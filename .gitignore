@@ -27,3 +27,4 @@ Thumbs.db
 
 # Skill de diseño de terceros (pbakaus/impeccable), instalada localmente
 .claude/skills/impeccable/
+.impeccable/review/

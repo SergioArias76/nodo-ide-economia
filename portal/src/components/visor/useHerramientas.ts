@@ -20,8 +20,8 @@ import type { Coordinate } from "ol/coordinate";
 import { descargarTexto } from "./exportar";
 import { Z, type Modo } from "./tipos";
 
-const NARANJA = "#e8590c";
-const AZUL = "#0b5d8f";
+const NARANJA = "#ff682c"; // meseta del isotipo
+const AZUL = "#21708c"; // mar profundo del isotipo
 
 const estiloDibujo = (f: FeatureLike) => {
   const texto = f.get("texto") as string | undefined;
@@ -30,20 +30,20 @@ const estiloDibujo = (f: FeatureLike) => {
       text: new Text({
         text: texto,
         font: "600 14px system-ui, sans-serif",
-        fill: new Fill({ color: "#1f2933" }),
+        fill: new Fill({ color: "#13262e" }),
         stroke: new Stroke({ color: "#ffffff", width: 3 }),
       }),
     });
   }
   return new Style({
-    fill: new Fill({ color: "rgba(232, 89, 12, 0.15)" }),
+    fill: new Fill({ color: "rgba(255, 104, 44, 0.15)" }),
     stroke: new Stroke({ color: NARANJA, width: 2.5 }),
     image: new Circle({ radius: 6, fill: new Fill({ color: NARANJA }), stroke: new Stroke({ color: "#fff", width: 2 }) }),
   });
 };
 
 const estiloMedicion = new Style({
-  fill: new Fill({ color: "rgba(11, 93, 143, 0.12)" }),
+  fill: new Fill({ color: "rgba(33, 112, 140, 0.12)" }),
   stroke: new Stroke({ color: AZUL, width: 2.5, lineDash: [8, 6] }),
   image: new Circle({ radius: 4, fill: new Fill({ color: AZUL }) }),
 });
@@ -63,7 +63,7 @@ export function formatearMedida(g: Geometry) {
 function etiquetaMedida(mapa: Map) {
   const el = document.createElement("div");
   el.className =
-    "pointer-events-none rounded-md bg-[#1f2933]/90 px-2 py-1 text-xs font-semibold whitespace-nowrap text-white shadow";
+    "pointer-events-none rounded-md bg-tinta/90 px-2 py-1 text-xs font-semibold whitespace-nowrap text-white shadow";
   const overlay = new Overlay({ element: el, offset: [0, -12], positioning: "bottom-center", stopEvent: false });
   mapa.addOverlay(overlay);
   return overlay;

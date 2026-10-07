@@ -3,29 +3,44 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/* Identidad del Gobierno del Chubut: neutros apenas teñidos de mar, acento mar profundo del isotipo */
 :root {
+  color-scheme: light; /* casillas, deslizadores y barras del navegador siguen el tema */
   --fondo: #ffffff;
-  --texto: #1f2933;
-  --tenue: #616e7c;
-  --borde: #d9dee3;
-  --acento: #0b5d8f;
+  --texto: #13262e;
+  --tenue: #4d646e;
+  --borde: #d3dee2;
+  --acento: #21708c;
   --acento-texto: #ffffff;
-  --superficie: #f4f6f8;
+  --superficie: #f2f6f7;
+
+  /* Franjas del isotipo: identifican los temas de capas */
+  --sol: #ffc815;
+  --sol-2: #ffb109;
+  --meseta: #ff8540;
+  --meseta-2: #ff682c;
+  --mar: #5894a7;
+  --mar-2: #21708c;
+
+  --sombra: 0 1px 2px rgb(19 38 46 / 0.08), 0 8px 24px -4px rgb(19 38 46 / 0.16);
+  --tinta: #13262e; /* avisos y etiquetas sobre el mapa */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --fondo: #12171c;
-    --texto: #e4e7eb;
-    --tenue: #9aa5b1;
-    --borde: #2b343d;
-    --acento: #4ea3d8;
-    --acento-texto: #0b1116;
-    --superficie: #1b2229;
+    color-scheme: dark;
+    --fondo: #0e1a20;
+    --texto: #e5eef1;
+    --tenue: #9bb2bb;
+    --borde: #29414c;
+    --acento: #7cc0d6;
+    --acento-texto: #0e1a20;
+    --superficie: #15252d;
+    --sombra: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -4px rgb(0 0 0 / 0.45);
   }
 }
 
-/* Los tokens del portal como colores de Tailwind (bg-superficie, text-tenue, border-borde…) */
+/* Los tokens del portal como utilidades de Tailwind (bg-superficie, text-tenue, border-borde, font-marca…) */
 @theme inline {
   --color-fondo: var(--fondo);
   --color-texto: var(--texto);
@@ -34,6 +49,16 @@
   --color-acento: var(--acento);
   --color-acento-texto: var(--acento-texto);
   --color-superficie: var(--superficie);
+  --color-tinta: var(--tinta);
+  --color-sol: var(--sol);
+  --color-sol-2: var(--sol-2);
+  --color-meseta: var(--meseta);
+  --color-meseta-2: var(--meseta-2);
+  --color-mar: var(--mar);
+  --color-mar-2: var(--mar-2);
+  --shadow-tarjeta: var(--sombra);
+  --font-sans: var(--font-public-sans), system-ui, sans-serif;
+  --font-marca: var(--font-rubik), var(--font-public-sans), sans-serif;
 }
 
 /* En capa base para que las utilidades de Tailwind tengan prioridad */
@@ -51,13 +76,20 @@
     flex-direction: column;
     background: var(--fondo);
     color: var(--texto);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--font-public-sans), system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    caret-color: var(--acento);
     line-height: 1.5;
   }
 
   main { flex: 1; display: flex; flex-direction: column; }
 
-  a { color: var(--acento); }
+  a { color: var(--acento); text-underline-offset: 0.18em; }
+
+  /* Superficies del navegador con la paleta: selección, foco y barras de desplazamiento */
+  ::selection { background: rgb(255 200 21 / 0.45); color: var(--texto); }
+  :focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+  * { scrollbar-width: thin; scrollbar-color: var(--borde) transparent; }
 
   .cabecera {
     display: flex;
@@ -148,4 +180,9 @@ html[data-sin-animaciones] *::before,
 html[data-sin-animaciones] *::after {
   animation-duration: 0s !important;
   transition: none !important;
+}
+
+/* Única animación del visor: la ficha de consulta crece desde el punto consultado */
+@keyframes ficha-aparece {
+  from { opacity: 0.4; transform: translateY(6px) scale(0.97); }
 }

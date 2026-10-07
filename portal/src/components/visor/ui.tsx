@@ -2,11 +2,12 @@
 
 import type { LucideIcon } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { temaDe } from "@/lib/config";
 
 // Los botones parten del reset de globals.css (sin preflight de Tailwind)
 export const reset = "appearance-none";
 
-export const tarjeta = "rounded-xl border border-borde bg-fondo text-texto shadow-lg";
+export const tarjeta = "rounded-xl border border-borde/70 bg-fondo text-texto shadow-tarjeta";
 
 export const campo =
   "m-0 w-full rounded-md border border-borde bg-fondo px-2.5 py-1.5 text-sm text-texto " +
@@ -51,9 +52,27 @@ export function BotonIcono({ icono: Icono, etiqueta, activo, tamano = "md", clas
 
 export function Titulo({ children, accion }: { children: ReactNode; accion?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <h2 className="m-0 text-xs font-semibold uppercase tracking-wider text-tenue">{children}</h2>
+    <div className="flex items-baseline justify-between gap-2">
+      <h2 className="m-0 text-base leading-tight font-semibold text-texto">{children}</h2>
       {accion}
     </div>
+  );
+}
+
+// Mosaico del tema: la franja del isotipo con el ícono provincial del tema encima
+export function IconoTema({ grupo, chico = false }: { grupo: string; chico?: boolean }) {
+  const t = temaDe(grupo);
+  const mascara = `url(/marca/temas/${t.icono}.svg) center / contain no-repeat`;
+  return (
+    <span
+      aria-hidden
+      className={"grid shrink-0 place-items-center " + (chico ? "size-5 rounded" : "size-8 rounded-lg")}
+      style={{ background: t.color }}
+    >
+      <span
+        className={chico ? "size-3" : "size-[1.1rem]"}
+        style={{ background: t.sobre, mask: mascara, WebkitMask: mascara }}
+      />
+    </span>
   );
 }

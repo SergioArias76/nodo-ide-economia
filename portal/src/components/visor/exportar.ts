@@ -72,12 +72,13 @@ export async function imprimirPdf(mapa: Map, o: OpcionesPdf) {
   const H = pdf.internal.pageSize.getHeight();
   const m = 12;
 
-  pdf.setFillColor(11, 93, 143);
-  pdf.rect(0, 0, W, 4, "F");
-  pdf.setFont("helvetica", "bold").setFontSize(15).setTextColor(31, 41, 51);
+  // Las seis franjas del isotipo del Chubut, de sol a mar
+  const franjas = [[255, 200, 21], [255, 177, 9], [255, 133, 64], [255, 104, 44], [88, 148, 167], [33, 112, 140]];
+  franjas.forEach(([r, g, b], i) => pdf.setFillColor(r, g, b).rect((W / 6) * i, 0, W / 6 + 0.2, 3, "F"));
+  pdf.setFont("helvetica", "bold").setFontSize(15).setTextColor(19, 38, 46);
   pdf.text(o.titulo || "Mapa", m, m + 6);
-  pdf.setFont("helvetica", "normal").setFontSize(9).setTextColor(97, 110, 124);
-  pdf.text("IDE Ministerio de Economía · Provincia del Chubut", m, m + 11);
+  pdf.setFont("helvetica", "normal").setFontSize(9).setTextColor(77, 100, 110);
+  pdf.text("Ministerio de Economía · Gobierno del Chubut · IDE", m, m + 11);
   pdf.text(new Date().toLocaleDateString("es-AR", { dateStyle: "long" }), W - m, m + 6, { align: "right" });
 
   // Mapa: ocupa el espacio disponible respetando la proporción
@@ -89,17 +90,17 @@ export async function imprimirPdf(mapa: Map, o: OpcionesPdf) {
   const w = Math.min(maxW, maxH * prop);
   const h = w / prop;
   pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", m, arriba, w, h);
-  pdf.setDrawColor(217, 222, 227).rect(m, arriba, w, h);
+  pdf.setDrawColor(211, 222, 226).rect(m, arriba, w, h);
 
   const [lon, lat] = toLonLat(mapa.getView().getCenter()!);
   let y = arriba + h + 6;
-  pdf.setFontSize(9).setTextColor(31, 41, 51);
+  pdf.setFontSize(9).setTextColor(19, 38, 46);
   pdf.text(`Escala aprox. ${escala(mapa)}  ·  Centro ${lat.toFixed(4)}°, ${lon.toFixed(4)}°  ·  EPSG:3857`, m, y);
   if (o.leyenda.length) {
     y += 5;
     pdf.text(`Capas: ${o.leyenda.join(" · ")}`, m, y, { maxWidth: W - 2 * m });
   }
-  pdf.setFontSize(7.5).setTextColor(97, 110, 124);
+  pdf.setFontSize(7.5).setTextColor(77, 100, 110);
   pdf.text(`Fuentes: Ministerio de Economía del Chubut${o.atribuciones ? ` · ${o.atribuciones}` : ""}`, m, H - m + 2, {
     maxWidth: W - 2 * m,
   });

@@ -25,21 +25,25 @@ type Props = {
 export default function PanelLateral({ panel, onPanel, onLugar, children }: Props) {
   return (
     <div className="pointer-events-none absolute top-3 bottom-3 left-3 z-20 sm:bottom-16 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2">
-      <header className={`${tarjeta} pointer-events-auto flex items-center gap-3 p-2 pl-3`}>
-        <Link href="/" className="flex shrink-0 items-center gap-2 text-texto no-underline" title="Inicio del portal">
-          <svg viewBox="0 0 24 24" className="size-7" aria-hidden>
-            <path d="M12 2 3 7l9 5 9-5-9-5Z" fill="var(--acento)" />
-            <path d="m3 12 9 5 9-5" fill="none" stroke="#e8590c" strokeWidth={2} strokeLinejoin="round" />
-            <path d="m3 17 9 5 9-5" fill="none" stroke="var(--tenue)" strokeWidth={2} strokeLinejoin="round" />
-          </svg>
-          <span className="text-sm leading-none font-bold">
-            IDE Economía
-            <span className="block text-xs font-semibold text-acento">Chubut</span>
+      <header className={`${tarjeta} pointer-events-auto relative flex flex-col gap-2.5 overflow-hidden p-3 pt-[calc(0.75rem+3px)]`}>
+        {/* Las seis franjas del isotipo, de sol a mar */}
+        <span
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-[3px]"
+          style={{
+            background:
+              "linear-gradient(90deg, var(--sol) 0 16.66%, var(--sol-2) 0 33.33%, var(--meseta) 0 50%, var(--meseta-2) 0 66.66%, var(--mar) 0 83.33%, var(--mar-2) 0)",
+          }}
+        />
+        <Link href="/" className="flex items-center gap-2.5 self-start text-texto no-underline" title="Inicio del portal IDE">
+          {/* eslint-disable-next-line @next/next/no-img-element -- isotipo oficial en SVG */}
+          <img src="/marca/isotipo.svg" alt="" className="-my-1.5 size-11 shrink-0" />
+          <span className="font-marca leading-[1.1]">
+            <span className="block text-[0.95rem] font-semibold">Ministerio de Economía</span>
+            <span className="block text-xs font-medium text-tenue">Gobierno del Chubut · IDE</span>
           </span>
         </Link>
-        <div className="min-w-0 flex-1">
-          <Buscador onElegir={onLugar} />
-        </div>
+        <Buscador onElegir={onLugar} />
       </header>
 
       <div className="flex min-h-0 flex-1 items-start gap-2">
