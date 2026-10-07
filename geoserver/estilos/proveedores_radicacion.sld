@@ -8,8 +8,7 @@
     <Name>proveedores_radicacion</Name>
     <UserStyle>
       <Title>Proveedores</Title>
-      <!-- Primero las humanas (un punto grande en el centro de la localidad: agrupa a todas las de esa localidad),
-           encima las jurídicas (domicilio exacto) -->
+      <!-- Todos en su domicilio; las jurídicas encima de las humanas -->
       <FeatureTypeStyle>
         <Rule>
           <Title>Persona humana</Title>
@@ -27,10 +26,10 @@
                 <Fill><CssParameter name="fill">#5894a7</CssParameter></Fill>
                 <Stroke>
                   <CssParameter name="stroke">#ffffff</CssParameter>
-                  <CssParameter name="stroke-width">2.5</CssParameter>
+                  <CssParameter name="stroke-width">1.2</CssParameter>
                 </Stroke>
               </Mark>
-              <Size>14</Size>
+              <Size>8</Size>
             </Graphic>
           </PointSymbolizer>
         </Rule>
