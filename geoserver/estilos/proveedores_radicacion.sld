@@ -16,7 +16,7 @@
             <Graphic>
               <Mark>
                 <WellKnownName>circle</WellKnownName>
-                <Fill><CssParameter name="fill">#e8590c</CssParameter></Fill>
+                <Fill><CssParameter name="fill">#ff682c</CssParameter></Fill>
                 <Stroke>
                   <CssParameter name="stroke">#ffffff</CssParameter>
                   <CssParameter name="stroke-width">1.2</CssParameter>

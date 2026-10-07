@@ -22,6 +22,7 @@ type Props = {
   onImprimir: (titulo: string, orientacion: "landscape" | "portrait") => Promise<void>;
   onBorrarTodo: () => void;
   onExportar: () => void;
+  ocultaEnMovil: boolean; // con el panel lateral abierto la barra quedaría detrás
 };
 
 const DIBUJO = [
@@ -46,8 +47,8 @@ export default function BarraHerramientas(p: Props) {
   const alternar = (m: Modo) => p.onModo(p.modo === m ? null : m);
 
   return (
-    <div className="pointer-events-none absolute top-3 right-3 z-10 flex flex-col items-end gap-2 max-sm:top-auto max-sm:right-[4.25rem] max-sm:bottom-8 max-sm:left-3 max-sm:flex-col-reverse max-sm:items-start">
-      <div role="toolbar" aria-label="Herramientas" className={`${tarjeta} pointer-events-auto flex flex-wrap items-center justify-end gap-0.5 p-1`}>
+    <div className={"pointer-events-none absolute top-3 right-3 z-10 flex flex-col items-end gap-2 max-sm:top-auto max-sm:right-[4.25rem] max-sm:bottom-[3.25rem] max-sm:left-3 max-sm:flex-col-reverse max-sm:items-start " + (p.ocultaEnMovil ? "max-sm:hidden" : "")}>
+      <div role="toolbar" aria-label="Herramientas" className={`${tarjeta} pointer-events-auto flex flex-wrap items-center justify-end gap-0.5 p-1 max-sm:max-w-full max-sm:flex-nowrap max-sm:justify-start max-sm:overflow-x-auto`}>
         <BotonIcono icono={Ruler} etiqueta="Medir distancia" activo={p.modo === "medir-distancia"} onClick={() => alternar("medir-distancia")} />
         <BotonIcono icono={SquareDashed} etiqueta="Medir superficie" activo={p.modo === "medir-area"} onClick={() => alternar("medir-area")} />
         {separador}
@@ -143,7 +144,7 @@ const AVISOS: Record<Modo, string> = {
 
 function AvisoModo({ modo, onSalir }: { modo: Modo; onSalir: () => void }) {
   return (
-    <div role="status" className="pointer-events-auto flex max-w-xs items-center gap-2 rounded-lg bg-[#1f2933]/90 py-1.5 pr-1.5 pl-3 text-xs text-white shadow-lg">
+    <div role="status" className="pointer-events-auto flex max-w-xs items-center gap-2 rounded-lg bg-tinta/95 py-1.5 pr-1.5 pl-3 text-xs text-white shadow-lg">
       {AVISOS[modo]}
       <button
         type="button"

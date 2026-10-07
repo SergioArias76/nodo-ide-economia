@@ -1,9 +1,11 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { BotonIcono } from "./ui";
+import { temaDe } from "@/lib/config";
+import { BotonIcono, IconoTema } from "./ui";
 
 export type Resultado = {
+  grupo: string; // tema de la capa (define su franja de color)
   capa: string; // título de la capa
   titulo: string; // encabezado de la ficha
   campos: { etiqueta: string; valor: string | string[] }[];
@@ -29,14 +31,24 @@ export default function FichaConsulta({ consulta, indice, onIndice, onCerrar }: 
     <div
       role="dialog"
       aria-label="Datos del punto consultado"
-      className="relative w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-borde bg-fondo text-sm text-texto shadow-xl"
+      className="relative w-80 max-w-[calc(100vw-2rem)] origin-bottom animate-[ficha-aparece_200ms_cubic-bezier(0.16,1,0.3,1)] rounded-xl border border-borde/70 bg-fondo text-sm text-texto shadow-tarjeta"
     >
+      {actual && (
+        <span
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-[3px] rounded-t-xl"
+          style={{ background: temaDe(actual.grupo).color }}
+        />
+      )}
       <div className="flex items-start justify-between gap-2 border-b border-borde py-2.5 pr-2 pl-4">
         <div className="min-w-0">
           {actual ? (
             <>
-              <p className="m-0 text-[0.6875rem] font-semibold uppercase tracking-wide text-acento">{actual.capa}</p>
               <h3 className="m-0 text-[0.9375rem] leading-snug font-semibold break-words">{actual.titulo}</h3>
+              <p className="m-0 mt-1 flex items-center gap-1.5 text-xs text-tenue">
+                <IconoTema grupo={actual.grupo} chico />
+                <span className="min-w-0 truncate">{actual.capa}</span>
+              </p>
             </>
           ) : (
             <p className="m-0 py-0.5 text-tenue">
@@ -58,7 +70,7 @@ export default function FichaConsulta({ consulta, indice, onIndice, onCerrar }: 
         <dl className="m-0 max-h-64 space-y-2.5 overflow-y-auto px-4 py-3">
           {actual.campos.map((c) => (
             <div key={c.etiqueta}>
-              <dt className="text-[0.6875rem] font-medium tracking-wide text-tenue uppercase">{c.etiqueta}</dt>
+              <dt className="text-xs text-tenue">{c.etiqueta}</dt>
               <dd className="m-0 mt-0.5 break-words">
                 {Array.isArray(c.valor) ? (
                   <ul className="m-0 flex list-none flex-wrap gap-1 p-0">

@@ -46,7 +46,7 @@ export const CAPAS_NODO: CapaNodo[] = [
     titulo: "Proveedores por localidad",
     grupo: "Proveedores del Estado",
     atributoTitulo: "localidad",
-    simbolo: { color: "#0b5d8f", proporcional: true },
+    simbolo: { color: "#21708c", proporcional: true },
     campos: [
       { atributo: "departamento", etiqueta: "Departamento" },
       { atributo: "provincia", etiqueta: "Provincia" },
@@ -61,7 +61,7 @@ export const CAPAS_NODO: CapaNodo[] = [
     grupo: "Proveedores del Estado",
     atributoTitulo: "entidad",
     nota: "Visible al acercar el mapa",
-    simbolo: { color: "#e8590c" },
+    simbolo: { color: "#ff682c" },
     campos: [
       { atributo: "cuit", etiqueta: "CUIT", formato: cuit },
       { atributo: "domicilio", etiqueta: "Domicilio" },
@@ -97,6 +97,27 @@ export const BASE_INICIAL = "osm";
 // Tesela de muestra (zoom 5, centro de Chubut) para la miniatura del selector
 export const miniatura = (b: MapaBase) =>
   b.url.replace("{z}", "5").replace("{x}", "9").replace("{-y}", "11").replace("{y}", "20");
+
+// Cada tema de capas toma una franja del isotipo (sol, meseta, mar) y un ícono de la biblioteca provincial
+// (public/marca/temas). El color identifica el tema en el panel y en las fichas de consulta.
+// "sobre": color del ícono encima de la franja (tinta sobre sol y meseta, blanco sobre mar)
+export type Tema = { color: string; icono: string; sobre: string };
+
+export const TEMAS: Record<string, Tema> = {
+  "Proveedores del Estado": { color: "var(--meseta-2)", icono: "proveedores", sobre: "#13262e" },
+  "Industria y Servicios": { color: "var(--meseta)", icono: "industria", sobre: "#13262e" },
+  "Geografía social": { color: "var(--sol-2)", icono: "social", sobre: "#13262e" },
+  "Defensa y Seguridad": { color: "var(--sol-2)", icono: "seguridad", sobre: "#13262e" },
+  "Clima y meteorología": { color: "var(--sol)", icono: "clima", sobre: "#13262e" },
+  "Biota": { color: "var(--meseta)", icono: "biota", sobre: "#13262e" },
+  "Geografía física": { color: "var(--meseta)", icono: "fisica", sobre: "#13262e" },
+  "Transporte": { color: "var(--mar)", icono: "transporte", sobre: "#ffffff" },
+  "Hidrografía y oceanografía": { color: "var(--mar-2)", icono: "hidrografia", sobre: "#ffffff" },
+  "Demarcación": { color: "var(--mar-2)", icono: "demarcacion", sobre: "#ffffff" },
+  "Unidades geoestadísticas": { color: "var(--mar)", icono: "estadistica", sobre: "#ffffff" },
+};
+
+export const temaDe = (grupo: string): Tema => TEMAS[grupo] ?? { color: "var(--tenue)", icono: "agregadas", sobre: "#ffffff" };
 
 // Servicios WMS sugeridos en "Agregar capas" (deben permitir CORS)
 export const WMS_SUGERIDOS = [

@@ -16,7 +16,7 @@
               <Mark>
                 <WellKnownName>circle</WellKnownName>
                 <Fill>
-                  <CssParameter name="fill">#0b5d8f</CssParameter>
+                  <CssParameter name="fill">#21708c</CssParameter>
                   <CssParameter name="fill-opacity">0.6</CssParameter>
                 </Fill>
                 <Stroke>
@@ -63,7 +63,7 @@
               <Radius>2</Radius>
               <Fill><CssParameter name="fill">#ffffff</CssParameter></Fill>
             </Halo>
-            <Fill><CssParameter name="fill">#1f2933</CssParameter></Fill>
+            <Fill><CssParameter name="fill">#13262e</CssParameter></Fill>
             <Priority><ogc:PropertyName>cant_proveedores</ogc:PropertyName></Priority>
           </TextSymbolizer>
         </Rule>
@@ -91,7 +91,7 @@
               <Radius>1.5</Radius>
               <Fill><CssParameter name="fill">#ffffff</CssParameter></Fill>
             </Halo>
-            <Fill><CssParameter name="fill">#3e4c59</CssParameter></Fill>
+            <Fill><CssParameter name="fill">#4d646e</CssParameter></Fill>
             <Priority><ogc:PropertyName>cant_proveedores</ogc:PropertyName></Priority>
           </TextSymbolizer>
         </Rule>

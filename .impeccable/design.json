@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-07T00:00:00-03:00",
+  "title": "Design System: IDE Economía Chubut",
+  "extensions": {
+    "colorMeta": {
+      "sol": { "role": "tertiary", "displayName": "Sol" },
+      "sol-hondo": { "role": "tertiary", "displayName": "Sol hondo" },
+      "meseta": { "role": "secondary", "displayName": "Meseta" },
+      "meseta-hondo": { "role": "secondary", "displayName": "Meseta honda" },
+      "mar": { "role": "tertiary", "displayName": "Mar" },
+      "mar-hondo": { "role": "primary", "displayName": "Mar hondo" },
+      "tinta": { "role": "neutral", "displayName": "Tinta" },
+      "tenue": { "role": "neutral", "displayName": "Tenue" },
+      "borde": { "role": "neutral", "displayName": "Borde" },
+      "superficie": { "role": "neutral", "displayName": "Superficie" },
+      "fondo": { "role": "neutral", "displayName": "Fondo" }
+    },
+    "typographyMeta": {
+      "marca": { "displayName": "Marca", "purpose": "Solo el logotipo del Ministerio." },
+      "titulo": { "displayName": "Título", "purpose": "Encabezados de panel." },
+      "ficha": { "displayName": "Ficha", "purpose": "Nombre del dato consultado." },
+      "cuerpo": { "displayName": "Cuerpo", "purpose": "Capas y valores de la ficha." },
+      "etiqueta": { "displayName": "Etiqueta", "purpose": "Etiquetas de campo, notas y metadatos." }
+    },
+    "shadows": [
+      { "name": "tarjeta", "value": "0 1px 2px rgb(19 38 46 / 0.08), 0 8px 24px -4px rgb(19 38 46 / 0.16)", "purpose": "Todo lo que flota sobre el mapa." }
+    ],
+    "motion": [
+      { "name": "ficha-aparece", "value": "200ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Única animación: la ficha crece desde el punto consultado." },
+      { "name": "estado", "value": "150-200ms", "purpose": "Cambios de color al hover y giro del chevron de grupo." }
+    ],
+    "breakpoints": [{ "name": "sm", "value": "640px" }]
+  },
+  "components": [
+    {
+      "name": "Botón primario",
+      "kind": "button",
+      "refersTo": "boton-primario",
+      "description": "Acción principal de un formulario del visor (Conectar, Generar PDF).",
+      "html": "<button class=\"ds-btn-primario\">Generar PDF</button>",
+      "css": ".ds-btn-primario { background: var(--acento, #21708c); color: var(--acento-texto, #fff); border: 0; border-radius: 6px; padding: 6px 12px; font: 500 0.875rem 'Public Sans', system-ui, sans-serif; cursor: pointer; transition: opacity 150ms; } .ds-btn-primario:hover { opacity: 0.9; } .ds-btn-primario:focus-visible { outline: 2px solid var(--acento, #21708c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botón de ícono",
+      "kind": "button",
+      "refersTo": "boton-icono",
+      "description": "Herramientas y riel de paneles; activo en mar hondo.",
+      "html": "<button class=\"ds-btn-icono\" aria-label=\"Medir distancia\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z\"/><path d=\"m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2\"/></svg></button><button class=\"ds-btn-icono ds-activo\" aria-pressed=\"true\" aria-label=\"Capas\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\"><path d=\"m12 2 9 5-9 5-9-5 9-5Z\"/><path d=\"m3 12 9 5 9-5\"/><path d=\"m3 17 9 5 9-5\"/></svg></button>",
+      "css": ".ds-btn-icono { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--texto, #13262e); cursor: pointer; transition: background 150ms; } .ds-btn-icono:hover { background: var(--superficie, #f2f6f7); } .ds-btn-icono.ds-activo { background: var(--acento, #21708c); color: var(--acento-texto, #fff); } .ds-btn-icono:focus-visible { outline: 2px solid var(--acento, #21708c); outline-offset: 1px; }"
+    },
+    {
+      "name": "Campo de búsqueda",
+      "kind": "input",
+      "refersTo": "campo",
+      "description": "Buscador de localidades y de capas.",
+      "html": "<input class=\"ds-campo\" type=\"search\" placeholder=\"Buscar localidad…\">",
+      "css": ".ds-campo { width: 100%; border: 1px solid var(--borde, #d3dee2); border-radius: 6px; background: var(--fondo, #fff); color: var(--texto, #13262e); padding: 6px 10px; font: 400 0.875rem 'Public Sans', system-ui, sans-serif; } .ds-campo::placeholder { color: var(--tenue, #4d646e); } .ds-campo:focus { outline: none; border-color: var(--acento, #21708c); box-shadow: 0 0 0 2px rgb(33 112 140 / 0.3); }"
+    },
+    {
+      "name": "Grupo de capas con mosaico de tema",
+      "kind": "custom",
+      "refersTo": "mosaico-tema",
+      "description": "Encabezado de grupo: franja del tema con ícono provincial, nombre y contador de capas encendidas.",
+      "html": "<button class=\"ds-grupo\"><span class=\"ds-mosaico\" style=\"background:#ffb109\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"#13262e\"><path d=\"M12 3 2 11h3v9h5v-6h4v6h5v-9h3Z\"/></svg></span><span class=\"ds-grupo-nombre\">Geografía social</span><span class=\"ds-contador\" style=\"background:#ffb109;color:#13262e\">2</span></button>",
+      "css": ".ds-grupo { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; border-radius: 8px; background: transparent; padding: 6px 4px; text-align: left; cursor: pointer; color: var(--texto, #13262e); transition: background 150ms; } .ds-grupo:hover { background: var(--superficie, #f2f6f7); } .ds-mosaico { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; } .ds-grupo-nombre { flex: 1; font: 600 0.875rem 'Public Sans', system-ui, sans-serif; } .ds-contador { min-width: 20px; padding: 0 6px; border-radius: 9999px; font: 600 0.75rem/20px 'Public Sans', system-ui, sans-serif; text-align: center; }"
+    },
+    {
+      "name": "Ficha de consulta",
+      "kind": "card",
+      "refersTo": "tarjeta",
+      "description": "Datos del punto consultado, con filete de la franja del tema y línea de origen.",
+      "html": "<div class=\"ds-ficha\"><span class=\"ds-filete\" style=\"background:#ffb109\"></span><div class=\"ds-ficha-cab\"><h3>Escuela Nº 724</h3><p>Establecimiento educativo</p></div><dl><dt>Jurisdicción</dt><dd>Chubut</dd><dt>Departamento</dt><dd>Rawson</dd></dl></div>",
+      "css": ".ds-ficha { position: relative; width: 320px; overflow: hidden; border: 1px solid rgb(211 222 226 / 0.7); border-radius: 12px; background: var(--fondo, #fff); color: var(--texto, #13262e); box-shadow: 0 1px 2px rgb(19 38 46 / 0.08), 0 8px 24px -4px rgb(19 38 46 / 0.16); font: 400 0.875rem 'Public Sans', system-ui, sans-serif; } .ds-filete { position: absolute; inset: 0 0 auto 0; height: 3px; } .ds-ficha-cab { padding: 10px 16px; border-bottom: 1px solid var(--borde, #d3dee2); } .ds-ficha-cab h3 { margin: 0; font-size: 0.9375rem; font-weight: 600; } .ds-ficha-cab p { margin: 4px 0 0; font-size: 0.75rem; color: var(--tenue, #4d646e); } .ds-ficha dl { margin: 0; padding: 12px 16px; } .ds-ficha dt { font-size: 0.75rem; color: var(--tenue, #4d646e); } .ds-ficha dd { margin: 2px 0 10px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Franjas del territorio",
+    "overview": "El isotipo del Gobierno del Chubut dibuja la provincia en franjas: sol, meseta y mar. El sistema usa esas franjas como código de color de los datos. Cada tema de capas toma una franja, y esa franja aparece donde el tema aparece: su mosaico en el panel, su contador de capas encendidas, el borde de la ficha de consulta y el aro del dato consultado en el mapa. El visitante reconoce un tema antes de leer su nombre.\n\nLa interfaz es una herramienta de trabajo (modo Operate). Lleva la disposición familiar de los visores de IDE: panel de capas a la izquierda, herramientas arriba a la derecha y zoom abajo. Las tarjetas son blancas y flotan sobre el mapa. El color de marca hace trabajo concreto: identifica temas, marca acciones y selección, y aparece como franja de seis colores sobre el logotipo. No decora.",
+    "keyCharacteristics": [
+      "Base clara de neutros fríos apenas teñidos de mar; el modo oscuro sigue la preferencia del sistema.",
+      "Acento único para acciones y selección: mar hondo.",
+      "Franjas del isotipo reservadas para identificar temas y para la marca.",
+      "Íconos temáticos de la biblioteca provincial, teñidos sobre su franja.",
+      "Public Sans en toda la interfaz; Rubik solo en el logotipo."
+    ],
+    "rules": [
+      { "name": "The Una Franja por Tema Rule", "body": "Cada tema de capas tiene una sola franja (`TEMAS` en `portal/src/lib/config.ts`), y esa franja es la única forma de color del tema. Un tema nuevo elige una franja existente; no inventa colores.", "section": "colors" },
+      { "name": "The Tinta sobre Sol Rule", "body": "Sobre sol y meseta el ícono y el número van en tinta. Sobre mar van en blanco. Las franjas cálidas nunca llevan texto blanco.", "section": "colors" },
+      { "name": "The Acento Hace Trabajo Rule", "body": "Mar hondo marca acciones, selección y foco, nada más. Las franjas no se usan como fondo de botones.", "section": "colors" },
+      { "name": "The Sin Volanta Rule", "body": "Ningún encabezado lleva rótulo en mayúsculas encima. La capa de origen de un dato va debajo del título, junto al mosaico del tema.", "section": "typography" },
+      { "name": "The Un Solo Piso Rule", "body": "Nada se apila sobre una tarjeta flotante con otra sombra. No hay tarjetas dentro de tarjetas.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do asignar a cada tema nuevo una franja existente y un ícono de la biblioteca provincial en `TEMAS`.",
+      "Do usar el acento mar hondo solo en acciones, selección y foco.",
+      "Do poner la capa de origen debajo del título de la ficha, con el mosaico del tema.",
+      "Do mantener una sola sombra (Tarjeta) para todo lo que flota sobre el mapa.",
+      "Do escribir en voseo y con etiquetas en lenguaje claro (\"Jurisdicción\", no \"jurisdiccion\")."
+    ],
+    "donts": [
+      "Don't poner texto blanco sobre sol o meseta.",
+      "Don't poner rótulos en mayúsculas encima de encabezados.",
+      "Don't anidar tarjetas ni dar a las filas de capas borde y sombra propios.",
+      "Don't usar Rubik fuera del logotipo.",
+      "Don't agregar animaciones de entrada a paneles o filas: la ficha es el único momento animado."
+    ]
+  }
+}

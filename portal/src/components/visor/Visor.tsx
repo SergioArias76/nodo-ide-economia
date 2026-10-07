@@ -20,9 +20,10 @@ import { ScaleLine } from "ol/control";
 import { Circle, Fill, Stroke, Style } from "ol/style";
 import { fromLonLat, toLonLat, transformExtent } from "ol/proj";
 import type { Extent } from "ol/extent";
+import type { FeatureLike } from "ol/Feature";
 import "ol/ol.css";
 import { Minus, Plus } from "lucide-react";
-import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, WORKSPACE } from "@/lib/config";
+import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, WORKSPACE, temaDe } from "@/lib/config";
 import catalogoIdera from "@/lib/capas-idera.json";
 import FichaConsulta, { type Consulta } from "./FichaConsulta";
 import PanelLateral from "./PanelLateral";
@@ -41,13 +42,26 @@ const VISTA_INICIAL = { lon: -68.5, lat: -43.7, zoom: 6 }; // Chubut
 const COLORES_ARCHIVO = ["#7048e8", "#0ca678", "#d6336c", "#1c7ed6", "#f59f00"];
 const corto = (nombre: string) => nombre.split(":").pop()!;
 
+// Margen al encuadrar la ficha: deja libre la barra de herramientas (≈56px) que flota sobre el mapa
+const MARGEN_FICHA = 72;
+
 const duracion = () => (document.documentElement.hasAttribute("data-sin-animaciones") ? 0 : 400);
 
-const estiloResaltado = new Style({
-  image: new Circle({ radius: 10, fill: new Fill({ color: "rgba(11, 93, 143, 0.15)" }), stroke: new Stroke({ color: "#0b5d8f", width: 3 }) }),
-  stroke: new Stroke({ color: "#0b5d8f", width: 3 }),
-  fill: new Fill({ color: "rgba(11, 93, 143, 0.12)" }),
-});
+// El resaltado del dato consultado lleva el color de su tema (franja del isotipo)
+const estiloResaltado = (f: FeatureLike) => {
+  const color = (f.get("color") as string | undefined) ?? "#21708c";
+  return new Style({
+    image: new Circle({ radius: 11, fill: new Fill({ color: `${color}33` }), stroke: new Stroke({ color, width: 3.5 }) }),
+    stroke: new Stroke({ color, width: 3.5 }),
+    fill: new Fill({ color: `${color}1f` }),
+  });
+};
+
+// Las franjas se definen como variables CSS; OpenLayers necesita el color resuelto
+const colorDelTema = (grupo: string) => {
+  const valor = temaDe(grupo).color.match(/var\((--[\w-]+)\)/);
+  return (valor && getComputedStyle(document.documentElement).getPropertyValue(valor[1]).trim()) || "#21708c";
+};
 
 const estiloUbicacion = new Style({
   image: new Circle({ radius: 7, fill: new Fill({ color: "#1c7ed6" }), stroke: new Stroke({ color: "#fff", width: 2.5 }) }),
@@ -131,7 +145,7 @@ function crearMapa() {
     element: nodoPopup,
     positioning: "bottom-center",
     offset: [0, -14],
-    autoPan: { animation: { duration: 250 }, margin: 24 },
+    autoPan: { animation: { duration: 250 }, margin: MARGEN_FICHA },
   });
   const editor = new Overlay({ element: nodoTexto, positioning: "bottom-center", offset: [0, -8] });
 
@@ -309,14 +323,17 @@ export default function Visor() {
     resaltado.clear();
     const g = geometrias[indice];
     if (!g) return;
-    resaltado.addFeature(new Feature(g));
+    const marca = new Feature(g);
+    const grupo = consulta?.estado === "listo" ? consulta.resultados[indice]?.grupo : undefined;
+    if (grupo) marca.set("color", colorDelTema(grupo));
+    resaltado.addFeature(marca);
     if (g instanceof Point) popup.setPosition(g.getCoordinates());
-  }, [geometrias, indice, popup, resaltado]);
+  }, [geometrias, indice, popup, resaltado, consulta]);
 
   // Con los datos cargados la ficha crece: se vuelve a encuadrar para que no quede cortada
   useEffect(() => {
     if (consulta?.estado !== "listo") return;
-    const cuadro = requestAnimationFrame(() => popup.panIntoView({ animation: { duration: 250 }, margin: 24 }));
+    const cuadro = requestAnimationFrame(() => popup.panIntoView({ animation: { duration: 250 }, margin: MARGEN_FICHA }));
     return () => cancelAnimationFrame(cuadro);
   }, [consulta, indice, popup]);
 
@@ -540,6 +557,7 @@ export default function Visor() {
         }
         onBorrarTodo={herramientas.borrarTodo}
         onExportar={herramientas.exportarDibujos}
+        ocultaEnMovil={panel !== null}
       />
 
       {/* Abajo a la derecha: zoom con nivel, como en el visor de IDERA */}
@@ -553,9 +571,9 @@ export default function Visor() {
 
       {/* Abajo: escala, coordenadas del cursor y fuentes */}
       <div className="pointer-events-none absolute right-3 bottom-3 left-3 z-10 flex items-end justify-between gap-3 text-xs">
-        <div className={`${tarjeta} pointer-events-auto flex items-center gap-3 px-2.5 py-1.5 shadow-sm max-sm:hidden`}>
+        <div className={`${tarjeta} pointer-events-auto flex items-center gap-3 px-2.5 py-1.5 shadow-sm`}>
           <div ref={escalaRef} className="escala" />
-          <span className="min-w-[13rem] text-tenue tabular-nums">
+          <span className="min-w-[13rem] text-tenue tabular-nums max-sm:hidden">
             {cursor ? `Lat ${cursor[1].toFixed(5)}°  Lon ${cursor[0].toFixed(5)}°` : "Mové el cursor sobre el mapa"}
           </span>
         </div>
@@ -566,7 +584,7 @@ export default function Visor() {
       </div>
 
       {aviso && (
-        <div role="alert" className="absolute bottom-16 left-1/2 z-30 max-w-sm -translate-x-1/2 rounded-lg bg-[#1f2933] px-4 py-2.5 text-sm text-white shadow-lg">
+        <div role="alert" className="absolute bottom-16 left-1/2 z-30 max-w-sm -translate-x-1/2 rounded-lg bg-tinta px-4 py-2.5 text-sm text-white shadow-lg">
           {aviso}
         </div>
       )}

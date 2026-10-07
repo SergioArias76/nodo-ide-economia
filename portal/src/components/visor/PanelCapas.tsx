@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { ChevronDown, EyeOff, Search, SlidersHorizontal, Trash, ZoomIn } from "lucide-react";
-import { BotonIcono, Titulo, campo, reset } from "./ui";
+import { temaDe } from "@/lib/config";
+import { BotonIcono, IconoTema, Titulo, campo, reset } from "./ui";
 import type { CapaVisor } from "./tipos";
 
 type Props = {
@@ -12,12 +13,8 @@ type Props = {
   onQuitar: (id: string) => void;
 };
 
-// Símbolo de las capas del nodo: debe coincidir con geoserver/estilos/<capa>.sld
+// Símbolo de las capas del nodo (debe coincidir con geoserver/estilos/<capa>.sld) y de los archivos
 function Simbolo({ c }: { c: CapaVisor }) {
-  if (c.leyenda) {
-    // eslint-disable-next-line @next/next/no-img-element -- leyenda dinámica de un WMS externo
-    return <img src={c.leyenda} alt="" className="max-h-6 max-w-9 shrink-0 rounded-sm bg-white object-contain p-0.5" />;
-  }
   const color = c.nodo?.simbolo.color ?? c.color ?? "#888";
   const circulo = (r: number, cx: number, cy: number, op = 1) => (
     <circle cx={cx} cy={cy} r={r} fill={color} fillOpacity={op} stroke="#fff" strokeWidth={1} />
@@ -41,12 +38,8 @@ function Simbolo({ c }: { c: CapaVisor }) {
 function FilaCapa({ c, onCambiar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Props, "capas">) {
   const [ajustes, setAjustes] = useState(false);
   return (
-    <li
-      className={
-        "rounded-lg border bg-fondo transition-colors " + (c.visible ? "border-acento/40" : "border-borde")
-      }
-    >
-      <div className="flex items-center gap-2 py-1.5 pr-1 pl-2.5">
+    <li className="rounded-lg transition-colors hover:bg-superficie">
+      <div className="flex items-center gap-1 py-1 pr-1 pl-2">
         <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 py-1" title={c.resumen || undefined}>
           <input
             type="checkbox"
@@ -54,26 +47,28 @@ function FilaCapa({ c, onCambiar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Pr
             checked={c.visible}
             onChange={() => onCambiar(c.id, { visible: !c.visible })}
           />
-          <span className={"min-w-0 flex-1 text-sm leading-tight " + (c.visible ? "" : "text-tenue")}>
+          <span className={"min-w-0 flex-1 text-sm leading-snug " + (c.visible ? "font-medium text-texto" : "text-tenue")}>
             {c.titulo}
-            {c.nodo?.nota && <span className="mt-0.5 block text-xs text-tenue">{c.nodo.nota}</span>}
+            {c.nodo?.nota && <span className="block text-xs font-normal text-tenue">{c.nodo.nota}</span>}
           </span>
-          <Simbolo c={c} />
+          {/* Las capas externas suelen tener leyendas por clases: se ven completas en los ajustes */}
+          {!c.leyenda && <Simbolo c={c} />}
         </label>
-        {c.extension && <BotonIcono icono={ZoomIn} etiqueta="Zoom a la capa" tamano="sm" onClick={() => onZoom(c)} />}
+        {c.extension && <BotonIcono icono={ZoomIn} etiqueta="Zoom a la capa" tamano="sm" className="text-tenue" onClick={() => onZoom(c)} />}
         <BotonIcono
           icono={SlidersHorizontal}
           etiqueta="Opacidad"
           tamano="sm"
           activo={ajustes}
+          className={ajustes ? "" : "text-tenue"}
           onClick={() => setAjustes(!ajustes)}
         />
         {(c.origen === "wms" || c.origen === "archivo") && (
-          <BotonIcono icono={Trash} etiqueta="Quitar capa" tamano="sm" onClick={() => onQuitar(c.id)} />
+          <BotonIcono icono={Trash} etiqueta="Quitar capa" tamano="sm" className="text-tenue" onClick={() => onQuitar(c.id)} />
         )}
       </div>
       {ajustes && (
-        <label className="flex items-center gap-3 border-t border-borde px-3 py-2 text-xs text-tenue">
+        <label className="flex items-center gap-3 px-3 pt-1 pb-2.5 pl-[2.1rem] text-xs text-tenue">
           Opacidad
           <input
             type="range"
@@ -82,10 +77,17 @@ function FilaCapa({ c, onCambiar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Pr
             step={5}
             value={Math.round(c.opacidad * 100)}
             onChange={(e) => onCambiar(c.id, { opacidad: Number(e.target.value) / 100 })}
-            className="m-0 flex-1 accent-acento"
+            className="m-0 min-w-0 flex-1 accent-acento"
           />
-          <span className="w-9 text-right tabular-nums">{Math.round(c.opacidad * 100)}%</span>
+          <span className="w-10 shrink-0 text-right">{Math.round(c.opacidad * 100)}%</span>
         </label>
+      )}
+      {ajustes && c.leyenda && c.visible && (
+        <figure className="m-0 px-3 pb-2.5 pl-[2.1rem]">
+          <figcaption className="mb-1 text-xs text-tenue">Leyenda</figcaption>
+          {/* eslint-disable-next-line @next/next/no-img-element -- leyenda dinámica de un WMS externo */}
+          <img src={c.leyenda} alt={`Leyenda de ${c.titulo}`} className="max-w-full rounded bg-white p-1 ring-1 ring-borde" />
+        </figure>
       )}
     </li>
   );
@@ -136,37 +138,48 @@ export default function PanelCapas({ capas, onCambiar, onZoom, onQuitar }: Props
       </div>
 
       {grupos.length === 0 && <p className="m-0 text-sm text-tenue">No hay capas que coincidan.</p>}
-      {grupos.map((g) => {
-        const abierto = !cerrados[g] || filtro !== "";
-        const encendidas = capas.filter((c) => c.grupo === g && c.visible).length;
-        return (
-          <section key={g} className="flex flex-col gap-2">
-            <button
-              type="button"
-              aria-expanded={abierto}
-              onClick={() => setCerrados({ ...cerrados, [g]: abierto })}
-              className={`${reset} flex cursor-pointer items-center justify-between rounded-md bg-acento px-3 py-2 text-left text-sm font-semibold text-acento-texto`}
-            >
-              <span className="flex-1">{g}</span>
-              {encendidas > 0 && (
-                <span className="mr-1.5 rounded-full bg-white/25 px-1.5 text-xs tabular-nums" aria-label={`${encendidas} encendidas`}>
-                  {encendidas}
-                </span>
+      <div className="-mx-1 flex flex-col divide-y divide-borde/70">
+        {grupos.map((g) => {
+          const abierto = !cerrados[g] || filtro !== "";
+          const encendidas = capas.filter((c) => c.grupo === g && c.visible).length;
+          const tema = temaDe(g);
+          return (
+            <section key={g} className="py-1.5">
+              <button
+                type="button"
+                aria-expanded={abierto}
+                onClick={() => setCerrados({ ...cerrados, [g]: abierto })}
+                className={`${reset} flex w-full cursor-pointer items-center gap-3 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-superficie`}
+              >
+                <IconoTema grupo={g} />
+                <span className="flex-1 text-sm font-semibold">{g}</span>
+                {encendidas > 0 && (
+                  <span
+                    className="min-w-5 rounded-full px-1.5 text-center text-xs leading-5 font-semibold"
+                    style={{ background: tema.color, color: tema.sobre }}
+                    aria-label={`${encendidas} encendidas`}
+                  >
+                    {encendidas}
+                  </span>
+                )}
+                <ChevronDown
+                  className={"size-4 text-tenue transition-transform duration-200 " + (abierto ? "" : "-rotate-90")}
+                  aria-hidden
+                />
+              </button>
+              {abierto && (
+                <ul className="m-0 mt-0.5 flex list-none flex-col p-0 pl-8">
+                  {visibles
+                    .filter((c) => c.grupo === g)
+                    .map((c) => (
+                      <FilaCapa key={c.id} c={c} onCambiar={onCambiar} onZoom={onZoom} onQuitar={onQuitar} />
+                    ))}
+                </ul>
               )}
-              <ChevronDown className={"size-4 transition-transform " + (abierto ? "" : "-rotate-90")} aria-hidden />
-            </button>
-            {abierto && (
-              <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-                {visibles
-                  .filter((c) => c.grupo === g)
-                  .map((c) => (
-                    <FilaCapa key={c.id} c={c} onCambiar={onCambiar} onZoom={onZoom} onQuitar={onQuitar} />
-                  ))}
-              </ul>
-            )}
-          </section>
-        );
-      })}
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }
