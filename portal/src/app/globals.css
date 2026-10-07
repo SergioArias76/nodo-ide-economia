@@ -38,6 +38,10 @@
 
 /* En capa base para que las utilidades de Tailwind tengan prioridad */
 @layer base {
+  /* Reset mínimo de controles (sin preflight); las utilidades lo pisan */
+  button { margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; }
+  input, select, textarea { font: inherit; }
+
   * { box-sizing: border-box; }
 
   html, body { margin: 0; height: 100%; }
@@ -112,4 +116,36 @@
   .registros p { margin: 0.25rem 0 0; color: var(--tenue); }
 
   .aviso, .cargando { color: var(--tenue); }
+}
+
+/* Visor: escala de OpenLayers dentro de la barra inferior */
+.escala .ol-scale-line {
+  position: static;
+  padding: 0;
+  background: none;
+}
+.escala .ol-scale-line-inner {
+  border-color: var(--texto);
+  color: var(--texto);
+  font-size: 0.6875rem;
+}
+
+/* Preferencias de accesibilidad del visor (atributos en <html>) */
+html[data-texto-grande] { font-size: 112.5%; }
+
+html[data-alto-contraste] {
+  --fondo: #ffffff;
+  --texto: #000000;
+  --tenue: #1a1a1a;
+  --borde: #000000;
+  --acento: #003a66;
+  --acento-texto: #ffffff;
+  --superficie: #f0f0f0;
+}
+
+html[data-sin-animaciones] *,
+html[data-sin-animaciones] *::before,
+html[data-sin-animaciones] *::after {
+  animation-duration: 0s !important;
+  transition: none !important;
 }

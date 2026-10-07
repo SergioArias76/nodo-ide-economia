@@ -1,0 +1,101 @@
+import type Map from "ol/Map";
+import type { Coordinate } from "ol/coordinate";
+import type { Pixel } from "ol/pixel";
+import type Geometry from "ol/geom/Geometry";
+import type Feature from "ol/Feature";
+import GeoJSON from "ol/format/GeoJSON";
+import ImageWMS from "ol/source/ImageWMS";
+import type { CapaNodo } from "@/lib/config";
+import type { CapaVisor } from "./tipos";
+import type { Resultado } from "./FichaConsulta";
+
+export type Hallazgo = { resultado: Resultado; geometria?: Geometry };
+
+const geojson = new GeoJSON(); // GetFeatureInfo devuelve la geometría en la proyección del mapa
+const capitalizar = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
+const ATRIBUTOS_NOMBRE = ["nombre", "name", "fna", "gna", "nam", "titulo", "entidad", "localidad"];
+
+// Ficha con los campos y formatos definidos para la capa en lib/config.ts
+function fichaNodo(nodo: CapaNodo, p: Record<string, unknown>): Resultado {
+  return {
+    capa: nodo.titulo,
+    titulo: String(p[nodo.atributoTitulo] ?? "Sin nombre"),
+    campos: nodo.campos.flatMap((c) => {
+      const crudo = p[c.atributo] as string | number | null | undefined;
+      if (crudo == null || crudo === "") return [];
+      const valor = c.lista
+        ? String(crudo).split(" | ").map(capitalizar)
+        : (c.formato?.(crudo) ?? String(crudo));
+      return [{ etiqueta: c.etiqueta, valor }];
+    }),
+  };
+}
+
+// Ficha genérica para capas externas o archivos: todos los atributos con valor
+function fichaGenerica(capa: string, p: Record<string, unknown>): Resultado {
+  const entradas = Object.entries(p).filter(
+    ([k, v]) => v != null && v !== "" && typeof v !== "object" && k !== "geometry" && k !== "bbox",
+  );
+  const nombre = entradas.find(([k]) => ATRIBUTOS_NOMBRE.includes(k.toLowerCase()));
+  return {
+    capa,
+    titulo: nombre ? String(nombre[1]) : capa,
+    campos: entradas.filter((e) => e !== nombre).map(([k, v]) => ({ etiqueta: k.replaceAll("_", " "), valor: String(v) })),
+  };
+}
+
+async function consultarWms(mapa: Map, c: CapaVisor, coordenada: Coordinate): Promise<Hallazgo[]> {
+  const fuente = c.capa.getSource();
+  if (!(fuente instanceof ImageWMS)) return [];
+  const url = fuente.getFeatureInfoUrl(coordenada, mapa.getView().getResolution()!, "EPSG:3857", {
+    INFO_FORMAT: "application/json",
+    FEATURE_COUNT: 50,
+    BUFFER: 6, // tolerancia en píxeles para acertar a los puntos
+  });
+  if (!url) return [];
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`GetFeatureInfo ${r.status}`);
+  let datos;
+  try {
+    datos = await r.json();
+  } catch {
+    if (c.origen === "nodo") throw new Error("Respuesta inválida");
+    return []; // el servicio externo no ofrece JSON: se ignora
+  }
+  return geojson.readFeatures(datos).map((f: Feature) => ({
+    resultado: c.nodo ? fichaNodo(c.nodo, f.getProperties()) : fichaGenerica(c.titulo, f.getProperties()),
+    geometria: f.getGeometry() ?? undefined,
+  }));
+}
+
+// Consulta todas las capas visibles en el punto, en el orden del panel
+export async function consultar(mapa: Map, capas: CapaVisor[], coordenada: Coordinate, pixel: Pixel) {
+  const visibles = capas.filter((c) => c.visible);
+  const porCapa = await Promise.all(
+    visibles.map(async (c): Promise<Hallazgo[]> => {
+      if (c.origen === "archivo") {
+        const features = mapa.getFeaturesAtPixel(pixel, { layerFilter: (l) => l === c.capa, hitTolerance: 5 });
+        return features.map((f) => ({
+          resultado: fichaGenerica(c.titulo, f.getProperties()),
+          geometria: (f as Feature).getGeometry() ?? undefined,
+        }));
+      }
+      try {
+        return await consultarWms(mapa, c, coordenada);
+      } catch (e) {
+        if (c.origen === "nodo") throw e;
+        return [];
+      }
+    }),
+  );
+  return porCapa.flat();
+}
+
+// ¿Hay algo dibujado bajo el cursor? Mira el píxel de las capas consultables
+export function hayDatoEn(capas: CapaVisor[], pixel: Pixel) {
+  return capas.some((c) => {
+    if (!c.visible) return false;
+    const dato = c.capa.getData(pixel) as Uint8ClampedArray | null;
+    return dato != null && dato[3] > 0;
+  });
+}

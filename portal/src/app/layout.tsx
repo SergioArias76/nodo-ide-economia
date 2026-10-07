@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,21 +10,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es">
-      <body>
-        <header className="cabecera">
-          <Link href="/" className="marca">
-            IDE Economía <span>Chubut</span>
-          </Link>
-          <nav>
-            <Link href="/visor">Visor</Link>
-            <Link href="/catalogo">Catálogo</Link>
-          </nav>
-        </header>
-        <main>{children}</main>
-        <footer className="pie">
-          Ministerio de Economía · Provincia del Chubut · Área de Sistemas de Información y Transparencia
-        </footer>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

@@ -16,6 +16,7 @@ export type Campo = {
 export type CapaNodo = {
   nombre: string;
   titulo: string;
+  grupo: string; // sección del panel de capas
   atributoTitulo: string; // atributo que encabeza la ficha de consulta
   nota?: string; // aclaración breve en el panel de capas
   // Símbolo de la leyenda: debe coincidir con el estilo de geoserver/estilos/<capa>.sld
@@ -43,6 +44,7 @@ export const CAPAS_NODO: CapaNodo[] = [
   {
     nombre: `${WORKSPACE}:proveedores_por_localidad`,
     titulo: "Proveedores por localidad",
+    grupo: "Proveedores del Estado",
     atributoTitulo: "localidad",
     simbolo: { color: "#0b5d8f", proporcional: true },
     campos: [
@@ -56,6 +58,7 @@ export const CAPAS_NODO: CapaNodo[] = [
   {
     nombre: `${WORKSPACE}:proveedores_radicacion`,
     titulo: "Proveedores (personas jurídicas)",
+    grupo: "Proveedores del Estado",
     atributoTitulo: "entidad",
     nota: "Visible al acercar el mapa",
     simbolo: { color: "#e8590c" },
@@ -94,6 +97,12 @@ export const BASE_INICIAL = "osm";
 // Tesela de muestra (zoom 5, centro de Chubut) para la miniatura del selector
 export const miniatura = (b: MapaBase) =>
   b.url.replace("{z}", "5").replace("{x}", "9").replace("{-y}", "11").replace("{y}", "20");
+
+// Servicios WMS sugeridos en "Agregar capas" (deben permitir CORS)
+export const WMS_SUGERIDOS = [
+  { titulo: "Instituto Geográfico Nacional", url: "https://wms.ign.gob.ar/geoserver/ows" },
+  { titulo: "Este nodo (Economía Chubut)", url: `${PUBLIC_GEOSERVER}/${WORKSPACE}/wms` },
+];
 
 export const SERVICIOS = [
   { tipo: "WMS", url: `${PUBLIC_GEOSERVER}/${WORKSPACE}/wms?service=WMS&request=GetCapabilities` },

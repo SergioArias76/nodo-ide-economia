@@ -3,11 +3,11 @@
 import dynamic from "next/dynamic";
 
 // OpenLayers usa APIs del navegador: se carga solo en el cliente.
-const Mapa = dynamic(() => import("./Mapa"), {
+const Visor = dynamic(() => import("./visor/Visor"), {
   ssr: false,
-  loading: () => <p className="cargando">Cargando mapa…</p>,
+  loading: () => <p className="cargando m-0 p-4">Cargando visor…</p>,
 });
 
 export default function MapaCliente() {
-  return <Mapa />;
+  return <Visor />;
 }
