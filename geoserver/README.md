@@ -20,7 +20,7 @@ Imagen oficial `docker.osgeo.org/geoserver`. El data directory vive en el volume
 ## Seguridad
 
 - `scripts/publicar-geoserver.sh` cambia la contraseña maestra del keystore (la de fábrica es `geoserver`) por `GEOSERVER_MASTER_PASSWORD` del `.env` y deshabilita WCS. WPS no viene instalado en la imagen.
-- WFS-T (escritura) deshabilitado: la carga se hace por scripts.
+- WFS en nivel `BASIC` (sin transacciones, lo configura el mismo script): la carga se hace por scripts.
 
 ## Estilos
 

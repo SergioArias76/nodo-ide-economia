@@ -25,6 +25,8 @@ json=(-H 'Content-Type: application/json')
 echo "Seguridad"
 # WCS (coberturas raster) no se usa; WPS no está instalado en la imagen
 ok "WCS deshabilitado" "$(api PUT /services/wcs/settings "${json[@]}" -d '{"wcs":{"enabled":false}}')"
+# WFS solo lectura (sin transacciones): los datos se cargan por scripts
+ok "WFS sin escritura" "$(api PUT /services/wfs/settings "${json[@]}" -d '{"wfs":{"serviceLevel":"BASIC"}}')"
 # La contraseña maestra protege el keystore; se cambia solo si difiere de la del .env
 maestra=$(curl -s "${INSEGURO[@]}" -u "$GEOSERVER_ADMIN_USER:$GEOSERVER_ADMIN_PASSWORD" "$REST/security/masterpw.json" |
   sed -n 's/.*"oldMasterPassword":"\([^"]*\)".*/\1/p')
