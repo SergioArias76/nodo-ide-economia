@@ -1,0 +1,101 @@
+name: nodo-ide-economia
+
+services:
+  postgis:
+    image: postgis/postgis:${POSTGIS_VERSION}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      IDE_DB: ${IDE_DB}
+      IDE_ADMIN_PASSWORD: ${IDE_ADMIN_PASSWORD}
+      GEOSERVER_DB_PASSWORD: ${GEOSERVER_DB_PASSWORD}
+      GEONETWORK_DB: ${GEONETWORK_DB}
+      GEONETWORK_DB_USER: ${GEONETWORK_DB_USER}
+      GEONETWORK_DB_PASSWORD: ${GEONETWORK_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgis/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      retries: 10
+    mem_limit: 1536m
+
+  geoserver:
+    image: docker.osgeo.org/geoserver:${GEOSERVER_VERSION}
+    restart: unless-stopped
+    depends_on:
+      postgis:
+        condition: service_healthy
+    environment:
+      GEOSERVER_ADMIN_USER: ${GEOSERVER_ADMIN_USER}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_ADMIN_PASSWORD}
+      SKIP_DEMO_DATA: "true"
+      CORS_ENABLED: "true"
+      PROXY_BASE_URL: https://${DOMINIO}/geoserver
+      EXTRA_JAVA_OPTS: ${GEOSERVER_JAVA_OPTS}
+    volumes:
+      - geoserver_data:/opt/geoserver_data
+    mem_limit: 2560m
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION}
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS}
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    mem_limit: 1g
+
+  geonetwork:
+    image: geonetwork:${GEONETWORK_VERSION}
+    restart: unless-stopped
+    depends_on:
+      postgis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+    environment:
+      GEONETWORK_DB_TYPE: postgres
+      GEONETWORK_DB_HOST: postgis
+      GEONETWORK_DB_PORT: "5432"
+      GEONETWORK_DB_NAME: ${GEONETWORK_DB}
+      GEONETWORK_DB_USERNAME: ${GEONETWORK_DB_USER}
+      GEONETWORK_DB_PASSWORD: ${GEONETWORK_DB_PASSWORD}
+      ES_HOST: elasticsearch
+      ES_PROTOCOL: http
+      ES_PORT: "9200"
+      JAVA_OPTS: ${GEONETWORK_JAVA_OPTS}
+    volumes:
+      - geonetwork_data:/catalogue-data
+    mem_limit: 1536m
+
+  portal:
+    build: ./portal
+    restart: unless-stopped
+    environment:
+      GEOSERVER_URL: http://geoserver:8080/geoserver
+      GEONETWORK_URL: http://geonetwork:8080/geonetwork
+    mem_limit: 512m
+
+  nginx:
+    image: nginx:${NGINX_VERSION}
+    restart: unless-stopped
+    depends_on: [portal, geoserver, geonetwork]
+    environment:
+      DOMINIO: ${DOMINIO}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+
+volumes:
+  pgdata:
+  geoserver_data:
+  esdata:
+  geonetwork_data:
