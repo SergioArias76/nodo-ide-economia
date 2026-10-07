@@ -16,7 +16,7 @@ type Props = {
 function Simbolo({ c }: { c: CapaVisor }) {
   if (c.leyenda) {
     // eslint-disable-next-line @next/next/no-img-element -- leyenda dinámica de un WMS externo
-    return <img src={c.leyenda} alt="" className="max-h-5 max-w-8 shrink-0 object-contain" />;
+    return <img src={c.leyenda} alt="" className="max-h-6 max-w-9 shrink-0 rounded-sm bg-white object-contain p-0.5" />;
   }
   const color = c.nodo?.simbolo.color ?? c.color ?? "#888";
   const circulo = (r: number, cx: number, cy: number, op = 1) => (

@@ -46,7 +46,7 @@ export default function BarraHerramientas(p: Props) {
   const alternar = (m: Modo) => p.onModo(p.modo === m ? null : m);
 
   return (
-    <div className="pointer-events-none absolute top-3 right-3 z-10 max-sm:top-[4.5rem] flex flex-col items-end gap-2">
+    <div className="pointer-events-none absolute top-3 right-3 z-10 flex flex-col items-end gap-2 max-sm:top-auto max-sm:right-[4.25rem] max-sm:bottom-8 max-sm:left-3 max-sm:flex-col-reverse max-sm:items-start">
       <div role="toolbar" aria-label="Herramientas" className={`${tarjeta} pointer-events-auto flex flex-wrap items-center justify-end gap-0.5 p-1`}>
         <BotonIcono icono={Ruler} etiqueta="Medir distancia" activo={p.modo === "medir-distancia"} onClick={() => alternar("medir-distancia")} />
         <BotonIcono icono={SquareDashed} etiqueta="Medir superficie" activo={p.modo === "medir-area"} onClick={() => alternar("medir-area")} />
@@ -113,7 +113,7 @@ export default function BarraHerramientas(p: Props) {
       )}
 
       {dibujo && (
-        <div role="toolbar" aria-label="Dibujo" aria-orientation="vertical" className={`${tarjeta} pointer-events-auto flex flex-col gap-0.5 p-1`}>
+        <div role="toolbar" aria-label="Dibujo" aria-orientation="vertical" className={`${tarjeta} pointer-events-auto flex flex-col gap-0.5 p-1 max-sm:self-end`}>
           {DIBUJO.map((d) => (
             <BotonIcono key={d.modo} icono={d.icono} etiqueta={d.etiqueta} activo={p.modo === d.modo} onClick={() => alternar(d.modo)} />
           ))}

@@ -282,6 +282,13 @@ export default function Visor() {
     if (g instanceof Point) popup.setPosition(g.getCoordinates());
   }, [geometrias, indice, popup, resaltado]);
 
+  // Con los datos cargados la ficha crece: se vuelve a encuadrar para que no quede cortada
+  useEffect(() => {
+    if (consulta?.estado !== "listo") return;
+    const cuadro = requestAnimationFrame(() => popup.panIntoView({ animation: { duration: 250 }, margin: 24 }));
+    return () => cancelAnimationFrame(cuadro);
+  }, [consulta, indice, popup]);
+
   const cerrarConsulta = useCallback(() => {
     ultimaConsulta.current++;
     popup.setPosition(undefined);

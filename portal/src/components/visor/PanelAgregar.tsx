@@ -35,7 +35,7 @@ function aplanar(capa: CapaCapabilities, salida: CapaCapabilities[] = []) {
 
 function ServicioWms({ onAgregarWms }: Pick<Props, "onAgregarWms">) {
   const [url, setUrl] = useState("");
-  const [estado, setEstado] = useState<"inicial" | "cargando" | "error" | "listo">("inicial");
+  const [estado, setEstado] = useState<"inicial" | "cargando" | "error" | "demora" | "listo">("inicial");
   const [capas, setCapas] = useState<CapaWms[]>([]);
   const [filtro, setFiltro] = useState("");
   const [agregadas, setAgregadas] = useState<string[]>([]);
@@ -45,7 +45,8 @@ function ServicioWms({ onAgregarWms }: Pick<Props, "onAgregarWms">) {
     setEstado("cargando");
     try {
       const base = direccion.split("?")[0];
-      const r = await fetch(`${base}?service=WMS&request=GetCapabilities&version=1.3.0`);
+      const r = await fetch(`${base}?service=WMS&request=GetCapabilities&version=1.3.0`, { signal: AbortSignal.timeout(20000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const caps = new WMSCapabilities().read(await r.text());
       const lista = aplanar(caps.Capability.Layer).map((c) => ({
         url: base,
@@ -56,8 +57,8 @@ function ServicioWms({ onAgregarWms }: Pick<Props, "onAgregarWms">) {
       }));
       setCapas(lista);
       setEstado("listo");
-    } catch {
-      setEstado("error");
+    } catch (e) {
+      setEstado(e instanceof DOMException && e.name === "TimeoutError" ? "demora" : "error");
     }
   }
 
@@ -97,6 +98,9 @@ function ServicioWms({ onAgregarWms }: Pick<Props, "onAgregarWms">) {
           </button>
         ))}
       </div>
+      {estado === "demora" && (
+        <p className="m-0 text-sm text-red-600 dark:text-red-400">El servicio no respondió en 20 segundos. Puede estar caído: probá más tarde.</p>
+      )}
       {estado === "error" && (
         <p className="m-0 text-sm text-red-600 dark:text-red-400">
           No se pudo leer el servicio. Verificá la dirección y que el servidor permita el acceso desde otros sitios (CORS).
