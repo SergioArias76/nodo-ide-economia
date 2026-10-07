@@ -33,12 +33,12 @@ export default function FichaConsulta({ consulta, indice, onIndice, onCerrar }: 
       aria-label="Datos del punto consultado"
       className="relative w-80 max-w-[calc(100vw-2rem)] origin-bottom animate-[ficha-aparece_200ms_cubic-bezier(0.16,1,0.3,1)] rounded-xl border border-borde/70 bg-fondo text-sm text-texto shadow-tarjeta"
     >
+      {/* Franja del tema: recortada por una capa con el redondeado de la tarjeta (la ficha no puede
+          llevar overflow-hidden porque cortaría el pico) */}
       {actual && (
-        <span
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-[3px] rounded-t-xl"
-          style={{ background: temaDe(actual.grupo).color }}
-        />
+        <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[11px]">
+          <span className="block h-[3px]" style={{ background: temaDe(actual.grupo).color }} />
+        </span>
       )}
       <div className="flex items-start justify-between gap-2 border-b border-borde py-2.5 pr-2 pl-4">
         <div className="min-w-0">
