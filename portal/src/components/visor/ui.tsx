@@ -63,16 +63,21 @@ export function Titulo({ children, accion }: { children: ReactNode; accion?: Rea
 export function IconoTema({ grupo, chico = false }: { grupo: string; chico?: boolean }) {
   const t = temaDe(grupo);
   const mascara = `url(/marca/temas/${t.icono}.svg) center / contain no-repeat`;
+  // Los iconos oficiales son de trazo fino: la sombra sin desenfoque del color del trazo lo engrosa
+  // (va en un contenedor aparte porque el filtro se aplica antes que la máscara del mismo elemento)
+  const engrosar = `drop-shadow(0 0 0.3px ${t.sobre}) drop-shadow(0 0 0.3px ${t.sobre})`;
   return (
     <span
       aria-hidden
-      className={"grid shrink-0 place-items-center " + (chico ? "size-5 rounded" : "size-8 rounded-lg")}
+      className={"grid shrink-0 place-items-center " + (chico ? "size-6 rounded-md" : "size-10 rounded-xl")}
       style={{ background: t.color }}
     >
-      <span
-        className={chico ? "size-3" : "size-[1.1rem]"}
-        style={{ background: t.sobre, mask: mascara, WebkitMask: mascara }}
-      />
+      <span className="grid place-items-center" style={{ filter: engrosar }}>
+        <span
+          className={chico ? "size-4" : "size-7"}
+          style={{ background: t.sobre, mask: mascara, WebkitMask: mascara }}
+        />
+      </span>
     </span>
   );
 }
