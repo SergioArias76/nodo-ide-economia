@@ -20,8 +20,18 @@ El archivo no se versiona: va en `datos/fuentes/proveedores/QGIS_proveedores_pun
 | `calle_sin_altura` | 365 | Calle, sin número |
 | `localidad` | 4.214 | Centro de la localidad |
 | `provincia` | 315 | Centro de la provincia (no sirve para mapear) |
+| `esquina` | — | Intersección de dos calles ("BELGRANO Y LEWIS JONES"); la agrega la regeocodificación |
 
 Las tres primeras (7.541, un 61%) están en el domicilio real. Localidades sin resolver todavía: Sarmiento, Trevelin, Lago Puelo, Gaiman y Rada Tilly (903 proveedores en total). El departamento se obtuvo con la API Georef (INDEC).
+
+## Regeocodificación
+
+Los domicilios que quedaron por localidad o provincia se pueden mejorar con `scripts/geocodificar-domicilios.mjs`:
+
+1. **Georef** (API del Estado): busca en la provincia y se queda con la coincidencia más cercana a la localidad del proveedor, a menos de 25 km. Interpola la altura sobre las cuadras del INDEC y resuelve esquinas.
+2. **OpenStreetMap** (Nominatim), si Georef no encuentra: exige que el nombre de la calle devuelta coincida con el pedido. Respeta su política de uso de una consulta por segundo.
+
+Las respuestas quedan en caché en `datos/geocodificacion/`, junto con el listado de lo que no se pudo ubicar (`no-ubicados.csv`). Con `--aplicar` el script guarda las mejoras en `proveedores.domicilio_correccion`, por CUIT y domicilio. La carga del padrón las vuelve a aplicar mientras el domicilio no cambie. En esa misma tabla se pueden cargar correcciones a mano (`fuente_geo = 'manual'`).
 
 ## Carga
 

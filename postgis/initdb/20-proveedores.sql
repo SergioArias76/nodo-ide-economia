@@ -54,6 +54,24 @@ CREATE TABLE proveedores.domicilio (
 CREATE INDEX domicilio_geom_idx ON proveedores.domicilio USING gist (geom);
 CREATE INDEX domicilio_localidad_idx ON proveedores.domicilio (provincia, localidad);
 
+-- Correcciones de ubicación (regeocodificación o carga manual). No referencia a proveedor porque la
+-- carga del padrón vacía esa tabla en cascada: se identifica por CUIT y vale mientras el domicilio del
+-- padrón siga siendo el mismo (domicilio_orig). La aplica postgis/etl/proveedores_desde_staging.sql.
+CREATE TABLE proveedores.domicilio_correccion (
+    cuit            varchar(11) PRIMARY KEY,
+    domicilio_orig  text NOT NULL,                 -- domicilio del padrón al que corresponde la corrección
+    calle           text,
+    altura          text,
+    localidad       text,
+    departamento    text,
+    provincia       text,
+    precision       text NOT NULL,
+    fuente_geo      text NOT NULL,                 -- nominatim/regeo | manual
+    geom            geometry(Point, 4326) NOT NULL,
+    nota            text,
+    actualizado_en  timestamptz NOT NULL DEFAULT now()
+);
+
 -- ---------------------------------------------------------------------------
 -- Vistas publicables (lo único que lee GeoServer; ver docs/convenciones.md)
 -- ---------------------------------------------------------------------------

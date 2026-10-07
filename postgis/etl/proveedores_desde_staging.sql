@@ -39,6 +39,22 @@ SELECT fid,
        nullif(fuente_geo, ''), geom
 FROM staging.proveedores_qgis;
 
+-- Correcciones de ubicación (scripts/geocodificar-domicilios.mjs o carga manual): solo si el
+-- domicilio del padrón no cambió desde que se hizo la corrección
+UPDATE proveedores.domicilio d
+SET calle = coalesce(c.calle, d.calle),
+    altura = coalesce(c.altura, d.altura),
+    localidad = coalesce(c.localidad, d.localidad),
+    departamento = coalesce(c.departamento, d.departamento),
+    provincia = coalesce(c.provincia, d.provincia),
+    precision = c.precision,
+    fuente_geo = c.fuente_geo,
+    geom = c.geom
+FROM proveedores.domicilio_correccion c
+JOIN proveedores.proveedor p ON p.cuit = c.cuit
+WHERE d.proveedor_id = p.id
+  AND d.domicilio_orig IS NOT DISTINCT FROM c.domicilio_orig;
+
 COMMIT;
 
 ANALYZE proveedores.proveedor, proveedores.proveedor_rubro, proveedores.domicilio;
