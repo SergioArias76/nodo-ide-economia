@@ -21,7 +21,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$IDE_DB" <<-SQL
   GRANT CONNECT ON DATABASE ${IDE_DB} TO geoserver_ro;
   GRANT USAGE ON SCHEMA proveedores, base TO geoserver_ro;
 
-  -- Lo que ide_admin cree en los esquemas publicables queda legible por GeoServer
-  ALTER DEFAULT PRIVILEGES FOR ROLE ide_admin IN SCHEMA proveedores, base
+  -- Capas base: todo lo que cree ide_admin queda legible por GeoServer.
+  -- En proveedores NO: hay datos personales; se otorga SELECT solo sobre las vistas públicas.
+  ALTER DEFAULT PRIVILEGES FOR ROLE ide_admin IN SCHEMA base
     GRANT SELECT ON TABLES TO geoserver_ro;
 SQL

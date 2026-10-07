@@ -6,7 +6,8 @@ export const WORKSPACE = "economia";
 
 // Capas del nodo que muestra el visor. Agregar aquí a medida que se publiquen en GeoServer.
 export const CAPAS_NODO = [
-  { nombre: `${WORKSPACE}:proveedores_radicacion`, titulo: "Proveedores – radicación" },
+  { nombre: `${WORKSPACE}:proveedores_por_localidad`, titulo: "Proveedores por localidad" },
+  { nombre: `${WORKSPACE}:proveedores_radicacion`, titulo: "Proveedores (personas jurídicas)" },
 ];
 
 export const SERVICIOS = [

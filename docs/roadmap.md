@@ -13,8 +13,10 @@
 - [ ] Backups automáticos y monitoreo básico (healthchecks)
 
 ## Fase 2 – Primeras capas
-- [ ] Modelo de datos `proveedores` y proceso de carga desde el Registro Provincial
-- [ ] Geocodificación de domicilios (evaluar georef-ar API de datos.gob.ar)
+- [x] Modelo de datos `proveedores` y carga de prueba desde el paquete QGIS (SIPPE 07/09/2026)
+- [ ] Probar la carga con el stack levantado
+- [ ] Integración directa con el Registro (reemplazar el paquete QGIS)
+- [ ] Mejorar la geocodificación de Sarmiento, Trevelin, Lago Puelo, Gaiman y Rada Tilly
 - [ ] Publicación WMS/WFS de `economia:proveedores_*`
 - [ ] Estilos SLD institucionales
 

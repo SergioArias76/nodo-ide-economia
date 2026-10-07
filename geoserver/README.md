@@ -9,7 +9,9 @@ Imagen oficial `docker.osgeo.org/geoserver`. El data directory vive en el volume
 3. **Store PostGIS** `ide_proveedores`:
    - host `postgis`, puerto `5432`, base `ide`, esquema `proveedores`
    - usuario `geoserver_ro` (solo lectura)
-4. Publicar `v_proveedores_publico` como `economia:proveedores_radicacion`.
+4. Publicar las vistas (ver [docs/datos-proveedores.md](../docs/datos-proveedores.md)):
+   - `v_proveedores_publico` → `economia:proveedores_radicacion`
+   - `v_proveedores_por_localidad` → `economia:proveedores_por_localidad`
 5. Información del servicio (Contact Information, título, resumen) según *Perfil de Metadatos para Servicios OGC – IDERA*.
 6. Habilitar cache de teselas (GeoWebCache) en EPSG:3857 para WMTS.
 
