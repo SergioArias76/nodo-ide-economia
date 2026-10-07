@@ -4,6 +4,7 @@
 #   por defecto: datos/fuentes/proveedores/QGIS_proveedores_puntos.geojson
 # Requiere el stack levantado (docker compose up -d). GDAL corre en un contenedor temporal.
 set -euo pipefail
+export MSYS_NO_PATHCONV=1  # Git Bash (Windows): que no convierta las rutas del contenedor
 
 cd "$(dirname "$0")/.."
 set -a; source .env; set +a
@@ -13,7 +14,7 @@ GDAL_IMAGE="${GDAL_IMAGE:-ghcr.io/osgeo/gdal:ubuntu-small-latest}"
 RED="$(docker compose ps -q postgis | xargs docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}')"
 
 [ -f "$GEOJSON" ] || { echo "No existe $GEOJSON" >&2; exit 1; }
-DIR="$(cd "$(dirname "$GEOJSON")" && pwd)"
+DIR="$(cd "$(dirname "$GEOJSON")" && (pwd -W 2>/dev/null || pwd))"  # pwd -W: ruta C:/... en Git Bash
 ARCHIVO="$(basename "$GEOJSON")"
 
 echo "1/2 GeoJSON → staging.proveedores_qgis"
