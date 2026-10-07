@@ -44,7 +44,11 @@ Al final muestra un resumen: cantidad por tipo de persona, por precisión y cuá
 
 ## 4. Publicar en GeoServer
 
-Seguir [geoserver/README.md](../geoserver/README.md): workspace `economia`, store PostGIS con `geoserver_ro` y publicar las dos vistas. Después recargar https://localhost/visor.
+```bash
+bash scripts/publicar-geoserver.sh
+```
+
+Crea el workspace `economia`, el store PostGIS (usuario `geoserver_ro`), publica las dos vistas y les aplica los estilos de `geoserver/estilos/`. Se puede volver a correr después de cambiar un estilo. Después recargar https://localhost/visor.
 
 ## Problemas comunes
 
