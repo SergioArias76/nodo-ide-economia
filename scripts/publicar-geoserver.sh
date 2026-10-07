@@ -22,6 +22,17 @@ existe() { [ "$(api GET "$1.json")" = 200 ]; }  # sin extensión, los estilos re
 ok() { case "$2" in 2??) echo "  ✓ $1";; *) echo "  ✗ $1 (HTTP $2)" >&2; exit 1;; esac; }
 json=(-H 'Content-Type: application/json')
 
+echo "Seguridad"
+# WCS (coberturas raster) no se usa; WPS no está instalado en la imagen
+ok "WCS deshabilitado" "$(api PUT /services/wcs/settings "${json[@]}" -d '{"wcs":{"enabled":false}}')"
+# La contraseña maestra protege el keystore; se cambia solo si difiere de la del .env
+maestra=$(curl -s "${INSEGURO[@]}" -u "$GEOSERVER_ADMIN_USER:$GEOSERVER_ADMIN_PASSWORD" "$REST/security/masterpw.json" |
+  sed -n 's/.*"oldMasterPassword":"\([^"]*\)".*/\1/p')
+if [ "$maestra" != "$GEOSERVER_MASTER_PASSWORD" ]; then
+  ok "contraseña maestra" "$(printf '{"oldMasterPassword":"%s","newMasterPassword":"%s"}' "$maestra" "$GEOSERVER_MASTER_PASSWORD" |
+    api PUT /security/masterpw.json "${json[@]}" --data-binary @-)"
+fi
+
 echo "Workspace y store"
 existe "/workspaces/$WS" || ok "workspace $WS" "$(api POST /namespaces "${json[@]}" \
   -d "{\"namespace\":{\"prefix\":\"$WS\",\"uri\":\"https://$DOMINIO/$WS\"}}")"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Respaldo de bases y data directory de GeoServer.
+# Respaldo de bases y data directories de GeoServer y GeoNetwork.
 # Uso: scripts/backup.sh [directorio_destino]   (cron sugerido: 0 2 * * *)
 set -euo pipefail
 
@@ -16,6 +16,8 @@ for db in "$IDE_DB" "$GEONETWORK_DB"; do
 done
 
 docker compose exec -T geoserver tar czf - -C /opt/geoserver_data . > "$DESTINO/geoserver_data_${FECHA}.tar.gz"
+# Incluye config/encryptor.properties: sin esa clave no se descifran las contraseñas guardadas en la base
+docker compose exec -T geonetwork tar czf - -C /catalogue-data . > "$DESTINO/geonetwork_data_${FECHA}.tar.gz"
 
 find "$DESTINO" -type f -mtime +"$RETENCION_DIAS" -delete
 echo "Backup completo en $DESTINO ($FECHA)"

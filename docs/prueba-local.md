@@ -28,7 +28,7 @@ La primera vez descarga ~3 GB de imágenes. GeoServer y GeoNetwork tardan 1–3 
 |---|---|---|
 | Portal | https://localhost/ | – |
 | GeoServer | https://localhost/geoserver/ | `.env` → `GEOSERVER_ADMIN_*` |
-| GeoNetwork | https://localhost/geonetwork/ | `admin` / `admin` |
+| GeoNetwork | https://localhost/geonetwork/ | `admin` / `admin` hasta el paso 5; después `.env` → `GEONETWORK_ADMIN_PASSWORD` |
 
 El navegador va a advertir por el certificado autofirmado: aceptar y continuar.
 
@@ -49,6 +49,14 @@ bash scripts/publicar-geoserver.sh
 ```
 
 Crea el workspace `economia`, el store PostGIS (usuario `geoserver_ro`), publica las dos vistas y les aplica los estilos de `geoserver/estilos/`. Se puede volver a correr después de cambiar un estilo. Después recargar https://localhost/visor.
+
+## 5. Asegurar GeoNetwork
+
+```bash
+bash scripts/configurar-geonetwork.sh
+```
+
+Reemplaza la contraseña de fábrica de `admin` por la del `.env`. (El paso 4 ya deshabilita WCS en GeoServer y cambia su contraseña maestra.)
 
 ## Problemas comunes
 
