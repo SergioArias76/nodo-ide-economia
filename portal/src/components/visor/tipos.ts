@@ -18,6 +18,7 @@ export type CapaVisor = {
   resumen?: string; // descripción de la capa
   consultable?: boolean; // false: el servicio no devuelve datos en JSON
   exportable?: boolean; // false: el servicio no permite CORS y bloquea la captura
+  filtro?: string[]; // valores elegidos del filtro de la capa (nodo.filtro)
 };
 
 export type Panel = "capas" | "base" | "agregar" | "ayuda" | "accesibilidad";

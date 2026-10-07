@@ -21,6 +21,8 @@ export type CapaNodo = {
   nota?: string; // aclaración breve en el panel de capas
   // Símbolo de la leyenda: debe coincidir con el estilo de geoserver/estilos/<capa>.sld
   simbolo: { color: string; proporcional?: boolean };
+  // Filtro por valores de un atributo (casillas en el panel; se aplica con CQL_FILTER de GeoServer)
+  filtro?: { atributo: string; opciones: { valor: string; etiqueta: string; color: string }[] };
   campos: Campo[];
 };
 
@@ -30,6 +32,7 @@ const PRECISION: Record<string, string> = {
   calle_altura_sin_validar: "Calle y altura (sin validar)",
   calle_sin_altura: "Calle sin altura",
   localidad: "Centro de la localidad",
+  centro_localidad: "Centro de la localidad (persona humana, sin domicilio)",
   provincia: "Provincia",
 };
 
@@ -57,12 +60,20 @@ export const CAPAS_NODO: CapaNodo[] = [
   },
   {
     nombre: `${WORKSPACE}:proveedores_radicacion`,
-    titulo: "Proveedores (personas jurídicas)",
+    titulo: "Proveedores",
     grupo: "Proveedores del Estado",
     atributoTitulo: "entidad",
     nota: "Visible al acercar el mapa",
     simbolo: { color: "#ff682c" },
+    filtro: {
+      atributo: "tipo_persona",
+      opciones: [
+        { valor: "juridica", etiqueta: "Personas jurídicas", color: "#ff682c" },
+        { valor: "humana", etiqueta: "Personas humanas", color: "#5894a7" },
+      ],
+    },
     campos: [
+      { atributo: "tipo_persona", etiqueta: "Tipo de persona", formato: (v) => (v === "humana" ? "Persona humana" : v === "juridica" ? "Persona jurídica" : String(v ?? "")) },
       { atributo: "cuit", etiqueta: "CUIT", formato: cuit },
       { atributo: "domicilio", etiqueta: "Domicilio" },
       { atributo: "rubros", etiqueta: "Rubros", lista: true },

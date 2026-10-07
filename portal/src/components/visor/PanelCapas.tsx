@@ -9,12 +9,23 @@ import type { CapaVisor } from "./tipos";
 type Props = {
   capas: CapaVisor[];
   onCambiar: (id: string, cambios: Partial<Pick<CapaVisor, "visible" | "opacidad">>) => void;
+  onFiltrar: (id: string, elegidos: string[]) => void;
   onZoom: (c: CapaVisor) => void;
   onQuitar: (id: string) => void;
 };
 
 // Símbolo de las capas del nodo (debe coincidir con geoserver/estilos/<capa>.sld) y de los archivos
 function Simbolo({ c }: { c: CapaVisor }) {
+  if (c.nodo?.filtro) {
+    const opciones = c.nodo.filtro.opciones;
+    return (
+      <svg viewBox="0 0 20 20" className="size-5 shrink-0" aria-hidden>
+        {opciones.map((o, i) => (
+          <circle key={o.valor} cx={6 + i * 8} cy={10} r={4.5} fill={o.color} stroke="#fff" strokeWidth={1} />
+        ))}
+      </svg>
+    );
+  }
   const color = c.nodo?.simbolo.color ?? c.color ?? "#888";
   const circulo = (r: number, cx: number, cy: number, op = 1) => (
     <circle cx={cx} cy={cy} r={r} fill={color} fillOpacity={op} stroke="#fff" strokeWidth={1} />
@@ -35,7 +46,7 @@ function Simbolo({ c }: { c: CapaVisor }) {
   );
 }
 
-function FilaCapa({ c, onCambiar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Props, "capas">) {
+function FilaCapa({ c, onCambiar, onFiltrar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Props, "capas">) {
   const [ajustes, setAjustes] = useState(false);
   return (
     <li className="rounded-lg transition-colors hover:bg-superficie">
@@ -67,6 +78,39 @@ function FilaCapa({ c, onCambiar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Pr
           <BotonIcono icono={Trash} etiqueta="Quitar capa" tamano="sm" className="text-tenue" onClick={() => onQuitar(c.id)} />
         )}
       </div>
+      {c.nodo?.filtro && c.filtro && (
+        <fieldset className="m-0 flex flex-wrap gap-1.5 border-0 px-3 pt-0.5 pb-2 pl-[2.1rem]">
+          <legend className="sr-only">Filtrar {c.titulo}</legend>
+          {c.nodo.filtro.opciones.map((o) => {
+            const marcada = c.filtro!.includes(o.valor);
+            return (
+              <label
+                key={o.valor}
+                className={
+                  "inline-flex cursor-pointer items-center gap-1.5 rounded-full border py-0.5 pr-2.5 pl-1.5 text-xs transition-colors " +
+                  "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-acento " +
+                  (marcada ? "border-acento/50 bg-acento/10 text-texto" : "border-borde text-tenue hover:bg-superficie")
+                }
+              >
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={marcada}
+                  onChange={() =>
+                    onFiltrar(c.id, marcada ? c.filtro!.filter((v) => v !== o.valor) : [...c.filtro!, o.valor])
+                  }
+                />
+                <span
+                  aria-hidden
+                  className="size-2.5 rounded-full ring-1 ring-white/80"
+                  style={{ background: marcada ? o.color : "transparent", boxShadow: `inset 0 0 0 1.5px ${o.color}` }}
+                />
+                {o.etiqueta}
+              </label>
+            );
+          })}
+        </fieldset>
+      )}
       {ajustes && (
         <label className="flex items-center gap-3 px-3 pt-1 pb-2.5 pl-[2.1rem] text-xs text-tenue">
           Opacidad
@@ -93,7 +137,7 @@ function FilaCapa({ c, onCambiar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Pr
   );
 }
 
-export default function PanelCapas({ capas, onCambiar, onZoom, onQuitar }: Props) {
+export default function PanelCapas({ capas, onCambiar, onFiltrar, onZoom, onQuitar }: Props) {
   const [filtro, setFiltro] = useState("");
   // Al abrir, solo se despliegan los grupos propios del nodo y los que tienen capas encendidas
   const [cerrados, setCerrados] = useState<Record<string, boolean>>(() =>
@@ -172,7 +216,7 @@ export default function PanelCapas({ capas, onCambiar, onZoom, onQuitar }: Props
                   {visibles
                     .filter((c) => c.grupo === g)
                     .map((c) => (
-                      <FilaCapa key={c.id} c={c} onCambiar={onCambiar} onZoom={onZoom} onQuitar={onQuitar} />
+                      <FilaCapa key={c.id} c={c} onCambiar={onCambiar} onFiltrar={onFiltrar} onZoom={onZoom} onQuitar={onQuitar} />
                     ))}
                 </ul>
               )}
