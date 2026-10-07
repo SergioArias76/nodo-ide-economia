@@ -1,3 +1,8 @@
+/* Tailwind sin preflight: el reset no se aplica para no alterar las páginas con estilos propios */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
 :root {
   --fondo: #ffffff;
   --texto: #1f2933;
@@ -20,94 +25,91 @@
   }
 }
 
-* { box-sizing: border-box; }
-
-html, body { margin: 0; height: 100%; }
-
-body {
-  display: flex;
-  flex-direction: column;
-  background: var(--fondo);
-  color: var(--texto);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.5;
+/* Los tokens del portal como colores de Tailwind (bg-superficie, text-tenue, border-borde…) */
+@theme inline {
+  --color-fondo: var(--fondo);
+  --color-texto: var(--texto);
+  --color-tenue: var(--tenue);
+  --color-borde: var(--borde);
+  --color-acento: var(--acento);
+  --color-acento-texto: var(--acento-texto);
+  --color-superficie: var(--superficie);
 }
 
-main { flex: 1; display: flex; flex-direction: column; }
+/* En capa base para que las utilidades de Tailwind tengan prioridad */
+@layer base {
+  * { box-sizing: border-box; }
 
-a { color: var(--acento); }
+  html, body { margin: 0; height: 100%; }
 
-.cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--borde);
-}
-.cabecera nav { display: flex; gap: 1rem; }
-.cabecera nav a { text-decoration: none; }
-.marca { font-weight: 700; text-decoration: none; color: var(--texto); }
-.marca span { color: var(--acento); }
+  body {
+    display: flex;
+    flex-direction: column;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+  }
 
-.pie {
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--borde);
-  color: var(--tenue);
-  font-size: 0.85rem;
-}
+  main { flex: 1; display: flex; flex-direction: column; }
 
-.contenido { width: 100%; max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem; }
+  a { color: var(--acento); }
 
-.acciones { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
-.boton {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  background: var(--acento);
-  color: var(--acento-texto);
-  text-decoration: none;
-}
-.boton.secundario { background: transparent; color: var(--acento); border: 1px solid var(--acento); }
+  .cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--borde);
+  }
+  .cabecera nav { display: flex; gap: 1rem; }
+  .cabecera nav a { text-decoration: none; }
+  .marca { font-weight: 700; text-decoration: none; color: var(--texto); }
+  .marca span { color: var(--acento); }
 
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 0.5rem; border-bottom: 1px solid var(--borde); text-align: left; }
-td code { word-break: break-all; font-size: 0.85rem; }
+  .pie {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--borde);
+    color: var(--tenue);
+    font-size: 0.85rem;
+  }
 
-.buscador { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-.buscador input {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid var(--borde);
-  border-radius: 6px;
-  background: var(--fondo);
-  color: var(--texto);
-}
-.buscador button {
-  padding: 0.5rem 1rem;
-  border: 0;
-  border-radius: 6px;
-  background: var(--acento);
-  color: var(--acento-texto);
-}
+  .contenido { width: 100%; max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem; }
 
-.registros { list-style: none; padding: 0; }
-.registros li { padding: 0.75rem 0; border-bottom: 1px solid var(--borde); }
-.registros p { margin: 0.25rem 0 0; color: var(--tenue); }
+  .acciones { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+  .boton {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background: var(--acento);
+    color: var(--acento-texto);
+    text-decoration: none;
+  }
+  .boton.secundario { background: transparent; color: var(--acento); border: 1px solid var(--acento); }
 
-.aviso, .cargando { color: var(--tenue); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.5rem; border-bottom: 1px solid var(--borde); text-align: left; }
+  td code { word-break: break-all; font-size: 0.85rem; }
 
-/* Visor */
-.visor { flex: 1; display: flex; min-height: 0; }
-.panel {
-  width: 260px;
-  padding: 1rem;
-  background: var(--superficie);
-  border-right: 1px solid var(--borde);
-}
-.panel h2 { margin-top: 0; font-size: 1rem; }
-.panel label { display: flex; gap: 0.5rem; align-items: center; }
-.mapa { flex: 1; min-height: 70vh; }
+  .buscador { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .buscador input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    background: var(--fondo);
+    color: var(--texto);
+  }
+  .buscador button {
+    padding: 0.5rem 1rem;
+    border: 0;
+    border-radius: 6px;
+    background: var(--acento);
+    color: var(--acento-texto);
+  }
 
-@media (max-width: 640px) {
-  .visor { flex-direction: column; }
-  .panel { width: 100%; border-right: 0; border-bottom: 1px solid var(--borde); }
+  .registros { list-style: none; padding: 0; }
+  .registros li { padding: 0.75rem 0; border-bottom: 1px solid var(--borde); }
+  .registros p { margin: 0.25rem 0 0; color: var(--tenue); }
+
+  .aviso, .cargando { color: var(--tenue); }
 }
