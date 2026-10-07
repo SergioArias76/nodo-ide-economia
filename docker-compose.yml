@@ -48,6 +48,10 @@ services:
       ES_JAVA_OPTS: ${ES_JAVA_OPTS}
     volumes:
       - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      retries: 30
     mem_limit: 1g
 
   geonetwork:
@@ -57,7 +61,7 @@ services:
       postgis:
         condition: service_healthy
       elasticsearch:
-        condition: service_started
+        condition: service_healthy
     environment:
       GEONETWORK_DB_TYPE: postgres
       GEONETWORK_DB_HOST: postgis
@@ -65,9 +69,15 @@ services:
       GEONETWORK_DB_NAME: ${GEONETWORK_DB}
       GEONETWORK_DB_USERNAME: ${GEONETWORK_DB_USER}
       GEONETWORK_DB_PASSWORD: ${GEONETWORK_DB_PASSWORD}
-      ES_HOST: elasticsearch
-      ES_PROTOCOL: http
-      ES_PORT: "9200"
+      # La imagen no lee ES_HOST/ES_PORT: la conexión al índice va como propiedades Java
+      GN_CONFIG_PROPERTIES: >-
+        -Dgeonetwork.dir=/catalogue-data
+        -Dgeonetwork.formatter.dir=/catalogue-data/data/formatter
+        -Dgeonetwork.schema.dir=/opt/geonetwork/WEB-INF/data/config/schema_plugins
+        -Dgeonetwork.indexConfig.dir=/opt/geonetwork/WEB-INF/data/config/index
+        -Des.host=elasticsearch -Des.protocol=http -Des.port=9200
+        -Des.url=http://elasticsearch:9200 -Des.username= -Des.password=
+        -Dgeonetwork.ESFeaturesProxy.targetUri=http://elasticsearch:9200/gn-features/{_}
       JAVA_OPTS: ${GEONETWORK_JAVA_OPTS}
     volumes:
       - geonetwork_data:/catalogue-data
