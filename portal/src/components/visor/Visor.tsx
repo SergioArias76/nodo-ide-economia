@@ -23,6 +23,7 @@ import type { Extent } from "ol/extent";
 import "ol/ol.css";
 import { Minus, Plus } from "lucide-react";
 import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, WORKSPACE } from "@/lib/config";
+import catalogoIdera from "@/lib/capas-idera.json";
 import FichaConsulta, { type Consulta } from "./FichaConsulta";
 import PanelLateral from "./PanelLateral";
 import PanelCapas from "./PanelCapas";
@@ -67,8 +68,32 @@ function leerUrl() {
   };
 }
 
+// Capas temáticas nacionales del catálogo de IDERA (scripts/actualizar-capas-idera.mjs), apagadas al inicio
+function capasCatalogo(activas: string[] | null): CapaVisor[] {
+  return catalogoIdera.capas.map((c) => {
+    const visible = activas?.includes(c.id) ?? false;
+    return {
+      id: c.id,
+      titulo: c.titulo,
+      grupo: c.grupo,
+      origen: "catalogo",
+      visible,
+      opacidad: 1,
+      resumen: c.resumen,
+      consultable: c.consultable,
+      exportable: c.cors,
+      leyenda: `${c.url}?service=WMS&version=1.3.0&request=GetLegendGraphic&format=image/png&layer=${encodeURIComponent(c.capa)}`,
+      capa: new ImageLayer({
+        visible,
+        zIndex: Z.catalogo,
+        // crossOrigin solo si el servicio lo permite: si no, la imagen no cargaría
+        source: new ImageWMS({ url: c.url, params: { LAYERS: c.capa }, crossOrigin: c.cors ? "anonymous" : undefined }),
+      }),
+    };
+  });
+}
 
-// Mapa, capas del nodo y overlays: se crean una vez, antes del primer render
+// Mapa, capas y overlays: se crean una vez, antes del primer render
 function crearMapa() {
   const inicial = leerUrl();
   const nodoPopup = document.createElement("div");
@@ -100,6 +125,8 @@ function crearMapa() {
     };
   });
 
+  const catalogo = capasCatalogo(inicial.capas);
+
   const popup = new Overlay({
     element: nodoPopup,
     positioning: "bottom-center",
@@ -121,6 +148,7 @@ function crearMapa() {
         return capa;
       }),
       ...nodo.map((c) => c.capa),
+      ...catalogo.map((c) => c.capa),
       new VectorLayer({ source: ubicacion, style: estiloUbicacion, zIndex: Z.resaltado }),
       new VectorLayer({ source: resaltado, style: estiloResaltado, zIndex: Z.resaltado }),
     ],
@@ -128,7 +156,7 @@ function crearMapa() {
     view: new View({ center: fromLonLat([inicial.lon, inicial.lat]), zoom: inicial.zoom, maxZoom: 20 }),
   });
 
-  return { mapa, nodo, inicial, bases, popup, editor, resaltado, ubicacion, nodoPopup, nodoTexto };
+  return { mapa, nodo, catalogo, inicial, bases, popup, editor, resaltado, ubicacion, nodoPopup, nodoTexto };
 }
 
 export default function Visor() {
@@ -138,7 +166,7 @@ export default function Visor() {
   const escalaRef = useRef<HTMLDivElement>(null);
   const [v] = useState(crearMapa);
   const { mapa, inicial, bases, popup, editor, resaltado, ubicacion } = v;
-  const [capas, setCapas] = useState<CapaVisor[]>(v.nodo);
+  const [capas, setCapas] = useState<CapaVisor[]>(() => [...v.nodo, ...v.catalogo]);
   const [base, setBase] = useState(inicial.base);
   const [panel, setPanel] = useState<Panel | null>(() => (window.innerWidth < 640 ? null : "capas"));
   const [zoom, setZoom] = useState(inicial.zoom);
@@ -267,7 +295,10 @@ export default function Visor() {
       lat: lat.toFixed(5),
       lng: lon.toFixed(5),
       base: activa,
-      capas: capasRef.current.filter((c) => c.origen === "nodo" && c.visible).map((c) => corto(c.id)).join(","),
+      capas: capasRef.current
+        .filter((c) => (c.origen === "nodo" || c.origen === "catalogo") && c.visible)
+        .map((c) => corto(c.id))
+        .join(","),
     });
     history.replaceState(null, "", `${location.pathname}?${q}`);
   }
@@ -347,6 +378,7 @@ export default function Visor() {
         titulo: w.titulo,
         grupo: "Capas agregadas",
         origen: "wms",
+        exportable: false, // se pide sin crossOrigin para que cargue aunque el servidor no tenga CORS
         capa,
         visible: true,
         opacidad: 1,
@@ -439,6 +471,12 @@ export default function Visor() {
   }
 
   async function exportar(accion: () => Promise<void>) {
+    // Servicios sin CORS: el navegador no deja copiar sus imágenes a la captura
+    const bloquean = capas.filter((c) => c.visible && c.exportable === false).map((c) => c.titulo);
+    if (bloquean.length) {
+      setAviso(`Para exportar, apagá ${bloquean.join(", ")}: el servicio no permite copiar sus imágenes.`);
+      return;
+    }
     try {
       await accion();
     } catch {

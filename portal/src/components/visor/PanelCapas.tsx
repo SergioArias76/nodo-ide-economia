@@ -47,7 +47,7 @@ function FilaCapa({ c, onCambiar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Pr
       }
     >
       <div className="flex items-center gap-2 py-1.5 pr-1 pl-2.5">
-        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 py-1">
+        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 py-1" title={c.resumen || undefined}>
           <input
             type="checkbox"
             className="m-0 size-4 shrink-0 accent-acento"
@@ -68,7 +68,7 @@ function FilaCapa({ c, onCambiar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Pr
           activo={ajustes}
           onClick={() => setAjustes(!ajustes)}
         />
-        {c.origen !== "nodo" && (
+        {(c.origen === "wms" || c.origen === "archivo") && (
           <BotonIcono icono={Trash} etiqueta="Quitar capa" tamano="sm" onClick={() => onQuitar(c.id)} />
         )}
       </div>
@@ -93,7 +93,15 @@ function FilaCapa({ c, onCambiar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Pr
 
 export default function PanelCapas({ capas, onCambiar, onZoom, onQuitar }: Props) {
   const [filtro, setFiltro] = useState("");
-  const [cerrados, setCerrados] = useState<Record<string, boolean>>({});
+  // Al abrir, solo se despliegan los grupos propios del nodo y los que tienen capas encendidas
+  const [cerrados, setCerrados] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      [...new Set(capas.map((c) => c.grupo))].map((g) => [
+        g,
+        !capas.some((c) => c.grupo === g && (c.origen === "nodo" || c.visible)),
+      ]),
+    ),
+  );
   const normalizar = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
   const visibles = capas.filter((c) => normalizar(`${c.titulo} ${c.grupo}`).includes(normalizar(filtro)));
   const grupos = [...new Set(visibles.map((c) => c.grupo))];
@@ -130,6 +138,7 @@ export default function PanelCapas({ capas, onCambiar, onZoom, onQuitar }: Props
       {grupos.length === 0 && <p className="m-0 text-sm text-tenue">No hay capas que coincidan.</p>}
       {grupos.map((g) => {
         const abierto = !cerrados[g] || filtro !== "";
+        const encendidas = capas.filter((c) => c.grupo === g && c.visible).length;
         return (
           <section key={g} className="flex flex-col gap-2">
             <button
@@ -138,7 +147,12 @@ export default function PanelCapas({ capas, onCambiar, onZoom, onQuitar }: Props
               onClick={() => setCerrados({ ...cerrados, [g]: abierto })}
               className={`${reset} flex cursor-pointer items-center justify-between rounded-md bg-acento px-3 py-2 text-left text-sm font-semibold text-acento-texto`}
             >
-              {g}
+              <span className="flex-1">{g}</span>
+              {encendidas > 0 && (
+                <span className="mr-1.5 rounded-full bg-white/25 px-1.5 text-xs tabular-nums" aria-label={`${encendidas} encendidas`}>
+                  {encendidas}
+                </span>
+              )}
               <ChevronDown className={"size-4 transition-transform " + (abierto ? "" : "-rotate-90")} aria-hidden />
             </button>
             {abierto && (

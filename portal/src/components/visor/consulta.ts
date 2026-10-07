@@ -36,7 +36,8 @@ function fichaGenerica(capa: string, p: Record<string, unknown>): Resultado {
   const entradas = Object.entries(p).filter(
     ([k, v]) => v != null && v !== "" && typeof v !== "object" && k !== "geometry" && k !== "bbox",
   );
-  const nombre = entradas.find(([k]) => ATRIBUTOS_NOMBRE.includes(k.toLowerCase()));
+  // El primero de ATRIBUTOS_NOMBRE que tenga valor, en ese orden de prioridad
+  const nombre = ATRIBUTOS_NOMBRE.map((n) => entradas.find(([k]) => k.toLowerCase() === n)).find(Boolean);
   return {
     capa,
     titulo: nombre ? String(nombre[1]) : capa,
@@ -70,7 +71,7 @@ async function consultarWms(mapa: Map, c: CapaVisor, coordenada: Coordinate): Pr
 
 // Consulta todas las capas visibles en el punto, en el orden del panel
 export async function consultar(mapa: Map, capas: CapaVisor[], coordenada: Coordinate, pixel: Pixel) {
-  const visibles = capas.filter((c) => c.visible);
+  const visibles = capas.filter((c) => c.visible && c.consultable !== false);
   const porCapa = await Promise.all(
     visibles.map(async (c): Promise<Hallazgo[]> => {
       if (c.origen === "archivo") {
