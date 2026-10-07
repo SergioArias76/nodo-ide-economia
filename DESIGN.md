@@ -102,7 +102,7 @@ La interfaz es una herramienta de trabajo (modo Operate). Lleva la disposición 
 - Base clara de neutros fríos apenas teñidos de mar; el modo oscuro sigue la preferencia del sistema.
 - Acento único para acciones y selección: mar hondo.
 - Franjas del isotipo reservadas para identificar temas y para la marca.
-- Íconos temáticos de la biblioteca provincial, teñidos sobre su franja.
+- Íconos temáticos de Lucide (la familia de los botones), en tinta o blanco sobre su franja.
 - Public Sans en toda la interfaz; Rubik solo en el logotipo.
 
 ## Colors
@@ -210,7 +210,7 @@ La ficha de consulta tiene un pico rotado que apunta al lugar consultado. Las fr
 - **Riel de paneles:** columna de botones de ícono (Capas, Mapa base, Agregar capas, Ayuda, Accesibilidad). El activo va en mar hondo; tocarlo de nuevo oculta el panel.
 
 ### Mosaico de tema (signature)
-Cuadrado de 32px (20px en la ficha) con 8px de radio, relleno con la franja del tema. Lleva encima el ícono de la biblioteca provincial (`public/marca/temas/*.svg`), aplicado como máscara en tinta o blanco. Encabeza cada grupo de capas y la línea de origen de la ficha.
+Cuadrado de 32px (20px en la ficha) con 8px de radio, relleno con la franja del tema. Lleva encima un ícono de Lucide (18px; 14px en la ficha) en tinta o blanco, mapeado por tema en `components/visor/ui.tsx`. Los íconos de la biblioteca provincial (`public/marca/temas/`) son de trazo fino y no se leen a este tamaño: quedan para piezas grandes. Encabeza cada grupo de capas y la línea de origen de la ficha.
 
 ### Ficha de consulta (signature)
 Tarjeta de 320px:

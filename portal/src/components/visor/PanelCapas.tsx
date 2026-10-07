@@ -212,7 +212,7 @@ export default function PanelCapas({ capas, onCambiar, onFiltrar, onZoom, onQuit
                 />
               </button>
               {abierto && (
-                <ul className="m-0 mt-0.5 flex list-none flex-col p-0 pl-10">
+                <ul className="m-0 mt-0.5 flex list-none flex-col p-0 pl-8">
                   {visibles
                     .filter((c) => c.grupo === g)
                     .map((c) => (

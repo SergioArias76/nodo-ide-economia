@@ -1,6 +1,9 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
+import {
+  BusFront, ChartPie, CloudSun, Factory, House, Layers, Leaf, Map as IconoMapa, Mountain, ShieldCheck, Store, Waves,
+  type LucideIcon,
+} from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { temaDe } from "@/lib/config";
 
@@ -59,25 +62,33 @@ export function Titulo({ children, accion }: { children: ReactNode; accion?: Rea
   );
 }
 
-// Mosaico del tema: la franja del isotipo con el ícono provincial del tema encima
+// Ícono de cada tema (familia Lucide, la misma de los botones: se lee bien a tamaño chico)
+const ICONOS_TEMA: Record<string, LucideIcon> = {
+  proveedores: Store,
+  industria: Factory,
+  social: House,
+  seguridad: ShieldCheck,
+  clima: CloudSun,
+  biota: Leaf,
+  fisica: Mountain,
+  transporte: BusFront,
+  hidrografia: Waves,
+  demarcacion: IconoMapa,
+  estadistica: ChartPie,
+  agregadas: Layers,
+};
+
+// Mosaico del tema: el color de la franja del isotipo con el ícono del tema encima
 export function IconoTema({ grupo, chico = false }: { grupo: string; chico?: boolean }) {
   const t = temaDe(grupo);
-  const mascara = `url(/marca/temas/${t.icono}.svg) center / contain no-repeat`;
-  // Los iconos oficiales son de trazo fino: la sombra sin desenfoque del color del trazo lo engrosa
-  // (va en un contenedor aparte porque el filtro se aplica antes que la máscara del mismo elemento)
-  const engrosar = `drop-shadow(0 0 0.3px ${t.sobre}) drop-shadow(0 0 0.3px ${t.sobre})`;
+  const Icono = ICONOS_TEMA[t.icono] ?? Layers;
   return (
     <span
       aria-hidden
-      className={"grid shrink-0 place-items-center " + (chico ? "size-6 rounded-md" : "size-10 rounded-xl")}
-      style={{ background: t.color }}
+      className={"grid shrink-0 place-items-center " + (chico ? "size-5 rounded" : "size-8 rounded-lg")}
+      style={{ background: t.color, color: t.sobre }}
     >
-      <span className="grid place-items-center" style={{ filter: engrosar }}>
-        <span
-          className={chico ? "size-4" : "size-7"}
-          style={{ background: t.sobre, mask: mascara, WebkitMask: mascara }}
-        />
-      </span>
+      <Icono className={chico ? "size-3.5" : "size-[1.125rem]"} strokeWidth={2} />
     </span>
   );
 }
