@@ -60,7 +60,10 @@ CREATE INDEX domicilio_localidad_idx ON proveedores.domicilio (provincia, locali
 
 -- Personas jurídicas con ubicación al menos a nivel localidad. Sin mail ni teléfono.
 CREATE VIEW proveedores.v_proveedores_publico AS
-SELECT p.id, p.entidad, p.cuit, p.rubro_principal, p.rubros, p.rubro_n1,
+SELECT p.id, p.entidad, p.cuit,
+       -- calle y altura, sin piso ni depto. ("Avenida." viene así de la normalización)
+       nullif(concat_ws(' ', replace(d.calle, 'Avenida.', 'Avenida'), d.altura), '') AS domicilio,
+       p.rubro_principal, p.rubros, p.rubro_n1,
        d.localidad, d.departamento, d.provincia, d.precision, d.geom
 FROM proveedores.proveedor p
 JOIN proveedores.domicilio d ON d.proveedor_id = p.id

@@ -17,7 +17,7 @@ import Point from "ol/geom/Point";
 import { Circle, Fill, Stroke, Style } from "ol/style";
 import { fromLonLat } from "ol/proj";
 import "ol/ol.css";
-import { CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, miniatura, type CapaNodo } from "@/lib/config";
+import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, miniatura, type CapaNodo } from "@/lib/config";
 import FichaConsulta, { type Consulta } from "./FichaConsulta";
 
 // Leyenda dibujada en el portal: GeoServer no puede graficar símbolos de tamaño variable
@@ -45,7 +45,7 @@ export default function Mapa() {
   const contenedor = useRef<HTMLDivElement>(null);
   const capas = useRef<Record<string, ImageLayer<ImageWMS>>>({});
   const bases = useRef<Record<string, TileLayer<XYZ>>>({});
-  const [base, setBase] = useState(MAPAS_BASE[0].id);
+  const [base, setBase] = useState(BASE_INICIAL);
   const overlay = useRef<Overlay>(null);
   const resaltado = useRef(new VectorSource());
   const ultimaConsulta = useRef(0);
@@ -84,8 +84,8 @@ export default function Mapa() {
     const mapa = new Map({
       target: contenedor.current!,
       layers: [
-        ...MAPAS_BASE.map((b, i) => {
-          const capa = new TileLayer({ visible: i === 0, source: new XYZ({ url: b.url, attributions: b.atribucion }) });
+        ...MAPAS_BASE.map((b) => {
+          const capa = new TileLayer({ visible: b.id === BASE_INICIAL, source: new XYZ({ url: b.url, attributions: b.atribucion }) });
           bases.current[b.id] = capa;
           return capa;
         }),

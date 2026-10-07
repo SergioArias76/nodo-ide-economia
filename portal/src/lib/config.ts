@@ -61,15 +61,16 @@ export const CAPAS_NODO: CapaNodo[] = [
     simbolo: { color: "#e8590c" },
     campos: [
       { atributo: "cuit", etiqueta: "CUIT", formato: cuit },
+      { atributo: "domicilio", etiqueta: "Domicilio" },
       { atributo: "rubros", etiqueta: "Rubros", lista: true },
       { atributo: "localidad", etiqueta: "Localidad" },
       { atributo: "departamento", etiqueta: "Departamento" },
-      { atributo: "precision", etiqueta: "Ubicación", formato: (v) => PRECISION[String(v)] ?? String(v ?? "") },
+      { atributo: "precision", etiqueta: "Precisión de la ubicación", formato: (v) => PRECISION[String(v)] ?? String(v ?? "") },
     ],
   },
 ];
 
-// Mapas base. Argenmap (IGN) es el recomendado para organismos públicos argentinos.
+// Mapas base. Argenmap (IGN) es el recomendado por IDERA; por decisión del área se abre con OpenStreetMap.
 const IGN = (capa: string) =>
   `https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/${capa}@EPSG%3A3857@png/{z}/{x}/{-y}.png`;
 const ATRIBUCION_IGN = '<a href="https://www.ign.gob.ar/">Instituto Geográfico Nacional</a>';
@@ -87,6 +88,8 @@ export const MAPAS_BASE: MapaBase[] = [
     atribucion: '© <a href="https://www.openstreetmap.org/copyright">colaboradores de OpenStreetMap</a>',
   },
 ];
+
+export const BASE_INICIAL = "osm";
 
 // Tesela de muestra (zoom 5, centro de Chubut) para la miniatura del selector
 export const miniatura = (b: MapaBase) =>

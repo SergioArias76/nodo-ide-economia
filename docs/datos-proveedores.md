@@ -39,7 +39,7 @@ GeoServer solo tiene permiso sobre dos vistas:
 
 | Vista | Capa sugerida | Contenido |
 |---|---|---|
-| `v_proveedores_publico` | `economia:proveedores_radicacion` | Personas jurídicas, sin mail ni teléfono, sin puntos de precisión `provincia` |
+| `v_proveedores_publico` | `economia:proveedores_radicacion` | Personas jurídicas con domicilio (calle y altura), sin mail ni teléfono, sin puntos de precisión `provincia` |
 | `v_proveedores_por_localidad` | `economia:proveedores_por_localidad` | Cantidad de proveedores (todos) por localidad |
 
 Las tablas completas, con los datos personales, quedan dentro de la base y solo las lee `ide_admin`.
