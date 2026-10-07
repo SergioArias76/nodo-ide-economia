@@ -6,9 +6,10 @@ import Map from "ol/Map";
 import View from "ol/View";
 import Overlay from "ol/Overlay";
 import TileLayer from "ol/layer/Tile";
+import ImageLayer from "ol/layer/Image";
 import VectorLayer from "ol/layer/Vector";
 import XYZ from "ol/source/XYZ";
-import TileWMS from "ol/source/TileWMS";
+import ImageWMS from "ol/source/ImageWMS";
 import VectorSource from "ol/source/Vector";
 import GeoJSON from "ol/format/GeoJSON";
 import Feature from "ol/Feature";
@@ -16,22 +17,35 @@ import Point from "ol/geom/Point";
 import { Circle, Fill, Stroke, Style } from "ol/style";
 import { fromLonLat } from "ol/proj";
 import "ol/ol.css";
-import { CAPAS_NODO, PUBLIC_GEOSERVER } from "@/lib/config";
+import { CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, miniatura, type CapaNodo } from "@/lib/config";
 import FichaConsulta, { type Consulta } from "./FichaConsulta";
 
-// Mapa base del IGN (Argenmap), recomendado para organismos argentinos
-const ARGENMAP =
-  "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png";
-
-const leyenda = (capa: string) =>
-  `${PUBLIC_GEOSERVER}/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetLegendGraphic&FORMAT=image/png&TRANSPARENT=true` +
-  `&WIDTH=14&HEIGHT=14&LAYER=${capa}&LEGEND_OPTIONS=forceLabels:off`;
+// Leyenda dibujada en el portal: GeoServer no puede graficar símbolos de tamaño variable
+function Simbolo({ color, proporcional }: CapaNodo["simbolo"]) {
+  const circulo = (r: number, cx: number, cy: number, opacidad = 1) => (
+    <circle cx={cx} cy={cy} r={r} fill={color} fillOpacity={opacidad} stroke="#fff" strokeWidth={1} />
+  );
+  return (
+    <svg viewBox="0 0 20 20" className="size-5 shrink-0" aria-hidden>
+      {proporcional ? (
+        <>
+          {circulo(7.5, 11.5, 11.5, 0.6)}
+          {circulo(3.5, 5, 15, 0.6)}
+        </>
+      ) : (
+        circulo(4.5, 10, 10)
+      )}
+    </svg>
+  );
+}
 
 const geojson = new GeoJSON(); // GetFeatureInfo devuelve la geometría en la proyección del mapa
 
 export default function Mapa() {
   const contenedor = useRef<HTMLDivElement>(null);
-  const capas = useRef<Record<string, TileLayer<TileWMS>>>({});
+  const capas = useRef<Record<string, ImageLayer<ImageWMS>>>({});
+  const bases = useRef<Record<string, TileLayer<XYZ>>>({});
+  const [base, setBase] = useState(MAPAS_BASE[0].id);
   const overlay = useRef<Overlay>(null);
   const resaltado = useRef(new VectorSource());
   const ultimaConsulta = useRef(0);
@@ -46,10 +60,11 @@ export default function Mapa() {
 
   useEffect(() => {
     const overlays = CAPAS_NODO.map((c) => {
-      const capa = new TileLayer({
-        source: new TileWMS({
+      const capa = new ImageLayer({
+        // Imagen única (no teselas): GeoServer no corta las etiquetas en los bordes
+        source: new ImageWMS({
           url: `${PUBLIC_GEOSERVER}/wms`,
-          params: { LAYERS: c.nombre, TILED: true },
+          params: { LAYERS: c.nombre },
           serverType: "geoserver",
           crossOrigin: "anonymous",
         }),
@@ -69,11 +84,10 @@ export default function Mapa() {
     const mapa = new Map({
       target: contenedor.current!,
       layers: [
-        new TileLayer({
-          source: new XYZ({
-            url: ARGENMAP,
-            attributions: '<a href="https://www.ign.gob.ar/">Instituto Geográfico Nacional</a>',
-          }),
+        ...MAPAS_BASE.map((b, i) => {
+          const capa = new TileLayer({ visible: i === 0, source: new XYZ({ url: b.url, attributions: b.atribucion }) });
+          bases.current[b.id] = capa;
+          return capa;
         }),
         ...overlays,
         new VectorLayer({
@@ -130,7 +144,7 @@ export default function Mapa() {
       }
     });
 
-    // Cursor de mano sobre los puntos: se mira el píxel de las teselas ya dibujadas
+    // Cursor de mano sobre los puntos: se mira el píxel de la imagen ya dibujada
     mapa.on("pointermove", (e) => {
       if (e.dragging) return;
       const sobrePunto = consultables().some((c) => {
@@ -166,6 +180,11 @@ export default function Mapa() {
     return () => window.removeEventListener("keydown", teclado);
   }, [consulta]);
 
+  function elegirBase(id: string) {
+    for (const [clave, capa] of Object.entries(bases.current)) capa.setVisible(clave === id);
+    setBase(id);
+  }
+
   function alternar(nombre: string) {
     const visible = !visibles[nombre];
     capas.current[nombre]?.setVisible(visible);
@@ -191,13 +210,36 @@ export default function Mapa() {
                   checked={visibles[c.nombre]}
                   onChange={() => alternar(c.nombre)}
                 />
-                <span className="flex-1 text-sm leading-tight">{c.titulo}</span>
-                {/* eslint-disable-next-line @next/next/no-img-element -- leyenda dinámica de GeoServer */}
-                <img src={leyenda(c.nombre)} alt="" width={14} height={14} className="shrink-0" />
+                <span className="flex-1 text-sm leading-tight">
+                  {c.titulo}
+                  {c.nota && <span className="mt-0.5 block text-xs text-tenue">{c.nota}</span>}
+                </span>
+                <Simbolo {...c.simbolo} />
               </label>
             </li>
           ))}
         </ul>
+        <h2 className="m-0 mt-2 text-xs font-semibold uppercase tracking-wider text-tenue">Mapa base</h2>
+        <div role="radiogroup" aria-label="Mapa base" className="grid grid-cols-2 gap-2">
+          {MAPAS_BASE.map((b) => (
+            <button
+              key={b.id}
+              type="button"
+              role="radio"
+              aria-checked={base === b.id}
+              onClick={() => elegirBase(b.id)}
+              className={
+                "m-0 cursor-pointer overflow-hidden rounded-lg border-2 bg-fondo p-0 text-left text-texto transition-colors " +
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento " +
+                (base === b.id ? "border-acento" : "border-borde hover:border-tenue")
+              }
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- tesela externa de muestra */}
+              <img src={miniatura(b)} alt="" className="block h-14 w-full object-cover" loading="lazy" />
+              <span className={"block px-2 py-1 text-xs " + (base === b.id ? "font-semibold" : "")}>{b.titulo}</span>
+            </button>
+          ))}
+        </div>
         <p className="m-0 flex items-start gap-2 text-xs leading-relaxed text-tenue">
           <svg viewBox="0 0 20 20" fill="currentColor" className="mt-px size-4 shrink-0" aria-hidden>
             <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 4a1 1 0 110 2 1 1 0 010-2zm1 8H9V9h2v5z" />

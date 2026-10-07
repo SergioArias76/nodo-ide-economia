@@ -17,6 +17,9 @@ export type CapaNodo = {
   nombre: string;
   titulo: string;
   atributoTitulo: string; // atributo que encabeza la ficha de consulta
+  nota?: string; // aclaración breve en el panel de capas
+  // Símbolo de la leyenda: debe coincidir con el estilo de geoserver/estilos/<capa>.sld
+  simbolo: { color: string; proporcional?: boolean };
   campos: Campo[];
 };
 
@@ -41,6 +44,7 @@ export const CAPAS_NODO: CapaNodo[] = [
     nombre: `${WORKSPACE}:proveedores_por_localidad`,
     titulo: "Proveedores por localidad",
     atributoTitulo: "localidad",
+    simbolo: { color: "#0b5d8f", proporcional: true },
     campos: [
       { atributo: "departamento", etiqueta: "Departamento" },
       { atributo: "provincia", etiqueta: "Provincia" },
@@ -53,6 +57,8 @@ export const CAPAS_NODO: CapaNodo[] = [
     nombre: `${WORKSPACE}:proveedores_radicacion`,
     titulo: "Proveedores (personas jurídicas)",
     atributoTitulo: "entidad",
+    nota: "Visible al acercar el mapa",
+    simbolo: { color: "#e8590c" },
     campos: [
       { atributo: "cuit", etiqueta: "CUIT", formato: cuit },
       { atributo: "rubros", etiqueta: "Rubros", lista: true },
@@ -62,6 +68,29 @@ export const CAPAS_NODO: CapaNodo[] = [
     ],
   },
 ];
+
+// Mapas base. Argenmap (IGN) es el recomendado para organismos públicos argentinos.
+const IGN = (capa: string) =>
+  `https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/${capa}@EPSG%3A3857@png/{z}/{x}/{-y}.png`;
+const ATRIBUCION_IGN = '<a href="https://www.ign.gob.ar/">Instituto Geográfico Nacional</a>';
+
+export type MapaBase = { id: string; titulo: string; url: string; atribucion: string };
+
+export const MAPAS_BASE: MapaBase[] = [
+  { id: "argenmap", titulo: "Argenmap", url: IGN("capabaseargenmap"), atribucion: ATRIBUCION_IGN },
+  { id: "gris", titulo: "Argenmap gris", url: IGN("mapabase_gris"), atribucion: ATRIBUCION_IGN },
+  { id: "oscuro", titulo: "Argenmap oscuro", url: IGN("argenmap_oscuro"), atribucion: ATRIBUCION_IGN },
+  {
+    id: "osm",
+    titulo: "OpenStreetMap",
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    atribucion: '© <a href="https://www.openstreetmap.org/copyright">colaboradores de OpenStreetMap</a>',
+  },
+];
+
+// Tesela de muestra (zoom 5, centro de Chubut) para la miniatura del selector
+export const miniatura = (b: MapaBase) =>
+  b.url.replace("{z}", "5").replace("{x}", "9").replace("{-y}", "11").replace("{y}", "20");
 
 export const SERVICIOS = [
   { tipo: "WMS", url: `${PUBLIC_GEOSERVER}/${WORKSPACE}/wms?service=WMS&request=GetCapabilities` },
