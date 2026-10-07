@@ -35,18 +35,52 @@ Luego:
 
 > En producción el certificado lo provee el dominio `*.chubut.gob.ar` (ver [docs/despliegue.md](docs/despliegue.md)).
 
+Con el stack levantado, cargar y publicar los datos (paso a paso en [docs/prueba-local.md](docs/prueba-local.md)):
+
+```bash
+bash scripts/cargar-proveedores.sh              # padrón de proveedores → PostGIS
+node scripts/geocodificar-domicilios.mjs --aplicar   # opcional: mejora las ubicaciones
+bash scripts/publicar-geoserver.sh              # capas, estilos y seguridad de GeoServer
+bash scripts/configurar-geonetwork.sh           # contraseña de admin de GeoNetwork
+```
+
+## Visor
+
+Visor propio en `/visor`, con las herramientas del visor de IDERA (mapa.idera.gob.ar) y la identidad del Gobierno del Chubut:
+
+- **Capas del nodo**: proveedores del Estado (punto por domicilio, con filtro por persona jurídica o humana) y cantidad de proveedores por localidad.
+- **Capas nacionales** del catálogo de IDERA agrupadas por tema (escuelas, hospitales, transporte, hidrografía…), con opacidad, leyenda y zoom a la extensión.
+- **Mapas base**: OpenStreetMap (por defecto) y Argenmap del IGN (normal, gris y oscuro).
+- **Herramientas**: búsqueda de localidades, consulta de datos con clic, medición de distancias y superficies, dibujo (con exportación a GeoJSON), grilla de coordenadas, mi ubicación, captura PNG e impresión en PDF.
+- **Agregar capas** de otros servicios WMS o de archivos GeoJSON, KML, GPX y Shapefile.
+- **Accesibilidad**: tema claro y oscuro, texto grande, alto contraste, movimiento reducido y uso completo con teclado.
+- El estado del mapa (zoom, centro, base, capas y filtros) queda en la URL, así se puede compartir.
+
+Diseño: [PRODUCT.md](PRODUCT.md) y [DESIGN.md](DESIGN.md). El catálogo de IDERA se regenera con `node scripts/actualizar-capas-idera.mjs`.
+
 ## Estructura del repositorio
 
 ```
-docs/            Documentación: contexto, arquitectura, despliegue, roadmap, convenciones
+docs/            Documentación: contexto, arquitectura, despliegue, roadmap, convenciones, datos y API
 nginx/           Plantilla de proxy inverso y certificados (no versionados)
-postgis/initdb/  Scripts de inicialización de la base (esquemas, roles, BD de GeoNetwork)
-geoserver/       Notas y configuración de GeoServer
+postgis/initdb/  Inicialización de la base (esquemas, roles, vistas públicas, BD de GeoNetwork)
+postgis/etl/     Pasaje de los datos cargados (staging) al modelo
+geoserver/       Notas de GeoServer y estilos SLD (geoserver/estilos/)
 geonetwork/      Notas y configuración del catálogo
-portal/          Geoportal Next.js (inicio, visor, catálogo)
-scripts/         Respaldo, carga de datos y utilidades
-datos/           Datos de trabajo locales (no versionados)
+portal/          Geoportal Next.js (inicio, visor, catálogo); marca en portal/public/marca/
+scripts/         Carga, geocodificación, publicación, respaldo y utilidades
+datos/           Datos de trabajo locales y cachés de geocodificación (no versionados)
 ```
+
+| Script | Qué hace |
+|---|---|
+| `generar-cert-dev.sh` | Certificado autofirmado para `https://localhost` |
+| `cargar-proveedores.sh` | Carga el padrón de proveedores en PostGIS y reaplica las correcciones de ubicación |
+| `geocodificar-domicilios.mjs` | Vuelve a ubicar domicilios por calle y altura (Georef y OpenStreetMap) |
+| `publicar-geoserver.sh` | Workspace, store, capas, estilos y ajustes de seguridad de GeoServer |
+| `configurar-geonetwork.sh` | Reemplaza la contraseña de fábrica de GeoNetwork |
+| `actualizar-capas-idera.mjs` | Regenera el catálogo de capas nacionales del visor |
+| `backup.sh` | Respaldo de la base y de los datos de GeoServer y GeoNetwork |
 
 ## Documentación
 
