@@ -1,0 +1,766 @@
+{
+  "origen": "https://mapa.idera.gob.ar/src/config/data.json",
+  "generado": "2026-10-07",
+  "capas": [
+    {
+      "id": "area-de-explotacion-hidrocarburifera",
+      "grupo": "Industria y Servicios",
+      "titulo": "Área de explotación hidrocarburífera",
+      "resumen": "Área donde se efectúa una actividad extractiva de origen hidrocarburífera para su aprovechamiento económico.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "planosbase_concesiones_explotacion",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "central-electrica",
+      "grupo": "Industria y Servicios",
+      "titulo": "Central eléctrica",
+      "resumen": "Edificio y equipamiento necesario para la generación de energía eléctrica.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "visor_centrales_unificacion",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "linea-de-transmision-electrica",
+      "grupo": "Industria y Servicios",
+      "titulo": "Línea de transmisión eléctrica",
+      "resumen": "Sistema de cableado que transmite o distribuye energía eléctrica.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "union_cammesa_lineas_transporte",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "planta-transformadora",
+      "grupo": "Industria y Servicios",
+      "titulo": "Planta transformadora",
+      "resumen": "Planta que se encuentra junto a las centrales generadoras o en la periferia de las diversas zonas de consumo, donde se transforma la tensión de la energía eléctrica.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "electrica_transporte_visor_eett",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "ductos-de-hidrocarburos-y-agua",
+      "grupo": "Industria y Servicios",
+      "titulo": "Ductos de hidrocarburos y agua",
+      "resumen": "Serie de tubos conectados para el transporte de sólidos, líquidos o gases por bombeo. No incluye acueducto.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "planosbase_ductos",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "ductos-de-gas-de-distribucion",
+      "grupo": "Industria y Servicios",
+      "titulo": "Ductos de gas de distribución",
+      "resumen": "Serie de tubos conectados para el transporte de sólidos, líquidos o gases por bombeo. No incluye acueducto.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "enargas_gasoductos_distribucion",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "ductos-de-gas-troncales",
+      "grupo": "Industria y Servicios",
+      "titulo": "Ductos de gas troncales",
+      "resumen": "Serie de tubos conectados para el transporte de sólidos, líquidos o gases por bombeo. No incluye acueducto.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "enargas_visor_gasoductos_transporte",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "yacimiento-hidrocarburifero-cuencas-de-shale-gas",
+      "grupo": "Industria y Servicios",
+      "titulo": "Yacimiento hidrocarburífero (cuencas de shale gas)",
+      "resumen": "Cuerpo geológico aproximado, constituido por petróleo y / o gas, económicamente explotable.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "shale_gas_basins",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "pozo-de-hidrocarburos-shale-res-319-93",
+      "grupo": "Industria y Servicios",
+      "titulo": "Pozo de hidrocarburos Shale (RES.319/93)",
+      "resumen": "Perforación realizada con el objetivo de realizar la extracción de hidrocarburos líquidos o gaseosos.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "pozos_noconvencionales_shale",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "pozo-de-hidrocarburos-tight-res-319-93",
+      "grupo": "Industria y Servicios",
+      "titulo": "Pozo de hidrocarburos Tight (RES.319/93)",
+      "resumen": "Perforación realizada con el objetivo de realizar la extracción de hidrocarburos líquidos o gaseosos.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "pozos_noconvencionales_tight",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "pozo-de-hidrocarburos-res-319-93",
+      "grupo": "Industria y Servicios",
+      "titulo": "Pozo de hidrocarburos (RES.319/93)",
+      "resumen": "Perforación realizada con el objetivo de realizar la extracción de hidrocarburos líquidos o gaseosos.",
+      "url": "https://sig.energia.gob.ar/wmsenergia",
+      "capa": "pozos_noinformados",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "planta-potabilizadora-de-agua",
+      "grupo": "Industria y Servicios",
+      "titulo": "Planta potabilizadora de agua",
+      "resumen": "Conjunto de instalaciones cuya función es la producción de agua para consumo humano.",
+      "url": "https://wms.ign.gob.ar/geoserver/industria-servicios/wms",
+      "capa": "planta_potabilizadora_de_agua",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "area-de-fabricacion-y-procesamiento",
+      "grupo": "Industria y Servicios",
+      "titulo": "Área de fabricación y procesamiento",
+      "resumen": "Localización de Parques Industriales inscriptos en el Registro Nacional de Parques Industriales (RENPI). Corresponde a predios planificados y diseñados para la radicación de industrias y servicios",
+      "url": "https://wms.ign.gob.ar/geoserver/wms",
+      "capa": "ign:areas_de_fabricacion_y_procesamiento_AC070",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "asentamientos-humanos-de-la-republica-argentina-bahra",
+      "grupo": "Geografía social",
+      "titulo": "Asentamientos Humanos de la República Argentina (BAHRA)",
+      "resumen": "La Base de Asentamientos Humanos de la República Argentina (BAHRA) es producto del trabajo conjunto entre el Ministerio de Educación, a través del Programa Nacional Mapa Educativo, el Instituto Nacional de Estadística y Censos (INDEC) y el Instituto Geográfico Nacional (IGN).",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "bahra",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "edificio-de-salud",
+      "grupo": "Geografía social",
+      "titulo": "Edificio de salud",
+      "resumen": "Construcción destinada a la asistencia de personas. Incluye hospital, sala de primeros auxilios, puesto asistencial, dispensario, entre otros.",
+      "url": "https://wms.ign.gob.ar/geoserver/infraestructura-social/wms",
+      "capa": "salud_020801",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "planta-urbana",
+      "grupo": "Geografía social",
+      "titulo": "Planta urbana",
+      "resumen": "Área urbana aproximada que incluye la zona contigua de amanzanamiento edificado, cuyos límites son reconocibles.",
+      "url": "https://wms.ign.gob.ar/geoserver/wms",
+      "capa": "ign:areas_de_asentamientos_y_edificios_020105",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "establecimiento-educativo",
+      "grupo": "Geografía social",
+      "titulo": "Establecimiento educativo",
+      "resumen": "Unidad organizacional que contiene en su interior a la/s unidades educativas, las cuales forman parte del establecimiento y se corresponden con cada uno de los niveles de enseñanza para los cuales se imparte educación. Un establecimiento puede funcionar en una o varias localizaciones geográficas, en caso de ser varias se compone de sede/s y anexo/s.",
+      "url": "https://mapa.educacion.gob.ar/geoserver/wms",
+      "capa": "publico:unidades_servicio",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "institucion-universitaria",
+      "grupo": "Geografía social",
+      "titulo": "Institución universitaria",
+      "resumen": "Institución de enseñanza superior que otorga distintos grados académicos. Incluye Universidades e Institutos Universitarios.",
+      "url": "https://mapa.educacion.gob.ar/geoserver/wms",
+      "capa": "publico:institucion_universitaria",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "ferrocarril",
+      "grupo": "Transporte",
+      "titulo": "Ferrocarril",
+      "resumen": "Vía férrea constituida por dos o tres rieles o carriles paralelos entre sí, sobre los cuales encajan y giran las ruedas de los trenes (incluye varios modos:ferrocarril, subterráneo, tranvía, entre otros).",
+      "url": "https://ide.transporte.gob.ar/geoserver/wms",
+      "capa": "idera:Ferrocarril",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "rutas-aereas-nacionales",
+      "grupo": "Transporte",
+      "titulo": "Rutas Aéreas Nacionales",
+      "resumen": "Línea que representa el corredor aéreo definido entre el aeródromo de origen y el aeródromo de destino.",
+      "url": "https://ide.transporte.gob.ar/geoserver/wms",
+      "capa": "observ:_3.4.4.8.rutas_cabotaje_2017.view",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "estacion-ferroviaria",
+      "grupo": "Transporte",
+      "titulo": "Estación ferroviaria",
+      "resumen": "Instalación edilicia y demás dependencias donde regularmente se detiene el transporte ferroviario, suben y bajan pasajeros y / o mercancías. Incluye apeadero, embarcadero y parada.",
+      "url": "https://ide.transporte.gob.ar/geoserver/wms",
+      "capa": "idera:Estacion_Ferroviaria",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "puerto",
+      "grupo": "Transporte",
+      "titulo": "Puerto",
+      "resumen": "Lugar dotado de instalaciones de terminales y de transferencia para la carga y descarga de mercaderías o pasajeros. Incluye atracadero para balsas, clubes deportivos y cualquier otra instalación para transferencia de pasajeros y / o mercaderías. No incluye puerto natural.",
+      "url": "https://ide.transporte.gob.ar/geoserver/wms",
+      "capa": "idera:Puertos",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "aerodromo-predios-aeroportuarios",
+      "grupo": "Transporte",
+      "titulo": "Aeródromo (predios aeroportuarios)",
+      "resumen": "Zona definida sobre tierra o agua (incluidos eventuales edificios, instalaciones y equipos), cuyo propósito es ser utilizada total o parcialmente para la llegada, salida y movimiento en superficie de aeronaves y / o helicópteros.",
+      "url": "https://ide.transporte.gob.ar/geoserver/wms",
+      "capa": "orsna:_3.4.4.6.Predios_Aeroportuarios_jun17.view",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "aerodromo-aeropuertos",
+      "grupo": "Transporte",
+      "titulo": "Aeródromo (aeropuertos)",
+      "resumen": "Zona definida sobre tierra o agua (incluidos eventuales edificios, instalaciones y equipos), cuyo propósito es ser utilizada total o parcialmente para la llegada, salida y movimiento en superficie de aeronaves y / o helicópteros.",
+      "url": "https://ide.transporte.gob.ar/geoserver/wms",
+      "capa": "orsna:_3.4.4.5_SNA_jun17.view",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "aerodromo",
+      "grupo": "Transporte",
+      "titulo": "Aeródromo",
+      "resumen": "Zona definida sobre tierra o agua (incluidos eventuales edificios, instalaciones y equipos), cuyo propósito es ser utilizada total o parcialmente para la llegada, salida y movimiento en superficie de aeronaves y / o helicópteros.",
+      "url": "https://ide.transporte.gob.ar/geoserver/wms",
+      "capa": "observ:_3.4.4.1.2.aerodromos_ont_a_view",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "puentes",
+      "grupo": "Transporte",
+      "titulo": "Puentes",
+      "resumen": "Estructura que asegura la continuidad de una vía de transporte (red vial, calle, ferrocarril, entre otros) sobre un obstáculo natural o artificial del terreno (corriente de agua, canal, entre otros).",
+      "url": "https://ide.transporte.gob.ar/geoserver/wms",
+      "capa": "observ:_3.4.1.1.7.puentes_DNV_2018.view",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "estacion-de-omnibus",
+      "grupo": "Transporte",
+      "titulo": "Estación de ómnibus",
+      "resumen": "Predio destinado a la maniobra de ómnibus nacionales e internacionales, carga, ascenso y descenso de pasajeros. Puede o no tener aduana.",
+      "url": "https://wms.ign.gob.ar/geoserver/wms",
+      "capa": "ign:infraestructura_de_transporte_AQ125",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "red-vial-rutas-provinciales",
+      "grupo": "Transporte",
+      "titulo": "Red vial (Rutas Provinciales)",
+      "resumen": "Trayecto diseñado con una superficie especialmente preparada, que se mantiene para ser usado por vehículos generalmente a motor.",
+      "url": "https://wms.ign.gob.ar/geoserver/transporte/wms",
+      "capa": "vial_provincial",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "tuneles",
+      "grupo": "Transporte",
+      "titulo": "Túneles",
+      "resumen": "Túneles. Dirección Nacional de Vialidad. Año Inventario 2020.",
+      "url": "https://sigvial.vialidad.gob.ar/geoserver/dnv/ows",
+      "capa": "Túneles",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "puente",
+      "grupo": "Transporte",
+      "titulo": "Puente",
+      "resumen": "Estructura que asegura la continuidad de una vía de transporte (red vial, calle, ferrocarril, entre otros) sobre un obstáculo natural o artificial del terreno (corriente de agua, canal, entre otros).",
+      "url": "https://sigvial.vialidad.gob.ar/geoserver/dnv/ows",
+      "capa": "dnv:Puentes_DNV_2022",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "red-vial-rutas-nacionales",
+      "grupo": "Transporte",
+      "titulo": "Red Vial (Rutas Nacionales)",
+      "resumen": "Trayecto diseñado con una superficie especialmente preparada, que se mantiene para ser usado por vehículos generalmente a motor.",
+      "url": "https://sigvial.vialidad.gob.ar/geoserver/dnv/ows",
+      "capa": "dnv:RVN_2022",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "isla",
+      "grupo": "Hidrografía y oceanografía",
+      "titulo": "Isla",
+      "resumen": "Parte de la superficie terrestre rodeada de agua y de dimensiones menores que un continente.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "isla",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "corriente-de-agua-lineas-perenne",
+      "grupo": "Hidrografía y oceanografía",
+      "titulo": "Corriente de agua líneas perenne",
+      "resumen": "Flujo natural de agua que sigue los desniveles del terreno, siendo arreico o desembocando en otra corriente de agua, en un espejo de agua o en el mar.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "lineas_de_aguas_continentales_perenne",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "corriente-de-agua-lineas-intermitente",
+      "grupo": "Hidrografía y oceanografía",
+      "titulo": "Corriente de agua líneas intermitente",
+      "resumen": "Flujo natural de agua que sigue los desniveles del terreno, siendo arreico o desembocando en otra corriente de agua, en un espejo de agua o en el mar.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "lineas_de_aguas_continentales_intermitentes",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "espejo-de-agua",
+      "grupo": "Hidrografía y oceanografía",
+      "titulo": "Espejo de agua",
+      "resumen": "Cuerpo natural o artificial de agua, dulce o salada, cuyo aporte proviene de corrientes de agua, afloramientos subterráneos o precipitaciones. Quedan excluidos los embalses y los embalses rurales.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "espejo_de_agua",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "corriente-de-agua-areas",
+      "grupo": "Hidrografía y oceanografía",
+      "titulo": "Corriente de agua áreas",
+      "resumen": "Flujo natural de agua que sigue los desniveles del terreno, siendo arreico o desembocando en otra corriente de agua, en un espejo de agua o en el mar.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "areas_de_aguas_continentales",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "dique",
+      "grupo": "Hidrografía y oceanografía",
+      "titulo": "Dique",
+      "resumen": "Terraplén natural o artificial destinado a detener o estancar el escurrimiento del agua en su curso, a los efectos de su almacenamiento para fines rurales o industriales.",
+      "url": "https://wms.ign.gob.ar/geoserver/wms",
+      "capa": "ign:puntos_de_aguas_continentales_BH051",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "curva-batimetrica",
+      "grupo": "Hidrografía y oceanografía",
+      "titulo": "Curva batimétrica",
+      "resumen": "Línea trazada en un espejo de agua, corriente de agua, mar u océano, que une puntos de igual profundidad respecto de un nivel de referencia definido. También se la denomina isobata.",
+      "url": "https://wms.shn.gob.ar/geoserver/wms",
+      "capa": "IDERA:curvas_batimetricas",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "cerro",
+      "grupo": "Geografía física",
+      "titulo": "Cerro",
+      "resumen": "Elevación que sobresale de los lineamientos serranos o montañosos. Incluye monte, morro, nevado, pico, entre otros. No incluye volcán. El nevado es un cerro de gran altura que posee nieves perpetuas en su cumbre y permanece blanco durante todo el año. Un pico es una elevación montañosa, de cumbre aguda y puntiaguda con flancos escarpados.",
+      "url": "https://wms.ign.gob.ar/geoserver/relieve-suelo/wms",
+      "capa": "puntos_de_geomorfologia_NA100",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "volcan",
+      "grupo": "Geografía física",
+      "titulo": "Volcán",
+      "resumen": "Conducto en la superficie de la Tierra, a través del cual asciende magma y gases asociados; también, se denomina a la estructura o forma (usualmente cónica) que se produce a partir del material eyectado (SEGEMAR, 2019).",
+      "url": "https://sigam.segemar.gov.ar/geoserver217/ows",
+      "capa": "sigam:PeligroVolcanes",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "epicentro-de-sismo",
+      "grupo": "Geografía física",
+      "titulo": "Epicentro de sismo",
+      "resumen": "Punto de la superficie de la tierra que está directamente sobre el hipocentro de un sismo.",
+      "url": "https://sigam.segemar.gov.ar/geoserver217/ows",
+      "capa": "sigam:PeligroSismos",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "falla",
+      "grupo": "Geografía física",
+      "titulo": "Falla",
+      "resumen": "Fractura macroscópica de los materiales de la corteza terrestre acompañada por el desplazamiento de los bloques.",
+      "url": "https://sigam.segemar.gov.ar/geoserver217/ows",
+      "capa": "sigam:e250K.Fallas",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "unidad-geologica",
+      "grupo": "Geografía física",
+      "titulo": "Unidad geológica",
+      "resumen": "Área cuyo volumen de roca es identificable de acuerdo a su origen y edad.",
+      "url": "https://sigam.segemar.gov.ar/geoserver217/ows",
+      "capa": "sigam:e5M.UnidadesGeologicas",
+      "consultable": false,
+      "cors": false
+    },
+    {
+      "id": "area-marina-protegida",
+      "grupo": "Geografía física",
+      "titulo": "Área marina protegida",
+      "resumen": "capa de áreas marinas protegidas que corresponden a la plataforma continental argentina gestionadas y manejadas por la Administración de Parques Nacionales (APN)",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "areas_protegidas:AMP-APN_limites_marzo2022",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "reservas-provinciales",
+      "grupo": "Geografía física",
+      "titulo": "Reservas Provinciales",
+      "resumen": "Área de tierra y / o mar destinada a la protección y mantenimiento de la diversidad biológica y de los recursos naturales y culturales asociados.",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "areas_protegidas:app280_noviembre2020",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "ordenamiento-territorial-de-bosques-nativos",
+      "grupo": "Geografía física",
+      "titulo": "Ordenamiento Territorial de Bosques Nativos",
+      "resumen": "Áreas de protección ambiental a los bosques nativos según lo establecido en la Ley de 26.331.",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "bosques:otbn_nacional",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "glaciar-continental",
+      "grupo": "Geografía física",
+      "titulo": "Glaciar (continental)",
+      "resumen": "Relevamiento y monitoreo de Glaciares realizado de acuerdo a la Ley 26693. No se incluye lo inventariado en las islas del Atlántico Sur.",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "dgarh:ing_sin_ias",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "ecorregion",
+      "grupo": "Geografía física",
+      "titulo": "Ecorregión",
+      "resumen": "",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "areas_protegidas:eco-regiones_Arg",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "tierras-aridas",
+      "grupo": "Geografía física",
+      "titulo": "Tierras áridas",
+      "resumen": "Área clasificada según la escasez estacional y / o anual de los recursos hídricos. Se define comúnmente como la insuficiencia de agua en el suelo y en la atmósfera.",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "suelos:indice_aridez_",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "areas-protegidas-nacionales",
+      "grupo": "Geografía física",
+      "titulo": "Áreas protegidas Nacionales",
+      "resumen": "Área de tierra y / o mar destinada a la protección y mantenimiento de la diversidad biológica y de los recursos naturales y culturales asociados.",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "areas_protegidas:APN_limite_areas_wgs84",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "reservas-de-biosfera",
+      "grupo": "Geografía física",
+      "titulo": "Reservas de Biosfera",
+      "resumen": "Ecosistema terrestre o costero/ marino, o una combinación de los mismos, reconocido como tal en un plano internacional en el marco del Programa MAB (Hombre y la Atmósfera) de la UNESCO.",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "areas_protegidas:reservas_mab",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "sitios-ramsar",
+      "grupo": "Geografía física",
+      "titulo": "Sitios RAMSAR",
+      "resumen": "Sitio de humedal que se enmarca dentro de La Convención sobre los Humedales de Importancia Internacional, llamada Convención de Ramsar, que incluye pantanos y marismas, lagos y ríos, pastizales húmedos y turberas, oasis, estuarios, deltas y bajos de marea, zonas marinas próximas a las costas, manglares y arrecifes de coral, así como sitios artificiales como estanques piscícolas, arrozales, embalses y salinas.",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "areas_protegidas:sitios_ramsar",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "departamento",
+      "grupo": "Demarcación",
+      "titulo": "Departamento",
+      "resumen": "División político administrativa de segundo orden.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "departamento",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "limite-de-zona-de-frontera",
+      "grupo": "Demarcación",
+      "titulo": "Límite de Zona de Frontera",
+      "resumen": "Línea que constituye la representación de la traza demarcadora que delimita la Zona de Frontera.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "limite_zona_de_frontera",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "limite-interdepartamental-o-de-partido",
+      "grupo": "Demarcación",
+      "titulo": "Límite interdepartamental o de partido",
+      "resumen": "Línea que constituye la representación de la traza demarcadora que delimita la jurisdicción de un departamento o partido de otro.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "limite_interdepartamental",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "limite-internacional",
+      "grupo": "Demarcación",
+      "titulo": "Límite internacional",
+      "resumen": "Línea que constituye la representación de la traza demarcadora que delimita un país.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "limite_internacional",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "limite-interprovincial",
+      "grupo": "Demarcación",
+      "titulo": "Límite interprovincial",
+      "resumen": "Línea que constituye la representación de la traza demarcadora que delimita una provincia de otra.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "limite_interprovincial",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "pais",
+      "grupo": "Demarcación",
+      "titulo": "País",
+      "resumen": "Nación jurídicamente organizada.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "pais",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "provincia",
+      "grupo": "Demarcación",
+      "titulo": "Provincia",
+      "resumen": "División político territorial de primer orden. Incluye la Ciudad Autónoma de Buenos Aires (CABA).",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "provincia",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "red-altimetrica",
+      "grupo": "Demarcación",
+      "titulo": "Red altimétrica",
+      "resumen": "Redes geodésicas de la Argentina",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "red_altimetrica",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "red-geocentrica",
+      "grupo": "Demarcación",
+      "titulo": "Red geocéntrica",
+      "resumen": "Redes geodésicas de la Argentina",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "red_geocentrica",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "red-gravimetrica",
+      "grupo": "Demarcación",
+      "titulo": "Red gravimétrica",
+      "resumen": "Redes geodésicas de la Argentina",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "red_gravimetrica",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "red-ramsac",
+      "grupo": "Demarcación",
+      "titulo": "Red RAMSAC",
+      "resumen": "Redes geodésicas de la Argentina",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "red_ramsac",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "zona-de-frontera",
+      "grupo": "Demarcación",
+      "titulo": "Zona de Frontera",
+      "resumen": "Zona adyacente al límite internacional, que constituye una zona de seguridad destinada a complementar las previsiones territoriales de la defensa nacional y / o un área prioritaria para su desarrollo.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "zona_de_frontera",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "limites-de-espacios-maritimos",
+      "grupo": "Demarcación",
+      "titulo": "Límites de espacios marítimos",
+      "resumen": "Líneas que representan los diferentes espacíos marítimos en su límite exterior.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "linea_limite_maritimos",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "gobierno-local",
+      "grupo": "Demarcación",
+      "titulo": "Gobierno Local",
+      "resumen": "Jurisdicción político-administrativa de tercer o cuarto orden. Incluye Municipios, Comunas, Juntas y Comisiones.",
+      "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
+      "capa": "gobiernoslocales_2022",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "paso-fronterizo",
+      "grupo": "Demarcación",
+      "titulo": "Paso fronterizo",
+      "resumen": "Punto geográfico (hecho físico) que permite ingresar o salir de un país.",
+      "url": "https://wms.ign.gob.ar/geoserver/defensa-seguridad/wms",
+      "capa": "ign:pasos_de_fronteras_internacionales",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "linea-de-costa",
+      "grupo": "Demarcación",
+      "titulo": "Línea de costa",
+      "resumen": "Línea que marca el contacto entre una masa de tierra y un cuerpo de agua, establecida por la línea de las más bajas bajamares, ya sea en las aguas litorales o interiores.",
+      "url": "https://wms.shn.gob.ar/geoserver/wms",
+      "capa": "IDERA:linea_de_costa",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "localidad-censal",
+      "grupo": "Unidades geoestadísticas",
+      "titulo": "Localidad Censal",
+      "resumen": "Concentración espacial de objetos físicos artificiales fijos conectados entre sí por medio de una red de calles, en una determinada porción del territorio. Está determinado por la continuidad espacial de los mismos y es independiente de los límites jurisdiccionales (INDEC, 2018).",
+      "url": "https://geoservicios.indec.gob.ar/geoserver/wms",
+      "capa": "geocenso2010:localidades_codigo",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "envolvente-urbana",
+      "grupo": "Unidades geoestadísticas",
+      "titulo": "Envolvente urbana",
+      "resumen": "Área comprendida por una o varias localidades censales cuya continuidad espacial determina que sean consideradas como una unidad o aglomerado urbano (INDEC, 2018).",
+      "url": "https://geoservicios.indec.gob.ar/geoserver/wms",
+      "capa": "desarrollo:envolventes",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "vias-de-circulacion-censal",
+      "grupo": "Unidades geoestadísticas",
+      "titulo": "Vias de circulación censal",
+      "resumen": "Trazado que permite la circulación en el interior de una área urbana y que no es parte del acceso a la misma. Determina los límites de manzanas (INDEC, 2018).",
+      "url": "https://geoservicios.indec.gob.ar/geoserver/wms",
+      "capa": "desarrollo:vias",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "radio-censal",
+      "grupo": "Unidades geoestadísticas",
+      "titulo": "Radio censal",
+      "resumen": "Unidad censal que forma parte de una fracción, definida por un espacio territorial con límites geográficos y una determinada cantidad de unidades de análisis a relevar (INDEC, 2018).",
+      "url": "https://geoservicios.indec.gob.ar/geoserver/wms",
+      "capa": "eph:radios_eph",
+      "consultable": true,
+      "cors": false
+    },
+    {
+      "id": "edificio-de-seguridad",
+      "grupo": "Defensa y Seguridad",
+      "titulo": "Edificio de seguridad",
+      "resumen": "Construcción destinada al asiento de la autoridad encargada de la seguridad.",
+      "url": "https://wms.ign.gob.ar/geoserver/defensa-seguridad/wms",
+      "capa": "ign:estructuras_operativas_y_defensivas_FA517",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "cuartel-de-bomberos",
+      "grupo": "Defensa y Seguridad",
+      "titulo": "Cuartel de bomberos",
+      "resumen": "Construcción destinada al asiento de la autoridad encargada de la seguridad.",
+      "url": "https://wms.ign.gob.ar/geoserver/defensa-seguridad/wms",
+      "capa": "ign:estructuras_operativas_y_defensivas_090102",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "area-de-vegetacion-natural-arborea-cerrada",
+      "grupo": "Biota",
+      "titulo": "Área de vegetación natural arbórea cerrada",
+      "resumen": "Área de vegetación natural cubierta por bosque cerrado, sea de un estrato arbóreo o de más de un estrato arbóreo, sin emergentes o con emergentes.",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "bosque_nativo:cobertura_bn",
+      "consultable": true,
+      "cors": true
+    },
+    {
+      "id": "estacion-meteorologica",
+      "grupo": "Clima y meteorología",
+      "titulo": "Estación meteorológica",
+      "resumen": "Instalación destinada a medir y registrar regularmente diversas variables meteorológicas.",
+      "url": "https://geo.ambiente.gob.ar/geoserver/wms",
+      "capa": "indicadoresyestadistica:estaciones_meteorologicas",
+      "consultable": true,
+      "cors": true
+    }
+  ]
+}

@@ -7,7 +7,7 @@ export type CapaVisor = {
   id: string;
   titulo: string;
   grupo: string;
-  origen: "nodo" | "wms" | "archivo";
+  origen: "nodo" | "catalogo" | "wms" | "archivo"; // catalogo: capas temáticas de IDERA
   capa: Layer;
   visible: boolean;
   opacidad: number; // 0 a 1
@@ -15,6 +15,9 @@ export type CapaVisor = {
   leyenda?: string; // URL de GetLegendGraphic (capas externas)
   color?: string; // capas de archivo
   nodo?: CapaNodo; // configuración propia (ficha de consulta y símbolo)
+  resumen?: string; // descripción de la capa
+  consultable?: boolean; // false: el servicio no devuelve datos en JSON
+  exportable?: boolean; // false: el servicio no permite CORS y bloquea la captura
 };
 
 export type Panel = "capas" | "base" | "agregar" | "ayuda" | "accesibilidad";
@@ -32,4 +35,4 @@ export type Modo =
   | "borrar";
 
 // Orden de dibujo de las capas
-export const Z = { base: 0, superpuesta: 10, grilla: 40, dibujo: 50, resaltado: 60 } as const;
+export const Z = { base: 0, catalogo: 5, superpuesta: 10, grilla: 40, dibujo: 50, resaltado: 60 } as const;
