@@ -58,16 +58,32 @@ CREATE INDEX domicilio_localidad_idx ON proveedores.domicilio (provincia, locali
 -- Vistas publicables (lo único que lee GeoServer; ver docs/convenciones.md)
 -- ---------------------------------------------------------------------------
 
--- Personas jurídicas con ubicación al menos a nivel localidad. Sin mail ni teléfono.
+-- Proveedores con ubicación al menos a nivel localidad. Sin mail ni teléfono.
+-- Personas jurídicas: domicilio y punto exactos. Personas humanas: sin domicilio y con el punto en el
+-- centro de su localidad, para no señalar viviendas (su CUIT contiene el DNI y suelen tener domicilio
+-- particular). Los 6 proveedores sin tipo (CUIT no reconocido) quedan fuera.
 CREATE VIEW proveedores.v_proveedores_publico AS
-SELECT p.id, p.entidad, p.cuit,
+WITH centros AS (
+  SELECT provincia, departamento, localidad, ST_Centroid(ST_Collect(geom)) AS geom
+  FROM proveedores.domicilio
+  WHERE precision <> 'provincia'
+  GROUP BY provincia, departamento, localidad
+)
+SELECT p.id, p.entidad, p.cuit, p.tipo_persona,
        -- calle y altura, sin piso ni depto. ("Avenida." viene así de la normalización)
-       nullif(concat_ws(' ', replace(d.calle, 'Avenida.', 'Avenida'), d.altura), '') AS domicilio,
+       CASE WHEN p.tipo_persona = 'juridica'
+            THEN nullif(concat_ws(' ', replace(d.calle, 'Avenida.', 'Avenida'), d.altura), '') END AS domicilio,
        p.rubro_principal, p.rubros, p.rubro_n1,
-       d.localidad, d.departamento, d.provincia, d.precision, d.geom
+       d.localidad, d.departamento, d.provincia,
+       CASE WHEN p.tipo_persona = 'juridica' THEN d.precision ELSE 'centro_localidad' END AS precision,
+       (CASE WHEN p.tipo_persona = 'juridica' THEN d.geom ELSE c.geom END)::geometry(Point, 4326) AS geom
 FROM proveedores.proveedor p
 JOIN proveedores.domicilio d ON d.proveedor_id = p.id
-WHERE p.tipo_persona = 'juridica'
+LEFT JOIN centros c
+  ON c.provincia IS NOT DISTINCT FROM d.provincia
+ AND c.departamento IS NOT DISTINCT FROM d.departamento
+ AND c.localidad IS NOT DISTINCT FROM d.localidad
+WHERE p.tipo_persona IN ('juridica', 'humana')
   AND d.precision <> 'provincia';
 
 -- Conteo de todos los proveedores (incluidas personas humanas) por localidad.

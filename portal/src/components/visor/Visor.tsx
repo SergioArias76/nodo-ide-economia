@@ -69,6 +69,15 @@ const estiloUbicacion = new Style({
   stroke: new Stroke({ color: "rgba(28, 126, 214, 0.5)", width: 1 }),
 });
 
+const CLAVES_URL = ["zoom", "lat", "lng", "base", "capas"];
+
+// Filtro CQL de GeoServer para los valores elegidos; sin filtro cuando están todos
+export function cqlDe(atributo: string, elegidos: string[], total: number) {
+  if (elegidos.length === total) return undefined;
+  if (elegidos.length === 0) return "EXCLUDE";
+  return `${atributo} IN (${elegidos.map((v) => `'${v.replaceAll("'", "''")}'`).join(", ")})`;
+}
+
 // Vista y capas compartibles por URL: ?zoom=&lat=&lng=&base=&capas=
 function leerUrl() {
   const q = new URLSearchParams(location.search);
@@ -79,6 +88,8 @@ function leerUrl() {
     lon: num("lng", VISTA_INICIAL.lon),
     base: MAPAS_BASE.some((b) => b.id === q.get("base")) ? q.get("base")! : BASE_INICIAL,
     capas: q.has("capas") ? q.get("capas")!.split(",").filter(Boolean) : null,
+    // Filtros de capas: un parámetro por atributo, con los valores elegidos (?tipo_persona=juridica)
+    filtros: Object.fromEntries([...q.entries()].filter(([k]) => !CLAVES_URL.includes(k))),
   };
 }
 
@@ -117,6 +128,9 @@ function crearMapa() {
   const ubicacion = new VectorSource();
   const nodo: CapaVisor[] = CAPAS_NODO.map((c) => {
     const visible = inicial.capas ? inicial.capas.includes(corto(c.nombre)) : true;
+    const todos = c.filtro?.opciones.map((o) => o.valor) ?? [];
+    const enUrl = c.filtro && inicial.filtros[c.filtro.atributo]?.split(",").filter((v) => todos.includes(v));
+    const filtro = c.filtro ? (enUrl ?? todos) : undefined;
     return {
       id: c.nombre,
       titulo: c.titulo,
@@ -125,13 +139,14 @@ function crearMapa() {
       visible,
       opacidad: 1,
       nodo: c,
+      filtro,
       // Imagen única (no teselas): GeoServer no corta las etiquetas en los bordes
       capa: new ImageLayer({
         visible,
         zIndex: Z.superpuesta,
         source: new ImageWMS({
           url: `${PUBLIC_GEOSERVER}/wms`,
-          params: { LAYERS: c.nombre },
+          params: { LAYERS: c.nombre, CQL_FILTER: c.filtro && cqlDe(c.filtro.atributo, filtro!, todos.length) },
           serverType: "geoserver",
           crossOrigin: "anonymous",
         }),
@@ -314,6 +329,10 @@ export default function Visor() {
         .map((c) => corto(c.id))
         .join(","),
     });
+    for (const c of capasRef.current) {
+      const f = c.nodo?.filtro;
+      if (f && c.filtro && c.filtro.length < f.opciones.length) q.set(f.atributo, c.filtro.join(","));
+    }
     history.replaceState(null, "", `${location.pathname}?${q}`);
   }
   useEffect(escribirUrl, [mapa, bases, base, capas]);
@@ -370,6 +389,18 @@ export default function Visor() {
         if (cambios.visible !== undefined) c.capa.setVisible(cambios.visible);
         if (cambios.opacidad !== undefined) c.capa.setOpacity(cambios.opacidad);
         return { ...c, ...cambios };
+      }),
+    );
+  }
+
+  // El filtro se aplica en GeoServer: cambia la imagen y también lo que devuelve la consulta por clic
+  function filtrarCapa(id: string, elegidos: string[]) {
+    setCapas((actuales) =>
+      actuales.map((c) => {
+        if (c.id !== id || !c.nodo?.filtro) return c;
+        const { atributo, opciones } = c.nodo.filtro;
+        (c.capa.getSource() as ImageWMS).updateParams({ CQL_FILTER: cqlDe(atributo, elegidos, opciones.length) });
+        return { ...c, filtro: elegidos };
       }),
     );
   }
@@ -509,6 +540,7 @@ export default function Visor() {
       <PanelCapas
         capas={capas}
         onCambiar={cambiarCapa}
+        onFiltrar={filtrarCapa}
         onZoom={(c) => c.extension && encuadrar(c.extension)}
         onQuitar={quitarCapa}
       />
