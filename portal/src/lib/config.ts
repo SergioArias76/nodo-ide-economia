@@ -109,8 +109,8 @@ export const BASE_INICIAL = "osm";
 export const miniatura = (b: MapaBase) =>
   b.url.replace("{z}", "5").replace("{x}", "9").replace("{-y}", "11").replace("{y}", "20");
 
-// Cada tema de capas toma una franja del isotipo (sol, meseta, mar) y un ícono de la biblioteca provincial
-// (public/marca/temas). El color identifica el tema en el panel y en las fichas de consulta.
+// Cada tema de capas toma una franja del isotipo (sol, meseta, mar) y un ícono (Lucide, mapeado en
+// components/visor/ui.tsx). El color identifica el tema en el panel y en las fichas de consulta.
 // "sobre": color del ícono encima de la franja (tinta sobre sol y meseta, blanco sobre mar)
 export type Tema = { color: string; icono: string; sobre: string };
 
