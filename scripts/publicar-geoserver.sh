@@ -68,7 +68,7 @@ while IFS="|" read -r capa vista titulo resumen; do
   ok "estilo por defecto de $capa" "$(api PUT "/layers/$WS:$capa" "${json[@]}" \
     -d "{\"layer\":{\"defaultStyle\":{\"name\":\"$WS:$capa\"}}}")"
 done <<'EOF'
-proveedores_radicacion|v_proveedores_publico|Proveedores del Estado provincial|Proveedores inscriptos en el Sistema Provincial de Proveedores del Estado (SIPPE) del Chubut, con CUIT, rubros y tipo de persona. Personas jurídicas en su domicilio; personas humanas en el centro de su localidad y sin domicilio.
+proveedores_radicacion|v_proveedores_publico|Proveedores del Estado provincial|Proveedores inscriptos en el Sistema Provincial de Proveedores del Estado (SIPPE) del Chubut, con CUIT, rubros y tipo de persona. Personas jurídicas y humanas en su domicilio; las que no tienen calle y altura, en el centro de su localidad.
 proveedores_por_localidad|v_proveedores_por_localidad|Proveedores del Estado provincial por localidad|Cantidad de proveedores inscriptos en el SIPPE del Chubut por localidad, discriminados en personas jurídicas y humanas.
 EOF
 

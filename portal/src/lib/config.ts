@@ -33,7 +33,6 @@ const PRECISION: Record<string, string> = {
   calle_sin_altura: "Calle sin altura",
   esquina: "Esquina",
   localidad: "Centro de la localidad",
-  centro_localidad: "Centro de la localidad (persona humana, sin domicilio)",
   provincia: "Provincia",
 };
 
