@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Rubik } from "next/font/google";
+import { SCRIPT_TEMA } from "@/lib/tema-script";
 import "./globals.css";
 
 // Tipografías de la identidad del Gobierno del Chubut: Public Sans para la interfaz, Rubik para el logotipo
@@ -25,7 +26,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${publicSans.variable} ${rubik.variable}`}>
+    // suppressHydrationWarning: SCRIPT_TEMA agrega data-tema antes de hidratar
+    <html lang="es" className={`${publicSans.variable} ${rubik.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
+      </head>
       <body>{children}</body>
     </html>
   );

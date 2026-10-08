@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BotonTema from "@/components/BotonTema";
 
 // Cabecera y pie de las páginas del sitio. El visor ocupa la pantalla completa y no los usa.
 export default function SitioLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,7 @@ export default function SitioLayout({ children }: { children: React.ReactNode })
         <nav>
           <Link href="/visor">Visor</Link>
           <Link href="/catalogo">Catálogo</Link>
+          <BotonTema />
         </nav>
       </header>
       <main>{children}</main>
