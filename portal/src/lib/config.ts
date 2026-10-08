@@ -23,6 +23,9 @@ export type CapaNodo = {
   simbolo: { color: string; proporcional?: boolean };
   // Filtro por valores de un atributo (casillas en el panel; se aplica con CQL_FILTER de GeoServer)
   filtro?: { atributo: string; opciones: { valor: string; etiqueta: string; color: string }[] };
+  // Filtro por localidad (buscador en el panel; CQL_FILTER sobre el atributo "localidad"). La lista
+  // sale por WFS de esta capa (localidad, departamento, provincia, cant_proveedores y punto)
+  filtroLocalidad?: string;
   campos: Campo[];
 };
 
@@ -65,6 +68,7 @@ export const CAPAS_NODO: CapaNodo[] = [
     atributoTitulo: "entidad",
     nota: "Visible al acercar el mapa",
     simbolo: { color: "#ff682c" },
+    filtroLocalidad: `${WORKSPACE}:proveedores_por_localidad`,
     filtro: {
       atributo: "tipo_persona",
       opciones: [
