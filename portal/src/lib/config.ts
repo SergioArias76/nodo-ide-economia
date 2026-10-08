@@ -22,7 +22,7 @@ export type CapaNodo = {
   // Símbolo de la leyenda: debe coincidir con el estilo de geoserver/estilos/<capa>.sld
   simbolo: { color: string; proporcional?: boolean };
   // Filtro por valores de un atributo (casillas en el panel; se aplica con CQL_FILTER de GeoServer)
-  filtro?: { atributo: string; opciones: { valor: string; etiqueta: string; color: string }[] };
+  filtro?: { atributo: string; opciones: { valor: string; etiqueta: string; color: string; icono?: string }[] };
   // Filtro por localidad (buscador en el panel; CQL_FILTER sobre el atributo "localidad"). La lista
   // sale por WFS de esta capa (localidad, departamento, provincia, cant_proveedores y punto)
   filtroLocalidad?: string;
@@ -72,8 +72,8 @@ export const CAPAS_NODO: CapaNodo[] = [
     filtro: {
       atributo: "tipo_persona",
       opciones: [
-        { valor: "juridica", etiqueta: "Personas jurídicas", color: "#ff682c" },
-        { valor: "fisica", etiqueta: "Personas físicas", color: "#5894a7" },
+        { valor: "juridica", etiqueta: "Personas jurídicas", color: "#ff682c", icono: "edificio" },
+        { valor: "fisica", etiqueta: "Personas físicas", color: "#5894a7", icono: "persona" },
       ],
     },
     campos: [
@@ -108,6 +108,9 @@ export const MAPAS_BASE: MapaBase[] = [
 ];
 
 export const BASE_INICIAL = "osm";
+
+// Opción del selector para ver las capas sin mapa base (en la URL: ?base=ninguno)
+export const SIN_BASE = "ninguno";
 
 // Tesela de muestra (zoom 5, centro de Chubut) para la miniatura del selector
 export const miniatura = (b: MapaBase) =>

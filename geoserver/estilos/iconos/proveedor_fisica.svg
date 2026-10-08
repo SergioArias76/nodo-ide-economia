@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Persona física: persona (Lucide "user") sobre el color de la capa -->
+  <circle cx="12" cy="12" r="11.2" fill="#5894a7" stroke="#ffffff" stroke-width="1.6"/>
+  <g transform="translate(5.4 5.4) scale(0.55)" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </g>
+</svg>

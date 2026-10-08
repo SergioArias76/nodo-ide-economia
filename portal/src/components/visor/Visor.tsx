@@ -23,7 +23,7 @@ import { boundingExtent, type Extent } from "ol/extent";
 import type { FeatureLike } from "ol/Feature";
 import "ol/ol.css";
 import { Minus, Plus } from "lucide-react";
-import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, WORKSPACE, temaDe, type CapaNodo } from "@/lib/config";
+import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, SIN_BASE, WORKSPACE, temaDe, type CapaNodo } from "@/lib/config";
 import catalogoIdera from "@/lib/capas-idera.json";
 import FichaConsulta, { type Consulta } from "./FichaConsulta";
 import PanelLateral from "./PanelLateral";
@@ -122,7 +122,7 @@ function leerUrl() {
     zoom: num("zoom", VISTA_INICIAL.zoom),
     lat: num("lat", VISTA_INICIAL.lat),
     lon: num("lng", VISTA_INICIAL.lon),
-    base: MAPAS_BASE.some((b) => b.id === q.get("base")) ? q.get("base")! : BASE_INICIAL,
+    base: [...MAPAS_BASE.map((b) => b.id), SIN_BASE].includes(q.get("base")!) ? q.get("base")! : BASE_INICIAL,
     capas: q.has("capas") ? q.get("capas")!.split(",").filter(Boolean) : null,
     localidades: q.get("localidad")?.split(",").filter(Boolean) ?? [],
     // Filtros de capas: un parámetro por atributo, con los valores elegidos (?tipo_persona=juridica)
@@ -362,7 +362,7 @@ export default function Visor() {
     if (!mapa) return;
     const vista = mapa.getView();
     const [lon, lat] = toLonLat(vista.getCenter()!);
-    const activa = Object.entries(bases).find(([, c]) => c.getVisible())?.[0] ?? BASE_INICIAL;
+    const activa = Object.entries(bases).find(([, c]) => c.getVisible())?.[0] ?? SIN_BASE;
     const q = new URLSearchParams({
       zoom: vista.getZoom()!.toFixed(2).replace(/\.?0+$/, ""),
       lat: lat.toFixed(5),
@@ -656,10 +656,12 @@ export default function Visor() {
             {cursor ? `Lat ${cursor[1].toFixed(5)}°  Lon ${cursor[0].toFixed(5)}°` : "Mové el cursor sobre el mapa"}
           </span>
         </div>
-        <div
-          className="pointer-events-auto ml-auto rounded-md bg-fondo/85 px-2 py-0.5 text-[0.6875rem] text-tenue [&_a]:text-tenue"
-          dangerouslySetInnerHTML={{ __html: baseActual?.atribucion ?? "" }}
-        />
+        {baseActual && (
+          <div
+            className="pointer-events-auto ml-auto rounded-md bg-fondo/85 px-2 py-0.5 text-[0.6875rem] text-tenue [&_a]:text-tenue"
+            dangerouslySetInnerHTML={{ __html: baseActual.atribucion }}
+          />
+        )}
       </div>
 
       {aviso && (

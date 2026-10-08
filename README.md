@@ -48,9 +48,9 @@ bash scripts/configurar-geonetwork.sh           # contraseña de admin de GeoNet
 
 Visor propio en `/visor`, con las herramientas del visor de IDERA (mapa.idera.gob.ar) y la identidad del Gobierno del Chubut:
 
-- **Capas del nodo**: proveedores del Estado (punto por domicilio, con filtros por persona jurídica o física y por localidad) y cantidad de proveedores por localidad.
+- **Capas del nodo**: proveedores del Estado (ícono por domicilio: edificio para persona jurídica, persona para física; con filtros por persona jurídica o física y por localidad) y cantidad de proveedores por localidad.
 - **Capas nacionales** del catálogo de IDERA agrupadas por tema (escuelas, hospitales, transporte, hidrografía…), con opacidad, leyenda y zoom a la extensión.
-- **Mapas base**: OpenStreetMap (por defecto) y Argenmap del IGN (normal, gris y oscuro).
+- **Mapas base**: OpenStreetMap (por defecto), Argenmap del IGN (normal, gris y oscuro) o sin mapa base.
 - **Herramientas**: búsqueda de localidades, consulta de datos con clic, medición de distancias y superficies, dibujo (con exportación a GeoJSON), grilla de coordenadas, mi ubicación, captura PNG e impresión en PDF.
 - **Agregar capas** de otros servicios WMS o de archivos GeoJSON, KML, GPX y Shapefile.
 - **Accesibilidad**: tema claro y oscuro, texto grande, alto contraste, movimiento reducido y uso completo con teclado.

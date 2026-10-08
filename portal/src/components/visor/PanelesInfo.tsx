@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import {
   Camera, CirclePlus, Grid3x3, Layers, Link, LocateFixed, Map as IconoMapa, Maximize, MousePointerClick, PenLine,
-  Printer, Ruler, Search,
+  Printer, Ruler, Search, SquareDashed,
 } from "lucide-react";
-import { MAPAS_BASE, miniatura } from "@/lib/config";
+import { MAPAS_BASE, SIN_BASE, miniatura } from "@/lib/config";
 import { Titulo, reset } from "./ui";
 
 export function PanelMapasBase({ base, onElegir }: { base: string; onElegir: (id: string) => void }) {
@@ -31,6 +31,22 @@ export function PanelMapasBase({ base, onElegir }: { base: string; onElegir: (id
             <span className={"block px-2 py-1 text-xs " + (base === b.id ? "font-semibold" : "")}>{b.titulo}</span>
           </button>
         ))}
+        <button
+          type="button"
+          role="radio"
+          aria-checked={base === SIN_BASE}
+          onClick={() => onElegir(SIN_BASE)}
+          className={
+            `${reset} cursor-pointer overflow-hidden rounded-lg border-2 bg-fondo text-left transition-colors ` +
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento " +
+            (base === SIN_BASE ? "border-acento" : "border-borde hover:border-tenue")
+          }
+        >
+          <span aria-hidden className="grid h-16 w-full place-items-center bg-superficie text-tenue">
+            <SquareDashed className="size-6" strokeWidth={1.6} />
+          </span>
+          <span className={"block px-2 py-1 text-xs " + (base === SIN_BASE ? "font-semibold" : "")}>Sin mapa base</span>
+        </button>
       </div>
     </div>
   );
@@ -40,7 +56,7 @@ const AYUDA = [
   { icono: Search, titulo: "Buscar localidad", texto: "Escribí el nombre en el buscador de arriba y elegí un resultado." },
   { icono: MousePointerClick, titulo: "Consultar", texto: "Hacé clic sobre un elemento del mapa para ver sus datos." },
   { icono: Layers, titulo: "Capas", texto: "Prendé o apagá capas, cambiá su opacidad o acercate a su extensión." },
-  { icono: IconoMapa, titulo: "Mapa base", texto: "Elegí el fondo: OpenStreetMap o Argenmap del IGN." },
+  { icono: IconoMapa, titulo: "Mapa base", texto: "Elegí el fondo: OpenStreetMap, Argenmap del IGN o ninguno." },
   { icono: CirclePlus, titulo: "Agregar capas", texto: "Sumá capas de otros servicios WMS o abrí archivos GeoJSON, KML, GPX o Shapefile." },
   { icono: Ruler, titulo: "Medir", texto: "Distancias y superficies. Doble clic termina la medición." },
   { icono: LocateFixed, titulo: "Mi ubicación", texto: "Centra el mapa en tu posición (el navegador pide permiso)." },
