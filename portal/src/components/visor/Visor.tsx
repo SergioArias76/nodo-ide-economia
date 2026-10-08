@@ -19,11 +19,11 @@ import { circular } from "ol/geom/Polygon";
 import { ScaleLine } from "ol/control";
 import { Circle, Fill, Stroke, Style } from "ol/style";
 import { fromLonLat, toLonLat, transformExtent } from "ol/proj";
-import type { Extent } from "ol/extent";
+import { boundingExtent, type Extent } from "ol/extent";
 import type { FeatureLike } from "ol/Feature";
 import "ol/ol.css";
 import { Minus, Plus } from "lucide-react";
-import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, WORKSPACE, temaDe } from "@/lib/config";
+import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, WORKSPACE, temaDe, type CapaNodo } from "@/lib/config";
 import catalogoIdera from "@/lib/capas-idera.json";
 import FichaConsulta, { type Consulta } from "./FichaConsulta";
 import PanelLateral from "./PanelLateral";
@@ -35,7 +35,7 @@ import { consultar, hayDatoEn } from "./consulta";
 import { useHerramientas } from "./useHerramientas";
 import { capturaPng, imprimirPdf } from "./exportar";
 import { BotonIcono, botonPrimario, campo, tarjeta } from "./ui";
-import { Z, type CapaVisor, type Panel } from "./tipos";
+import { Z, type CapaVisor, type Localidad, type Panel } from "./tipos";
 import type { Lugar } from "./Buscador";
 
 const VISTA_INICIAL = { lon: -68.5, lat: -43.7, zoom: 6 }; // Chubut
@@ -69,16 +69,52 @@ const estiloUbicacion = new Style({
   stroke: new Stroke({ color: "rgba(28, 126, 214, 0.5)", width: 1 }),
 });
 
-const CLAVES_URL = ["zoom", "lat", "lng", "base", "capas"];
+const CLAVES_URL = ["zoom", "lat", "lng", "base", "capas", "localidad"];
+
+const lista = (valores: string[]) => valores.map((v) => `'${v.replaceAll("'", "''")}'`).join(", ");
 
 // Filtro CQL de GeoServer para los valores elegidos; sin filtro cuando están todos
 export function cqlDe(atributo: string, elegidos: string[], total: number) {
   if (elegidos.length === total) return undefined;
   if (elegidos.length === 0) return "EXCLUDE";
-  return `${atributo} IN (${elegidos.map((v) => `'${v.replaceAll("'", "''")}'`).join(", ")})`;
+  return `${atributo} IN (${lista(elegidos)})`;
 }
 
-// Vista y capas compartibles por URL: ?zoom=&lat=&lng=&base=&capas=
+// Filtro CQL de una capa del nodo: valores del atributo y localidades elegidas (sin localidades: todas)
+function cqlCapa(c: CapaNodo, elegidos?: string[], localidades?: string[]) {
+  const partes = [
+    c.filtro && elegidos && cqlDe(c.filtro.atributo, elegidos, c.filtro.opciones.length),
+    c.filtroLocalidad && localidades?.length ? `localidad IN (${lista(localidades)})` : undefined,
+  ].filter((p): p is string => p !== undefined);
+  if (partes.includes("EXCLUDE")) return "EXCLUDE";
+  return partes.length ? partes.join(" AND ") : undefined;
+}
+
+// Localidades con proveedores (WFS de la capa de conteo), ordenadas por nombre
+async function cargarLocalidades(capa: string): Promise<Localidad[]> {
+  const q = new URLSearchParams({
+    service: "WFS",
+    version: "2.0.0",
+    request: "GetFeature",
+    typeNames: capa,
+    propertyName: "localidad,departamento,provincia,cant_proveedores,geom",
+    srsName: "EPSG:3857",
+    outputFormat: "application/json",
+  });
+  const datos = await (await fetch(`${PUBLIC_GEOSERVER}/${WORKSPACE}/wfs?${q}`)).json();
+  return (datos.features as { properties: Record<string, string | number>; geometry: { coordinates: number[] } }[])
+    .filter((f) => f.properties.localidad && f.geometry)
+    .map((f) => ({
+      nombre: String(f.properties.localidad),
+      departamento: String(f.properties.departamento ?? ""),
+      provincia: String(f.properties.provincia ?? ""),
+      cantidad: Number(f.properties.cant_proveedores),
+      coordenada: f.geometry.coordinates,
+    }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+}
+
+// Vista y capas compartibles por URL: ?zoom=&lat=&lng=&base=&capas=&localidad=
 function leerUrl() {
   const q = new URLSearchParams(location.search);
   const num = (k: string, defecto: number) => (q.has(k) && !isNaN(Number(q.get(k))) ? Number(q.get(k)) : defecto);
@@ -88,6 +124,7 @@ function leerUrl() {
     lon: num("lng", VISTA_INICIAL.lon),
     base: MAPAS_BASE.some((b) => b.id === q.get("base")) ? q.get("base")! : BASE_INICIAL,
     capas: q.has("capas") ? q.get("capas")!.split(",").filter(Boolean) : null,
+    localidades: q.get("localidad")?.split(",").filter(Boolean) ?? [],
     // Filtros de capas: un parámetro por atributo, con los valores elegidos (?tipo_persona=juridica)
     filtros: Object.fromEntries([...q.entries()].filter(([k]) => !CLAVES_URL.includes(k))),
   };
@@ -131,6 +168,7 @@ function crearMapa() {
     const todos = c.filtro?.opciones.map((o) => o.valor) ?? [];
     const enUrl = c.filtro && inicial.filtros[c.filtro.atributo]?.split(",").filter((v) => todos.includes(v));
     const filtro = c.filtro ? (enUrl ?? todos) : undefined;
+    const localidades = c.filtroLocalidad ? inicial.localidades : undefined;
     return {
       id: c.nombre,
       titulo: c.titulo,
@@ -140,13 +178,14 @@ function crearMapa() {
       opacidad: 1,
       nodo: c,
       filtro,
+      localidades,
       // Imagen única (no teselas): GeoServer no corta las etiquetas en los bordes
       capa: new ImageLayer({
         visible,
         zIndex: Z.superpuesta,
         source: new ImageWMS({
           url: `${PUBLIC_GEOSERVER}/wms`,
-          params: { LAYERS: c.nombre, CQL_FILTER: c.filtro && cqlDe(c.filtro.atributo, filtro!, todos.length) },
+          params: { LAYERS: c.nombre, CQL_FILTER: cqlCapa(c, filtro, localidades) },
           serverType: "geoserver",
           crossOrigin: "anonymous",
         }),
@@ -204,6 +243,7 @@ export default function Visor() {
   const [pantallaCompleta, setPantallaCompleta] = useState(false);
   const [ubicando, setUbicando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [localidades, setLocalidades] = useState<Localidad[]>([]);
   const herramientas = useHerramientas(mapa);
 
   // Consulta por clic
@@ -246,6 +286,10 @@ export default function Visor() {
         );
       })
       .catch(() => {}); // sin extensión no se muestra el botón de zoom
+
+    // Lista para el filtro por localidad; si el WFS no responde, el filtro no se muestra
+    const fuente = CAPAS_NODO.find((c) => c.filtroLocalidad)?.filtroLocalidad;
+    if (fuente) cargarLocalidades(fuente).then(setLocalidades).catch(() => {});
 
     return () => {
       mapa.removeControl(escala);
@@ -332,6 +376,7 @@ export default function Visor() {
     for (const c of capasRef.current) {
       const f = c.nodo?.filtro;
       if (f && c.filtro && c.filtro.length < f.opciones.length) q.set(f.atributo, c.filtro.join(","));
+      if (c.localidades?.length) q.set("localidad", c.localidades.join(","));
     }
     history.replaceState(null, "", `${location.pathname}?${q}`);
   }
@@ -394,21 +439,22 @@ export default function Visor() {
   }
 
   // El filtro se aplica en GeoServer: cambia la imagen y también lo que devuelve la consulta por clic
-  function filtrarCapa(id: string, elegidos: string[]) {
-    setCapas((actuales) =>
-      actuales.map((c) => {
-        if (c.id !== id || !c.nodo?.filtro) return c;
-        const { atributo, opciones } = c.nodo.filtro;
-        (c.capa.getSource() as ImageWMS).updateParams({ CQL_FILTER: cqlDe(atributo, elegidos, opciones.length) });
-        return { ...c, filtro: elegidos };
-      }),
-    );
+  function filtrarCapa(id: string, cambios: Partial<Pick<CapaVisor, "filtro" | "localidades">>) {
+    const c = capas.find((x) => x.id === id);
+    if (!c?.nodo) return;
+    const nueva = { ...c, ...cambios };
+    (c.capa.getSource() as ImageWMS).updateParams({ CQL_FILTER: cqlCapa(c.nodo, nueva.filtro, nueva.localidades) });
+    setCapas((actuales) => actuales.map((x) => (x.id === id ? nueva : x)));
+    // Al sumar localidades, el mapa va hacia ellas (los proveedores se ven al acercar)
+    const agregadas = cambios.localidades?.filter((l) => !c.localidades?.includes(l)) ?? [];
+    const puntos = localidades.filter((l) => agregadas.includes(l.nombre)).map((l) => l.coordenada);
+    if (puntos.length) encuadrar(boundingExtent(puntos), 13);
   }
 
-  function encuadrar(extension: Extent) {
+  function encuadrar(extension: Extent, maxZoom = 15) {
     const ancho = raiz.current!.clientWidth;
     const izquierda = panel && ancho >= 640 ? 440 : 24;
-    mapa?.getView().fit(extension, { padding: [80, 80, 80, izquierda], maxZoom: 15, duration: duracion() });
+    mapa?.getView().fit(extension, { padding: [80, 80, 80, izquierda], maxZoom, duration: duracion() });
   }
 
   function agregarWms(w: CapaWms) {
@@ -539,6 +585,7 @@ export default function Visor() {
     capas: (
       <PanelCapas
         capas={capas}
+        localidades={localidades}
         onCambiar={cambiarCapa}
         onFiltrar={filtrarCapa}
         onZoom={(c) => c.extension && encuadrar(c.extension)}

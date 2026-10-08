@@ -19,7 +19,11 @@ export type CapaVisor = {
   consultable?: boolean; // false: el servicio no devuelve datos en JSON
   exportable?: boolean; // false: el servicio no permite CORS y bloquea la captura
   filtro?: string[]; // valores elegidos del filtro de la capa (nodo.filtro)
+  localidades?: string[]; // localidades elegidas (nodo.filtroLocalidad); vacío: todas
 };
+
+// Localidad con proveedores, para el filtro por localidad (coordenada en EPSG:3857)
+export type Localidad = { nombre: string; departamento: string; provincia: string; cantidad: number; coordenada: number[] };
 
 export type Panel = "capas" | "base" | "agregar" | "ayuda" | "accesibilidad";
 
