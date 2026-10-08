@@ -8,9 +8,9 @@ CREATE TABLE proveedores.proveedor (
     cuit             varchar(11) UNIQUE,          -- sin guiones; 5 registros del padrón vienen sin CUIT
     nro_comp         text,                         -- número del registro en SIPPE
     entidad          text NOT NULL,
-    -- Por prefijo de CUIT: 20/23/24/27 persona humana, 30/33/34 persona jurídica
+    -- Por prefijo de CUIT: 20/23/24/27 persona física, 30/33/34 persona jurídica
     tipo_persona     text GENERATED ALWAYS AS (
-                       CASE WHEN left(cuit, 2) IN ('20', '23', '24', '27') THEN 'humana'
+                       CASE WHEN left(cuit, 2) IN ('20', '23', '24', '27') THEN 'fisica'
                             WHEN left(cuit, 2) IN ('30', '33', '34') THEN 'juridica'
                        END) STORED,
     rubro_principal  text,
@@ -77,7 +77,7 @@ CREATE TABLE proveedores.domicilio_correccion (
 -- ---------------------------------------------------------------------------
 
 -- Proveedores con ubicación al menos a nivel localidad. Sin mail ni teléfono.
--- Personas jurídicas y humanas con su domicilio y punto exactos (decisión del Ministerio: los datos de
+-- Personas jurídicas y físicas con su domicilio y punto exactos (decisión del Ministerio: los datos de
 -- proveedores del Estado son públicos). Los 6 proveedores sin tipo (CUIT no reconocido) quedan fuera.
 CREATE VIEW proveedores.v_proveedores_publico AS
 SELECT p.id, p.entidad, p.cuit, p.tipo_persona,
@@ -89,16 +89,16 @@ SELECT p.id, p.entidad, p.cuit, p.tipo_persona,
        d.geom::geometry(Point, 4326) AS geom
 FROM proveedores.proveedor p
 JOIN proveedores.domicilio d ON d.proveedor_id = p.id
-WHERE p.tipo_persona IN ('juridica', 'humana')
+WHERE p.tipo_persona IN ('juridica', 'fisica')
   AND d.precision <> 'provincia';
 
--- Conteo de todos los proveedores (incluidas personas humanas) por localidad.
+-- Conteo de todos los proveedores (incluidas personas físicas) por localidad.
 CREATE VIEW proveedores.v_proveedores_por_localidad AS
 SELECT row_number() OVER (ORDER BY d.provincia, d.localidad) AS id,
        d.localidad, d.departamento, d.provincia,
        count(*)                                          AS cant_proveedores,
        count(*) FILTER (WHERE p.tipo_persona = 'juridica') AS cant_juridicas,
-       count(*) FILTER (WHERE p.tipo_persona = 'humana')   AS cant_humanas,
+       count(*) FILTER (WHERE p.tipo_persona = 'fisica')   AS cant_fisicas,
        ST_Centroid(ST_Collect(d.geom))::geometry(Point, 4326) AS geom
 FROM proveedores.proveedor p
 JOIN proveedores.domicilio d ON d.proveedor_id = p.id

@@ -7,8 +7,8 @@ El archivo no se versiona: va en `datos/fuentes/proveedores/QGIS_proveedores_pun
 ## Contenido
 
 - 12.435 puntos, uno por proveedor, en EPSG:4326, con los rubros agrupados en el campo `rubros` (separados por ` | `).
-- Personas humanas (CUIT 20/23/24/27): ~8.400. Personas jurídicas (CUIT 30/33): ~4.000. Hay 6 registros sin CUIT.
-- Incluye **CUIT, mail y teléfono**: son datos personales en el caso de personas humanas.
+- Personas físicas (CUIT 20/23/24/27): ~8.400. Personas jurídicas (CUIT 30/33): ~4.000. Hay 6 registros sin CUIT.
+- Incluye **CUIT, mail y teléfono**: son datos personales en el caso de personas físicas.
 
 ## Precisión de la ubicación
 
@@ -49,7 +49,7 @@ GeoServer solo tiene permiso sobre dos vistas:
 
 | Vista | Capa sugerida | Contenido |
 |---|---|---|
-| `v_proveedores_publico` | `economia:proveedores_radicacion` | Personas jurídicas y humanas con domicilio (calle y altura) en su punto exacto. Columna `tipo_persona` para filtrar (`CQL_FILTER=tipo_persona='humana'`). Sin mail ni teléfono ni puntos de precisión `provincia` |
+| `v_proveedores_publico` | `economia:proveedores_radicacion` | Personas jurídicas y físicas con domicilio (calle y altura) en su punto exacto. Columna `tipo_persona` para filtrar (`CQL_FILTER=tipo_persona='fisica'`). Sin mail ni teléfono ni puntos de precisión `provincia` |
 | `v_proveedores_por_localidad` | `economia:proveedores_por_localidad` | Cantidad de proveedores (todos) por localidad |
 
 Las tablas completas, con los datos personales, quedan dentro de la base y solo las lee `ide_admin`.

@@ -55,7 +55,7 @@ export const CAPAS_NODO: CapaNodo[] = [
       { atributo: "provincia", etiqueta: "Provincia" },
       { atributo: "cant_proveedores", etiqueta: "Proveedores", formato: entero },
       { atributo: "cant_juridicas", etiqueta: "Personas jurídicas", formato: entero },
-      { atributo: "cant_humanas", etiqueta: "Personas humanas", formato: entero },
+      { atributo: "cant_fisicas", etiqueta: "Personas físicas", formato: entero },
     ],
   },
   {
@@ -69,11 +69,11 @@ export const CAPAS_NODO: CapaNodo[] = [
       atributo: "tipo_persona",
       opciones: [
         { valor: "juridica", etiqueta: "Personas jurídicas", color: "#ff682c" },
-        { valor: "humana", etiqueta: "Personas humanas", color: "#5894a7" },
+        { valor: "fisica", etiqueta: "Personas físicas", color: "#5894a7" },
       ],
     },
     campos: [
-      { atributo: "tipo_persona", etiqueta: "Tipo de persona", formato: (v) => (v === "humana" ? "Persona humana" : v === "juridica" ? "Persona jurídica" : String(v ?? "")) },
+      { atributo: "tipo_persona", etiqueta: "Tipo de persona", formato: (v) => (v === "fisica" ? "Persona física" : v === "juridica" ? "Persona jurídica" : String(v ?? "")) },
       { atributo: "cuit", etiqueta: "CUIT", formato: cuit },
       { atributo: "domicilio", etiqueta: "Domicilio" },
       { atributo: "rubros", etiqueta: "Rubros", lista: true },

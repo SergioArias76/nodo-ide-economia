@@ -3,7 +3,7 @@
 // por localidad o por provincia, y guarda lo que encuentra en proveedores.domicilio_correccion.
 //
 // Uso (con el stack levantado, desde la raíz del repo):
-//   node scripts/geocodificar-domicilios.mjs                      # personas humanas, sin tocar la base
+//   node scripts/geocodificar-domicilios.mjs                      # personas físicas, sin tocar la base
 //   node scripts/geocodificar-domicilios.mjs --aplicar            # además guarda las correcciones
 //   node scripts/geocodificar-domicilios.mjs --tipo todos --limite 50
 //
@@ -26,7 +26,7 @@ const DISTANCIA_MAXIMA_KM = 25; // un resultado más lejos de su localidad se de
 const args = process.argv.slice(2);
 const opcion = (n, defecto) => (args.includes(n) ? args[args.indexOf(n) + 1] : defecto);
 const APLICAR = args.includes("--aplicar");
-const TIPO = opcion("--tipo", "humana"); // humana | juridica | todos
+const TIPO = opcion("--tipo", "fisica"); // fisica | juridica | todos
 const LIMITE = Number(opcion("--limite", "0")) || Infinity;
 
 // --- Base de datos (psql dentro del contenedor, como scripts/cargar-proveedores.sh) ---
@@ -42,7 +42,7 @@ function psql(sql, entrada) {
   return r.stdout;
 }
 
-const tipos = TIPO === "todos" ? ["humana", "juridica"] : [TIPO];
+const tipos = TIPO === "todos" ? ["fisica", "juridica"] : [TIPO];
 const candidatos = JSON.parse(
   psql(`SELECT coalesce(json_agg(row_to_json(t)), '[]') FROM (
     SELECT p.cuit, d.domicilio_orig, d.calle, d.altura, d.localidad, d.departamento, d.provincia,
