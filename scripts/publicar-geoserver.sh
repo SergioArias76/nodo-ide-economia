@@ -47,6 +47,13 @@ existe "/workspaces/$WS/datastores/$STORE" || ok "store $STORE" "$(api POST "/wo
 EOF
 )"
 
+echo "Íconos de los estilos"
+# Junto a los SLD del workspace: los estilos los citan por nombre (ExternalGraphic relativo)
+for svg in geoserver/estilos/iconos/*.svg; do
+  ok "ícono $(basename "$svg")" "$(api PUT "/resource/workspaces/$WS/styles/$(basename "$svg")" \
+    -H 'Content-Type: image/svg+xml' --data-binary "@$svg")"
+done
+
 echo "Capas y estilos"
 # capa publicada | vista de PostGIS | título | resumen (los muestran los clientes WMS/WFS)
 while IFS="|" read -r capa vista titulo resumen; do

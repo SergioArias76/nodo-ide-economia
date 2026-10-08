@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ChevronDown, EyeOff, MapPin, Search, SlidersHorizontal, Trash, X, ZoomIn } from "lucide-react";
+import { Building, ChevronDown, EyeOff, MapPin, Search, SlidersHorizontal, Trash, User, X, ZoomIn, type LucideIcon } from "lucide-react";
 import { temaDe } from "@/lib/config";
 import { BotonIcono, IconoTema, Titulo, campo, reset } from "./ui";
 import type { CapaVisor, Localidad } from "./tipos";
@@ -15,7 +15,10 @@ type Props = {
   onQuitar: (id: string) => void;
 };
 
-const normalizar = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+// Íconos de las opciones de filtro (config.ts: filtro.opciones[].icono)
+const ICONOS_FILTRO: Record<string, LucideIcon> = { edificio: Building, persona: User };
+
+const normalizar =(s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
 // Buscador de localidades con las elegidas como etiquetas; sin ninguna elegida se muestran todas
 function FiltroLocalidad({ titulo, opciones, elegidas, onCambiar }: {
@@ -230,11 +233,21 @@ function FilaCapa({ c, localidades, onCambiar, onFiltrar, onZoom, onQuitar }: { 
                     onFiltrar(c.id, { filtro: marcada ? c.filtro!.filter((v) => v !== o.valor) : [...c.filtro!, o.valor] })
                   }
                 />
+                {/* Mismo ícono que el estilo de GeoServer (geoserver/estilos/iconos/): sirve de leyenda */}
                 <span
                   aria-hidden
-                  className="size-2.5 rounded-full ring-1 ring-white/80"
-                  style={{ background: marcada ? o.color : "transparent", boxShadow: `inset 0 0 0 1.5px ${o.color}` }}
-                />
+                  className="grid size-4 place-items-center rounded-full"
+                  style={{
+                    background: marcada ? o.color : "transparent",
+                    color: marcada ? "#ffffff" : o.color,
+                    boxShadow: `inset 0 0 0 1.5px ${o.color}`,
+                  }}
+                >
+                  {(() => {
+                    const Icono = o.icono ? ICONOS_FILTRO[o.icono] : undefined;
+                    return Icono && <Icono className="size-2.5" strokeWidth={2.6} />;
+                  })()}
+                </span>
                 {o.etiqueta}
               </label>
             );
