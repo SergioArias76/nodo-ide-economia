@@ -42,7 +42,7 @@ bash scripts/cargar-proveedores.sh
 
 Al final muestra un resumen: cantidad por tipo de persona, por precisión y cuántos quedan publicados.
 
-Opcional: ubicar mejor los domicilios que quedaron por localidad o provincia (Georef y OpenStreetMap; la primera vez tarda alrededor de una hora por personas humanas, después sale de la caché en `datos/geocodificacion/`):
+Opcional: ubicar mejor los domicilios que quedaron por localidad o provincia (Georef y OpenStreetMap; la primera vez tarda alrededor de una hora por personas físicas, después sale de la caché en `datos/geocodificacion/`):
 
 ```bash
 node scripts/geocodificar-domicilios.mjs             # revisa sin tocar la base

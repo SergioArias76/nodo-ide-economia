@@ -16,7 +16,7 @@
 - [x] Modelo de datos `proveedores` y carga de prueba desde el paquete QGIS (SIPPE 07/09/2026)
 - [x] Probar la carga con el stack levantado
 - [ ] Integración directa con el Registro (reemplazar el paquete QGIS): API propuesta en api-proveedores.md; falta el importador del reporte Excel del SIAFyC
-- [x] Mejorar la geocodificación (regeocodificación con Georef y OpenStreetMap: 1.578 personas humanas mejor ubicadas)
+- [x] Mejorar la geocodificación (regeocodificación con Georef y OpenStreetMap: 1.578 personas físicas mejor ubicadas)
 - [ ] Corregir a mano los 1.805 domicilios que no se pudieron ubicar (barrios, chacras, rutas)
 - [x] Publicación WMS/WFS de `economia:proveedores_*` (WFS en nivel BASIC, sin transacciones)
 - [x] Estilos SLD institucionales

@@ -20,9 +20,9 @@
 
 ## Datos personales
 
-Los datos del Registro de Proveedores pueden incluir información de personas humanas. Antes de publicar:
+Los datos del Registro de Proveedores pueden incluir información de personas físicas. Antes de publicar:
 
 - Publicar solo atributos de acceso público según normativa vigente (Ley 25.326 y normativa provincial).
 - GeoServer (`geoserver_ro`) lee solo vistas de `proveedores`, nunca las tablas: mail y teléfono no salen de la base.
-- Para personas humanas, evaluar publicar a nivel de localidad/departamento en lugar de domicilio exacto.
+- Para personas físicas, evaluar publicar a nivel de localidad/departamento en lugar de domicilio exacto.
 - Mantener versiones internas (completas) y públicas (reducidas) en vistas separadas.

@@ -61,7 +61,7 @@ Accept: application/json
 
 | Campo | Tipo | Obligatorio | Notas |
 |---|---|---|---|
-| `cuit` | texto, 11 dígitos sin guiones | Sí | Identifica al proveedor. El nodo deduce de los dos primeros dígitos si es persona humana (20, 23, 24, 27) o jurídica (30, 33, 34). |
+| `cuit` | texto, 11 dígitos sin guiones | Sí | Identifica al proveedor. El nodo deduce de los dos primeros dígitos si es persona física (20, 23, 24, 27) o jurídica (30, 33, 34). |
 | `nro_inscripcion` | texto | Sí | Número de inscripción en el registro (hoy `nro_comp` en el reporte). |
 | `razon_social` | texto | Sí | Nombre o razón social. |
 | `estado` | `activo`, `suspendido` o `baja` | Sí | El mapa muestra solo los `activo`. |
@@ -91,7 +91,7 @@ Cuerpo de error: `{ "error": "texto para personas", "codigo": "parametro_invalid
 
 ## Por qué así
 
-- **Domicilio en campos separados.** El reporte actual trae la calle, el número, el piso y a veces la localidad en un solo texto (`SEGUI Nro 562 Piso 3`, `MANUEL CASAS Nro 128 MEDANOS - VILLARINO`), y la localidad pegada al código postal (`9001 Rada Tilly`). Por eso el paquete de septiembre dejó 7.739 direcciones sin resolver y 85 personas humanas sin ubicar.
+- **Domicilio en campos separados.** El reporte actual trae la calle, el número, el piso y a veces la localidad en un solo texto (`SEGUI Nro 562 Piso 3`, `MANUEL CASAS Nro 128 MEDANOS - VILLARINO`), y la localidad pegada al código postal (`9001 Rada Tilly`). Por eso el paquete de septiembre dejó 7.739 direcciones sin resolver y 85 personas físicas sin ubicar.
 - **Coordenadas desde el origen.** Validar el domicilio cuando el proveedor lo carga corrige el dato una sola vez, para todos los sistemas que lo usen, no solo para el mapa.
 - **Actualización incremental.** Con `modificados_desde`, el nodo trae solo lo que cambió desde la última consulta y la carga tarda segundos.
 - **Estado explícito.** Hoy no se distinguen las bajas ni las suspensiones.

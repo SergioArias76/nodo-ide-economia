@@ -8,14 +8,14 @@
     <Name>proveedores_radicacion</Name>
     <UserStyle>
       <Title>Proveedores</Title>
-      <!-- Todos en su domicilio; las jurídicas encima de las humanas -->
+      <!-- Todos en su domicilio; las jurídicas encima de las físicas -->
       <FeatureTypeStyle>
         <Rule>
-          <Title>Persona humana</Title>
+          <Title>Persona física</Title>
           <ogc:Filter>
             <ogc:PropertyIsEqualTo>
               <ogc:PropertyName>tipo_persona</ogc:PropertyName>
-              <ogc:Literal>humana</ogc:Literal>
+              <ogc:Literal>fisica</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
           <MaxScaleDenominator>1500000</MaxScaleDenominator>
