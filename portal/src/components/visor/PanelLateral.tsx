@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Accessibility, CirclePlus, CircleQuestionMark, Layers, Map as IconoMapa, PanelLeftClose } from "lucide-react";
+import { Accessibility, CirclePlus, CircleQuestionMark, Layers, Map as IconoMapa, Moon, PanelLeftClose, Sun } from "lucide-react";
+import { elegirTema, useTema } from "@/lib/tema";
 import Buscador, { type Lugar } from "./Buscador";
 import { BotonIcono, tarjeta } from "./ui";
 import type { Panel } from "./tipos";
@@ -23,6 +24,7 @@ type Props = {
 };
 
 export default function PanelLateral({ panel, onPanel, onLugar, children }: Props) {
+  const { oscuro } = useTema();
   return (
     <div className="pointer-events-none absolute top-3 bottom-3 left-3 z-20 sm:bottom-16 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2">
       <header className={`${tarjeta} pointer-events-auto relative flex flex-col gap-2.5 overflow-hidden p-3 pt-[calc(0.75rem+3px)]`}>
@@ -57,6 +59,12 @@ export default function PanelLateral({ panel, onPanel, onLugar, children }: Prop
               onClick={() => onPanel(panel === p.id ? null : p.id)}
             />
           ))}
+          {/* Cambio rápido de tema; "según el sistema" se elige en Accesibilidad */}
+          <BotonIcono
+            icono={oscuro ? Sun : Moon}
+            etiqueta={oscuro ? "Usar modo claro" : "Usar modo oscuro"}
+            onClick={() => elegirTema(oscuro ? "claro" : "oscuro")}
+          />
           {panel && (
             <>
               <span className="mx-auto my-0.5 h-px w-6 bg-borde" aria-hidden />

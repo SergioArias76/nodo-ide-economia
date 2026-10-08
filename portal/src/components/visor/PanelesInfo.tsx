@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import {
   Camera, CirclePlus, Grid3x3, Layers, Link, LocateFixed, Map as IconoMapa, Maximize, MousePointerClick, PenLine,
-  Printer, Ruler, Search, SquareDashed,
+  Monitor, Moon, Printer, Ruler, Search, SquareDashed, Sun,
 } from "lucide-react";
 import { MAPAS_BASE, SIN_BASE, miniatura } from "@/lib/config";
+import { elegirTema, useTema, type Tema } from "@/lib/tema";
 import { Titulo, reset } from "./ui";
 
 export function PanelMapasBase({ base, onElegir }: { base: string; onElegir: (id: string) => void }) {
@@ -57,6 +58,7 @@ const AYUDA = [
   { icono: MousePointerClick, titulo: "Consultar", texto: "Hacé clic sobre un elemento del mapa para ver sus datos." },
   { icono: Layers, titulo: "Capas", texto: "Prendé o apagá capas, cambiá su opacidad o acercate a su extensión." },
   { icono: IconoMapa, titulo: "Mapa base", texto: "Elegí el fondo: OpenStreetMap, Argenmap del IGN o ninguno." },
+  { icono: Moon, titulo: "Modo claro u oscuro", texto: "Cambialo con el botón de luna o sol de la barra; en Accesibilidad podés volver al del sistema." },
   { icono: CirclePlus, titulo: "Agregar capas", texto: "Sumá capas de otros servicios WMS o abrí archivos GeoJSON, KML, GPX o Shapefile." },
   { icono: Ruler, titulo: "Medir", texto: "Distancias y superficies. Doble clic termina la medición." },
   { icono: LocateFixed, titulo: "Mi ubicación", texto: "Centra el mapa en tu posición (el navegador pide permiso)." },
@@ -112,7 +114,14 @@ export function usePreferenciasAccesibilidad() {
   }, []);
 }
 
+const TEMAS_PORTAL: { id: Tema; titulo: string; icono: typeof Sun }[] = [
+  { id: "sistema", titulo: "Sistema", icono: Monitor },
+  { id: "claro", titulo: "Claro", icono: Sun },
+  { id: "oscuro", titulo: "Oscuro", icono: Moon },
+];
+
 export function PanelAccesibilidad() {
+  const { tema } = useTema();
   const [p, setP] = useState<Preferencias>(() => {
     const html = document.documentElement;
     return {
@@ -140,6 +149,28 @@ export function PanelAccesibilidad() {
   return (
     <div className="flex flex-col gap-3">
       <Titulo>Accesibilidad</Titulo>
+      <fieldset className="m-0 flex flex-col gap-2 rounded-lg border border-borde px-3 pt-2 pb-3">
+        <legend className="px-1 text-sm font-semibold">Tema</legend>
+        <div role="radiogroup" aria-label="Tema" className="grid grid-cols-3 gap-1 rounded-md bg-superficie p-1">
+          {TEMAS_PORTAL.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="radio"
+              aria-checked={tema === t.id}
+              onClick={() => elegirTema(t.id)}
+              className={
+                `${reset} inline-flex cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1.5 text-xs transition-colors ` +
+                "focus-visible:outline-2 focus-visible:outline-acento " +
+                (tema === t.id ? "bg-fondo font-semibold text-texto shadow-sm" : "text-tenue hover:text-texto")
+              }
+            >
+              <t.icono className="size-3.5" aria-hidden />
+              {t.titulo}
+            </button>
+          ))}
+        </div>
+      </fieldset>
       {opciones.map((o) => (
         <label key={o.clave} className="flex cursor-pointer items-start gap-3 rounded-lg border border-borde px-3 py-2.5">
           <input

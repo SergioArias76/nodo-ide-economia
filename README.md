@@ -53,7 +53,7 @@ Visor propio en `/visor`, con las herramientas del visor de IDERA (mapa.idera.go
 - **Mapas base**: OpenStreetMap (por defecto), Argenmap del IGN (normal, gris y oscuro) o sin mapa base.
 - **Herramientas**: búsqueda de localidades, consulta de datos con clic, medición de distancias y superficies, dibujo (con exportación a GeoJSON), grilla de coordenadas, mi ubicación, captura PNG e impresión en PDF.
 - **Agregar capas** de otros servicios WMS o de archivos GeoJSON, KML, GPX y Shapefile.
-- **Accesibilidad**: tema claro y oscuro, texto grande, alto contraste, movimiento reducido y uso completo con teclado.
+- **Accesibilidad**: modo claro u oscuro (a elección o según el sistema), texto grande, alto contraste, movimiento reducido y uso completo con teclado.
 - El estado del mapa (zoom, centro, base, capas y filtros) queda en la URL, así se puede compartir.
 
 Diseño: [PRODUCT.md](PRODUCT.md) y [DESIGN.md](DESIGN.md). El catálogo de IDERA se regenera con `node scripts/actualizar-capas-idera.mjs`.

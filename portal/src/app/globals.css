@@ -26,8 +26,9 @@
   --tinta: #13262e; /* avisos y etiquetas sobre el mapa */
 }
 
+/* Tema oscuro: el del sistema, salvo que se elija otro (data-tema en <html>, ver lib/tema.ts) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-tema="claro"]) {
     color-scheme: dark;
     --fondo: #0e1a20;
     --texto: #e5eef1;
@@ -38,6 +39,17 @@
     --superficie: #15252d;
     --sombra: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -4px rgb(0 0 0 / 0.45);
   }
+}
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+  --fondo: #0e1a20;
+  --texto: #e5eef1;
+  --tenue: #9bb2bb;
+  --borde: #29414c;
+  --acento: #7cc0d6;
+  --acento-texto: #0e1a20;
+  --superficie: #15252d;
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -4px rgb(0 0 0 / 0.45);
 }
 
 /* Los tokens del portal como utilidades de Tailwind (bg-superficie, text-tenue, border-borde, font-marca…) */
@@ -98,7 +110,17 @@
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--borde);
   }
-  .cabecera nav { display: flex; gap: 1rem; }
+  .cabecera nav { display: flex; align-items: center; gap: 1rem; }
+  .boton-tema {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    color: var(--texto);
+    cursor: pointer;
+  }
+  .boton-tema:hover { background: var(--superficie); }
   .cabecera nav a { text-decoration: none; }
   .marca { font-weight: 700; text-decoration: none; color: var(--texto); }
   .marca span { color: var(--acento); }
@@ -165,7 +187,9 @@
 /* Preferencias de accesibilidad del visor (atributos en <html>) */
 html[data-texto-grande] { font-size: 112.5%; }
 
-html[data-alto-contraste] {
+/* :root y al final: tiene que ganarle a cualquier tema */
+:root[data-alto-contraste] {
+  color-scheme: light;
   --fondo: #ffffff;
   --texto: #000000;
   --tenue: #1a1a1a;
