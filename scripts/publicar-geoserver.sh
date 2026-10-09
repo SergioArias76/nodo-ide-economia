@@ -77,6 +77,7 @@ while IFS="|" read -r capa vista titulo resumen; do
 done <<'EOF'
 proveedores_radicacion|v_proveedores_publico|Proveedores del Estado provincial|Proveedores inscriptos en el Sistema Provincial de Proveedores del Estado (SIPPE) del Chubut, con CUIT, rubros y tipo de persona. Personas jurídicas y físicas en su domicilio; las que no tienen calle y altura, en el centro de su localidad.
 proveedores_por_localidad|v_proveedores_por_localidad|Proveedores del Estado provincial por localidad|Cantidad de proveedores inscriptos en el SIPPE del Chubut por localidad, discriminados en personas jurídicas y físicas.
+proveedores_rubros|v_proveedores_rubros|Rubros de los proveedores del Estado provincial|Rubros en los que están inscriptos los proveedores del SIPPE del Chubut, con la cantidad de proveedores de cada uno. Tabla sin geometría (solo WFS).
 EOF
 
 # Las teselas cacheadas quedaron con el estilo anterior

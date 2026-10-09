@@ -48,11 +48,16 @@ bash scripts/configurar-geonetwork.sh           # contraseña de admin de GeoNet
 
 Visor propio en `/visor`, con las herramientas del visor de IDERA (mapa.idera.gob.ar) y la identidad del Gobierno del Chubut:
 
-- **Capas del nodo**: proveedores del Estado (ícono por domicilio: edificio para persona jurídica, persona para física; con filtros por persona jurídica o física y por localidad) y cantidad de proveedores por localidad.
+- **Capas del nodo**: proveedores del Estado (ícono por domicilio: edificio para persona jurídica, persona para física; con filtros por persona jurídica o física, por localidad y por rubro) y cantidad de proveedores por localidad.
 - **Capas nacionales** del catálogo de IDERA agrupadas por tema (escuelas, hospitales, transporte, hidrografía…), con opacidad, leyenda y zoom a la extensión.
 - **Mapas base**: OpenStreetMap (por defecto), Argenmap del IGN (normal, gris y oscuro) o sin mapa base.
 - **Herramientas**: búsqueda de localidades, consulta de datos con clic, medición de distancias y superficies, dibujo (con exportación a GeoJSON), grilla de coordenadas, mi ubicación, captura PNG e impresión en PDF.
-- **Análisis geográfico**, con las funciones del geoportal del INDEC: conteo por área, estadísticas (cuenta, suma, promedio, máximo y mínimo, en total o agrupadas por un campo), área de influencia, superposición (intersección, diferencia y unión), distancias a un destino (en línea recta o por red vial a pie, en bicicleta o en vehículo) y geometrías derivadas (centroide, envolvente, centro de masa, punto interior). Se aplica a la extensión del mapa, a toda la capa o a un área dibujada. Analiza las capas del nodo (respetando sus filtros), las nacionales que ofrecen WFS, los archivos agregados, los dibujos y los resultados anteriores. Los resultados quedan como capas descargables en GeoJSON y las tablas, en CSV. Se calcula en el navegador con Turf; la red vial usa el servidor OSRM público de FOSSGIS (routing.openstreetmap.de).
+- **Análisis geográfico**, con las funciones y el comportamiento del geoportal estadístico del INDEC:
+  - Conteo por área (exacto, lo cuenta el servidor), estadísticas (cuenta, suma, promedio, máximo o mínimo de un campo, en total o sumarizadas por otro campo; los rubros se cuentan uno por uno), área de influencia (con "Disolver áreas de influencia" en la capa de resultado), superposición elemento por elemento (intersección, diferencia, unión), distancias a uno o más destinos (en línea recta o por red vial a pie, en bicicleta o en vehículo, con duración) y geometrías derivadas (centroide, envolvente, centro de masa, punto en el elemento).
+  - Área de análisis: extensión del mapa, toda la capa o un área dibujada; se aplica en el servidor (WFS con `INTERSECTS`).
+  - Capas de entrada: las encendidas del nodo, con sus filtros (por ejemplo, proveedores de un rubro), las nacionales que publican WFS (42 de 76, como edificios de seguridad, escuelas o salud), archivos, dibujos y resultados anteriores.
+  - Panel de datos a la derecha, como el del INDEC: tablas de estadísticas, distancias y atributos de cualquier capa analizable, con columnas ordenables, descarga CSV y clic en la fila para ir al elemento. Las capas de resultado tienen color, tabla de atributos y descarga GeoJSON.
+  - Se calcula en el navegador con Turf; la red vial usa el servidor OSRM público de FOSSGIS (routing.openstreetmap.de).
 - **Agregar capas** de otros servicios WMS o de archivos GeoJSON, KML, GPX y Shapefile.
 - **Accesibilidad**: modo claro u oscuro (a elección o según el sistema), texto grande, alto contraste, movimiento reducido y uso completo con teclado.
 - El estado del mapa (zoom, centro, base, capas y filtros) queda en la URL, así se puede compartir.

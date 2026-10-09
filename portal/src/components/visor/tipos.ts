@@ -19,9 +19,15 @@ export type CapaVisor = {
   consultable?: boolean; // false: el servicio no devuelve datos en JSON
   exportable?: boolean; // false: el servicio no permite CORS y bloquea la captura
   wfs?: boolean; // capas del catálogo: se pueden descargar por WFS para el análisis geográfico
+  capaWfs?: string; // nombre de la capa en el WFS, si no es el mismo que en el WMS
   filtro?: string[]; // valores elegidos del filtro de la capa (nodo.filtro)
   localidades?: string[]; // localidades elegidas (nodo.filtroLocalidad); vacío: todas
+  rubros?: string[]; // rubros elegidos (nodo.filtroRubro); vacío: todos
+  proceso?: string; // capas de resultado del análisis geográfico: proceso que las generó
 };
+
+// Opción de los filtros con buscador (localidades, rubros)
+export type OpcionFiltro = { nombre: string; detalle?: string; cantidad: number };
 
 // Localidad con proveedores, para el filtro por localidad (coordenada en EPSG:3857)
 export type Localidad = { nombre: string; departamento: string; provincia: string; cantidad: number; coordenada: number[] };
