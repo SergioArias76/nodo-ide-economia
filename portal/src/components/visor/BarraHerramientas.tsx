@@ -47,7 +47,7 @@ export default function BarraHerramientas(p: Props) {
   const alternar = (m: Modo) => p.onModo(p.modo === m ? null : m);
 
   return (
-    <div className={"pointer-events-none absolute top-3 right-3 z-10 flex flex-col items-end gap-2 max-sm:top-auto max-sm:right-[4.25rem] max-sm:bottom-[3.25rem] max-sm:left-3 max-sm:flex-col-reverse max-sm:items-start " + (p.ocultaEnMovil ? "max-sm:hidden" : "")}>
+    <div className={"pointer-events-none absolute top-3 right-3 z-10 sm:right-[calc(var(--panel-datos)+0.75rem)] flex flex-col items-end gap-2 max-sm:top-auto max-sm:right-[4.25rem] max-sm:bottom-[3.25rem] max-sm:left-3 max-sm:flex-col-reverse max-sm:items-start " + (p.ocultaEnMovil ? "max-sm:hidden" : "")}>
       <div role="toolbar" aria-label="Herramientas" className={`${tarjeta} pointer-events-auto flex flex-wrap items-center justify-end gap-0.5 p-1 max-sm:max-w-full max-sm:flex-nowrap max-sm:justify-start max-sm:overflow-x-auto`}>
         <BotonIcono icono={Ruler} etiqueta="Medir distancia" activo={p.modo === "medir-distancia"} onClick={() => alternar("medir-distancia")} />
         <BotonIcono icono={SquareDashed} etiqueta="Medir superficie" activo={p.modo === "medir-area"} onClick={() => alternar("medir-area")} />

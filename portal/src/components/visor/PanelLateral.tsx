@@ -74,14 +74,14 @@ export default function PanelLateral({ panel, onPanel, onLugar, minimizado, chil
             </>
           )}
         </nav>
-        {panel && (
-          <section
-            aria-label={PANELES.find((p) => p.id === panel)?.etiqueta}
-            className={`${tarjeta} pointer-events-auto max-h-full min-w-0 flex-1 overflow-y-auto p-3 ${minimizado ? "max-sm:hidden" : ""}`}
-          >
-            {children}
-          </section>
-        )}
+        {/* Siempre montado (oculto sin panel): el análisis conserva lo elegido aunque se cierre el panel */}
+        <section
+          hidden={!panel}
+          aria-label={PANELES.find((p) => p.id === panel)?.etiqueta}
+          className={`${tarjeta} pointer-events-auto max-h-full min-w-0 flex-1 overflow-y-auto p-3 ${minimizado ? "max-sm:hidden" : ""}`}
+        >
+          {children}
+        </section>
       </div>
     </div>
   );

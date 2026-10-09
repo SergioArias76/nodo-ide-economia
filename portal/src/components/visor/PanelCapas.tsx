@@ -1,22 +1,29 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Building, ChevronDown, Download, EyeOff, MapPin, Search, SlidersHorizontal, Trash, User, X, ZoomIn, type LucideIcon } from "lucide-react";
+import {
+  Blend, Building, ChevronDown, Download, EyeOff, MapPin, Search, SlidersHorizontal, Table, Tag, Trash, User, X, ZoomIn, type LucideIcon,
+} from "lucide-react";
 import type VectorLayer from "ol/layer/Vector";
 import type VectorSource from "ol/source/Vector";
 import GeoJSON from "ol/format/GeoJSON";
 import { temaDe } from "@/lib/config";
 import { descargarTexto } from "./exportar";
 import { BotonIcono, IconoTema, Titulo, campo, reset } from "./ui";
-import type { CapaVisor, Localidad } from "./tipos";
+import { esAnalizable } from "./analisis";
+import type { CapaVisor, Localidad, OpcionFiltro } from "./tipos";
 
 type Props = {
   capas: CapaVisor[];
   onCambiar: (id: string, cambios: Partial<Pick<CapaVisor, "visible" | "opacidad">>) => void;
   localidades: Localidad[]; // opciones del filtro por localidad
-  onFiltrar: (id: string, cambios: Partial<Pick<CapaVisor, "filtro" | "localidades">>) => void;
+  rubros: OpcionFiltro[]; // opciones del filtro por rubro
+  onFiltrar: (id: string, cambios: Partial<Pick<CapaVisor, "filtro" | "localidades" | "rubros">>) => void;
   onZoom: (c: CapaVisor) => void;
   onQuitar: (id: string) => void;
+  onAtributos: (c: CapaVisor) => void; // tabla de atributos en el panel de datos
+  onColor: (id: string, color: string) => void; // capas de archivo y resultados
+  onDisolver: (c: CapaVisor) => void; // "Disolver áreas de influencia", como en el INDEC
 };
 
 // Íconos de las opciones de filtro (config.ts: filtro.opciones[].icono)
@@ -24,12 +31,15 @@ const ICONOS_FILTRO: Record<string, LucideIcon> = { edificio: Building, persona:
 
 const normalizar =(s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
-// Buscador de localidades con las elegidas como etiquetas; sin ninguna elegida se muestran todas
-function FiltroLocalidad({ titulo, opciones, elegidas, onCambiar }: {
+// Buscador con los valores elegidos como etiquetas (localidades, rubros); sin ninguno elegido se muestran todos
+function FiltroLista({ titulo, criterio, icono: Icono, opciones, elegidas, onCambiar, textos }: {
   titulo: string;
-  opciones: Localidad[];
+  criterio: string; // "localidad", "rubro"
+  icono: LucideIcon;
+  opciones: OpcionFiltro[];
   elegidas: string[];
   onCambiar: (elegidas: string[]) => void;
+  textos: { filtrar: string; otra: string; vacio: string; todas: string };
 }) {
   const [texto, setTexto] = useState("");
   const [abierto, setAbierto] = useState(false);
@@ -45,7 +55,7 @@ function FiltroLocalidad({ titulo, opciones, elegidas, onCambiar }: {
     : [];
   const mostrar = abierto && buscado !== "";
 
-  function elegir(l: Localidad) {
+  function elegir(l: OpcionFiltro) {
     onCambiar([...elegidas, l.nombre]);
     setTexto("");
     setActivo(-1);
@@ -54,14 +64,14 @@ function FiltroLocalidad({ titulo, opciones, elegidas, onCambiar }: {
   return (
     <div className="flex flex-col gap-1.5 px-3 pt-0.5 pb-2 pl-[2.1rem]">
       {elegidas.length > 0 && (
-        <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0" aria-label={`Localidades de ${titulo}`}>
+        <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0" aria-label={`Filtro por ${criterio} de ${titulo}`}>
           {elegidas.map((nombre) => (
             <li
               key={nombre}
-              className="inline-flex items-center gap-1 rounded-full border border-acento/50 bg-acento/10 py-0.5 pr-0.5 pl-2 text-xs text-texto"
+              className="inline-flex max-w-full items-center gap-1 rounded-full border border-acento/50 bg-acento/10 py-0.5 pr-0.5 pl-2 text-xs leading-tight text-texto"
             >
-              <MapPin className="size-3 text-acento" aria-hidden />
-              {nombre}
+              <Icono className="size-3 shrink-0 text-acento" aria-hidden />
+              <span className="min-w-0">{nombre}</span>
               <button
                 type="button"
                 aria-label={`Quitar ${nombre}`}
@@ -80,22 +90,22 @@ function FiltroLocalidad({ titulo, opciones, elegidas, onCambiar }: {
                 onClick={() => onCambiar([])}
                 className={`${reset} cursor-pointer py-0.5 text-xs text-acento hover:underline`}
               >
-                Quitar todas
+                {textos.todas}
               </button>
             </li>
           )}
         </ul>
       )}
       <div className="relative">
-        <MapPin className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-tenue" aria-hidden />
+        <Icono className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-tenue" aria-hidden />
         <input
           type="search"
           role="combobox"
           aria-expanded={mostrar}
           aria-controls={id}
           aria-activedescendant={activo >= 0 ? `${id}-${activo}` : undefined}
-          aria-label={`Filtrar ${titulo} por localidad`}
-          placeholder={elegidas.length ? "Sumar otra localidad" : "Filtrar por localidad"}
+          aria-label={`Filtrar ${titulo} por ${criterio}`}
+          placeholder={elegidas.length ? textos.otra : textos.filtrar}
           value={texto}
           onChange={(e) => {
             setTexto(e.target.value);
@@ -121,9 +131,9 @@ function FiltroLocalidad({ titulo, opciones, elegidas, onCambiar }: {
             role="listbox"
             className="absolute inset-x-0 top-full z-20 m-0 mt-1 max-h-64 list-none overflow-y-auto rounded-lg border border-borde bg-fondo p-1 shadow-lg"
           >
-            {sugeridas.length === 0 && <li className="px-2.5 py-1.5 text-xs text-tenue">No hay proveedores en esa localidad</li>}
+            {sugeridas.length === 0 && <li className="px-2.5 py-1.5 text-xs text-tenue">{textos.vacio}</li>}
             {sugeridas.map((l, i) => (
-              <li key={`${l.nombre}-${l.provincia}`} id={`${id}-${i}`} role="option" aria-selected={i === activo}>
+              <li key={`${l.nombre}-${l.detalle ?? ""}`} id={`${id}-${i}`} role="option" aria-selected={i === activo}>
                 <button
                   type="button"
                   tabIndex={-1}
@@ -136,7 +146,7 @@ function FiltroLocalidad({ titulo, opciones, elegidas, onCambiar }: {
                 >
                   <span className="min-w-0 flex-1 text-sm leading-tight">
                     {l.nombre}
-                    <span className="block text-xs text-tenue">{[l.departamento, l.provincia].filter(Boolean).join(", ")}</span>
+                    {l.detalle && <span className="block text-xs text-tenue">{l.detalle}</span>}
                   </span>
                   <span className="shrink-0 text-xs text-tenue tabular-nums">
                     {l.cantidad.toLocaleString("es-AR")} {l.cantidad === 1 ? "proveedor" : "proveedores"}
@@ -191,7 +201,10 @@ function descargarCapa(c: CapaVisor) {
   descargarTexto(json, `${nombre || "capa"}.geojson`, "application/geo+json");
 }
 
-function FilaCapa({ c, localidades, onCambiar, onFiltrar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Props, "capas">) {
+const opcionesLocalidad = (ls: Localidad[]): OpcionFiltro[] =>
+  ls.map((l) => ({ nombre: l.nombre, detalle: [l.departamento, l.provincia].filter(Boolean).join(", "), cantidad: l.cantidad }));
+
+function FilaCapa({ c, localidades, rubros, onCambiar, onFiltrar, onZoom, onQuitar, onAtributos, onColor, onDisolver }: { c: CapaVisor } & Omit<Props, "capas">) {
   const [ajustes, setAjustes] = useState(false);
   return (
     <li className="rounded-lg transition-colors hover:bg-superficie">
@@ -211,9 +224,12 @@ function FilaCapa({ c, localidades, onCambiar, onFiltrar, onZoom, onQuitar }: { 
           {!c.leyenda && <Simbolo c={c} />}
         </label>
         {c.extension && <BotonIcono icono={ZoomIn} etiqueta="Zoom a la capa" tamano="sm" className="text-tenue" onClick={() => onZoom(c)} />}
+        {esAnalizable(c) && (
+          <BotonIcono icono={Table} etiqueta="Tabla de atributos" tamano="sm" className="text-tenue" onClick={() => onAtributos(c)} />
+        )}
         <BotonIcono
           icono={SlidersHorizontal}
-          etiqueta="Opacidad"
+          etiqueta={c.origen === "archivo" ? "Estilo y opacidad" : "Opacidad"}
           tamano="sm"
           activo={ajustes}
           className={ajustes ? "" : "text-tenue"}
@@ -270,12 +286,48 @@ function FilaCapa({ c, localidades, onCambiar, onFiltrar, onZoom, onQuitar }: { 
         </fieldset>
       )}
       {c.nodo?.filtroLocalidad && c.localidades && localidades.length > 0 && (
-        <FiltroLocalidad
+        <FiltroLista
           titulo={c.titulo}
-          opciones={localidades}
+          criterio="localidad"
+          icono={MapPin}
+          opciones={opcionesLocalidad(localidades)}
           elegidas={c.localidades}
           onCambiar={(elegidas) => onFiltrar(c.id, { localidades: elegidas })}
+          textos={{ filtrar: "Filtrar por localidad", otra: "Sumar otra localidad", vacio: "No hay proveedores en esa localidad", todas: "Quitar todas" }}
         />
+      )}
+      {c.nodo?.filtroRubro && c.rubros && rubros.length > 0 && (
+        <FiltroLista
+          titulo={c.titulo}
+          criterio="rubro"
+          icono={Tag}
+          opciones={rubros}
+          elegidas={c.rubros}
+          onCambiar={(elegidas) => onFiltrar(c.id, { rubros: elegidas })}
+          textos={{ filtrar: "Filtrar por rubro", otra: "Sumar otro rubro", vacio: "No hay proveedores en ese rubro", todas: "Quitar todos" }}
+        />
+      )}
+      {c.proceso === "influencia" && (
+        <div className="px-3 pt-0.5 pb-2 pl-[2.1rem]">
+          <button
+            type="button"
+            onClick={() => onDisolver(c)}
+            className={`${reset} inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-borde px-2 py-1 text-xs hover:bg-fondo`}
+          >
+            <Blend className="size-3.5 text-acento" aria-hidden /> Disolver áreas de influencia
+          </button>
+        </div>
+      )}
+      {ajustes && c.origen === "archivo" && (
+        <label className="flex items-center gap-3 px-3 pt-1 pl-[2.1rem] text-xs text-tenue">
+          Color
+          <input
+            type="color"
+            value={c.color ?? "#7048e8"}
+            onChange={(e) => onColor(c.id, e.target.value)}
+            className="m-0 h-6 w-10 cursor-pointer rounded border border-borde bg-transparent p-0"
+          />
+        </label>
       )}
       {ajustes && (
         <label className="flex items-center gap-3 px-3 pt-1 pb-2.5 pl-[2.1rem] text-xs text-tenue">
@@ -303,7 +355,7 @@ function FilaCapa({ c, localidades, onCambiar, onFiltrar, onZoom, onQuitar }: { 
   );
 }
 
-export default function PanelCapas({ capas, localidades, onCambiar, onFiltrar, onZoom, onQuitar }: Props) {
+export default function PanelCapas({ capas, ...acciones }: Props) {
   const [filtro, setFiltro] = useState("");
   // Al abrir, solo se despliegan los grupos propios del nodo y los que tienen capas encendidas
   const [cerrados, setCerrados] = useState<Record<string, boolean>>(() =>
@@ -325,7 +377,7 @@ export default function PanelCapas({ capas, localidades, onCambiar, onFiltrar, o
           <button
             type="button"
             disabled={!hayActivas}
-            onClick={() => capas.forEach((c) => c.visible && onCambiar(c.id, { visible: false }))}
+            onClick={() => capas.forEach((c) => c.visible && acciones.onCambiar(c.id, { visible: false }))}
             className={`${reset} inline-flex cursor-pointer items-center gap-1 text-xs text-acento hover:underline disabled:cursor-default disabled:text-tenue disabled:no-underline`}
           >
             <EyeOff className="size-3.5" aria-hidden /> Desactivar todas
@@ -381,7 +433,7 @@ export default function PanelCapas({ capas, localidades, onCambiar, onFiltrar, o
                   {visibles
                     .filter((c) => c.grupo === g)
                     .map((c) => (
-                      <FilaCapa key={c.id} c={c} localidades={localidades} onCambiar={onCambiar} onFiltrar={onFiltrar} onZoom={onZoom} onQuitar={onQuitar} />
+                      <FilaCapa key={c.id} c={c} {...acciones} />
                     ))}
                 </ul>
               )}

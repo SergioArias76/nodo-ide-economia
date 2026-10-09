@@ -1,12 +1,16 @@
-// Geoprocesos del panel "Análisis geográfico", con las mismas funciones que el geoportal del INDEC:
+// Geoprocesos del panel "Análisis geográfico", con las mismas funciones y el mismo comportamiento que el
+// geoportal estadístico del INDEC (portalgeoestadistico.indec.gob.ar, js/geoprocess.json y js/core.js):
 // conteo por área, estadísticas, área de influencia, superposición, distancias y geometrías derivadas.
-// Se calculan en el navegador con Turf sobre GeoJSON en EPSG:4326; los datos de las capas WMS se
-// piden por WFS al mismo servidor.
+//
+// Como en el INDEC, el área de análisis se aplica en el servidor: las capas WMS se piden por WFS con
+// CQL_FILTER=INTERSECTS(geom, área) (y el conteo, con resultType=hits); los archivos, dibujos y resultados
+// se filtran en el navegador. Los cálculos se hacen con Turf sobre GeoJSON en EPSG:4326.
 import type Feature from "ol/Feature";
 import type VectorLayer from "ol/layer/Vector";
 import type VectorSource from "ol/source/Vector";
 import type ImageWMS from "ol/source/ImageWMS";
 import GeoJSON from "ol/format/GeoJSON";
+import WKT from "ol/format/WKT";
 import { fromExtent } from "ol/geom/Polygon";
 import type { Extent } from "ol/extent";
 import type { Geometry, Polygon } from "ol/geom";
@@ -15,12 +19,10 @@ import type {
   FeatureCollection,
   Geometry as GGeometry,
   GeoJsonProperties,
-  LineString as GLineString,
   MultiPolygon as GMultiPolygon,
-  Point as GPoint,
   Polygon as GPolygon,
 } from "geojson";
-import { PUBLIC_GEOSERVER, WORKSPACE } from "@/lib/config";
+import { PUBLIC_GEOSERVER, WORKSPACE, type Campo } from "@/lib/config";
 import { ATRIBUTOS_INTERNOS, ATRIBUTOS_NOMBRE, etiquetaDe } from "./consulta";
 import type { CapaVisor } from "./tipos";
 
@@ -31,32 +33,35 @@ const cargarTurf = () => (turfCargado ??= import("@turf/turf"));
 
 export type GFeatures = GFeature<GGeometry, GeoJsonProperties>[];
 
-// Máximo de elementos que se piden por WFS (los 12.000 proveedores pesan unos 8 MB); con más, se avisa
-// que el resultado es parcial
+// Máximo de elementos que se descargan por WFS (los 12.000 proveedores pesan unos 8 MB). El conteo no
+// tiene tope: lo resuelve el servidor.
 export const MAXIMO = 20000;
 // El servidor público de ruteo (FOSSGIS, routing.openstreetmap.de) acepta hasta 100 puntos por consulta
 const RUTEO = "https://routing.openstreetmap.de";
-const LOTE_RUTEO = 90;
-export const MAXIMO_RUTEO = 450;
+const PUNTOS_RUTEO = 95;
+export const MAXIMO_RUTEO = 500;
+export const MAXIMO_DESTINOS = 10;
+// Algunos servicios nacionales tardan (el del IGN, a veces más de 40 segundos): se espera hasta 90
+const ESPERA = 90_000;
 
 export const PROCESOS = {
-  conteo: { nombre: "Conteo por área", ayuda: "Cuenta los elementos de una capa que tocan el área de análisis." },
+  conteo: { nombre: "Conteo por área", ayuda: "Cuenta los elementos de una capa que intersectan con el área de análisis." },
   estadisticas: {
     nombre: "Estadísticas",
-    ayuda: "Suma, promedio, máximo o mínimo de un campo en el área de análisis, en total o agrupado por otro campo.",
+    ayuda: "Cuenta, suma, promedio, máximo o mínimo de un campo numérico en el área de análisis, en total o sumarizado por otro campo.",
   },
   influencia: { nombre: "Área de influencia", ayuda: "Genera el área a una distancia dada alrededor de cada elemento (buffer)." },
   superposicion: {
     nombre: "Superposición",
-    ayuda: "Cruza dos capas: lo que comparten (intersección), lo que queda fuera de la segunda (diferencia) o ambas juntas (unión).",
+    ayuda: "Cruza cada elemento de la capa de entrada con los de la capa de superposición: intersección, diferencia o unión.",
   },
   distancias: {
     nombre: "Distancias",
-    ayuda: "Distancia de cada elemento a un destino, en línea recta o por la red vial (a pie, en bicicleta o en vehículo).",
+    ayuda: "Distancia de cada elemento a uno o más destinos, en línea recta o por la red vial (a pie, en bicicleta o en vehículo).",
   },
   geometrias: {
     nombre: "Geometrías derivadas",
-    ayuda: "Reemplaza cada elemento por su centroide, su rectángulo envolvente, su centro de masa o un punto dentro de él.",
+    ayuda: "Reemplaza cada elemento por su centroide, su envolvente, su centro de masa o un punto sobre el elemento.",
   },
 } as const;
 export type Proceso = keyof typeof PROCESOS;
@@ -64,17 +69,11 @@ export type Proceso = keyof typeof PROCESOS;
 export type AreaAnalisis = "mapa" | "capa" | "dibujo";
 export const AREAS: { valor: AreaAnalisis; etiqueta: string }[] = [
   { valor: "mapa", etiqueta: "Extensión del mapa" },
-  { valor: "capa", etiqueta: "Toda la capa de entrada" },
-  { valor: "dibujo", etiqueta: "Dibujar un área" },
+  { valor: "capa", etiqueta: "Extensión de la capa de entrada" },
+  { valor: "dibujo", etiqueta: "Dibujar área" },
 ];
 
-export const OPERACIONES = {
-  cuenta: "Cuenta",
-  suma: "Suma",
-  promedio: "Promedio",
-  maximo: "Máximo",
-  minimo: "Mínimo",
-} as const;
+export const OPERACIONES = { cuenta: "Cuenta", suma: "Suma", promedio: "Promedio", maximo: "Máximo", minimo: "Mínimo" } as const;
 export type Operacion = keyof typeof OPERACIONES;
 
 export const RELACIONES = { interseccion: "Intersección", diferencia: "Diferencia", union: "Unión" } as const;
@@ -88,9 +87,22 @@ export const DERIVADAS = {
 } as const;
 export type Derivada = keyof typeof DERIVADAS;
 
-export const MODOS = { auto: "Vehículo", bici: "Bicicleta", pie: "A pie" } as const;
+export const MODOS = { pie: "A pie", bici: "Bicicleta", auto: "Vehículo" } as const;
 export type ModoTransporte = keyof typeof MODOS;
 const PERFIL: Record<ModoTransporte, string> = { auto: "car", bici: "bike", pie: "foot" };
+
+// --- Tablas del panel de datos ---
+
+export type Columna = { clave: string; etiqueta: string; numerico?: boolean; formato?: (v: unknown) => string };
+export type Tabla = {
+  titulo: string;
+  subtitulo?: string;
+  columnas: Columna[];
+  filas: Record<string, unknown>[];
+  geometrias?: (Geometry | undefined)[]; // EPSG:3857, para ir al elemento con clic en la fila
+  archivo: string; // nombre del CSV
+  aviso?: string;
+};
 
 // --- Capas de entrada ---
 
@@ -105,139 +117,192 @@ export type Entrada = {
 // Capas que se pueden analizar: las del nodo y las nacionales con WFS, los archivos y los resultados
 export const esAnalizable = (c: CapaVisor) => c.origen === "nodo" || c.origen === "archivo" || (c.origen === "catalogo" && c.wfs === true);
 
+const esVectorial = (e: Entrada) => e.features != null || e.capa?.origen === "archivo";
+
+const featuresDe = (e: Entrada): Feature[] =>
+  e.features ? e.features() : (((e.capa!.capa as VectorLayer<VectorSource>).getSource()?.getFeatures() ?? []) as Feature[]);
+
 const formato = new GeoJSON();
+const wkt = new WKT();
+
 const a4326 = (features: Feature[]) =>
   (formato.writeFeaturesObject(features, { featureProjection: "EPSG:3857", dataProjection: "EPSG:4326" }) as FeatureCollection)
     .features as GFeatures;
+
+const a4326Geom = (g: Geometry) =>
+  formato.writeGeometryObject(g, { featureProjection: "EPSG:3857", dataProjection: "EPSG:4326" }) as GGeometry;
 
 // Features de OpenLayers (EPSG:3857) a partir de GeoJSON en EPSG:4326
 export const aMapa = (features: GFeatures) =>
   formato.readFeatures({ type: "FeatureCollection", features }, { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" });
 
+export const areaDeExtension = (extension: Extent) => fromExtent(extension);
+
 // URL y nombre WFS de una capa WMS (GeoServer atiende WFS en el mismo punto de acceso)
 function wfsDe(c: CapaVisor) {
   if (c.origen === "nodo") return { url: `${PUBLIC_GEOSERVER}/${WORKSPACE}/wfs`, nombre: c.id };
   const fuente = c.capa.getSource() as ImageWMS;
-  return { url: fuente.getUrl()!, nombre: String(fuente.getParams().LAYERS) };
+  return { url: fuente.getUrl()!, nombre: c.capaWfs ?? String(fuente.getParams().LAYERS) };
 }
 
-async function pedirWfs(c: CapaVisor, extension: Extent | null, cantidad = MAXIMO) {
+// --- Esquema de la capa (DescribeFeatureType): nombre de la geometría y campos con su tipo ---
+
+export type CampoEntrada = { atributo: string; etiqueta: string; numerico: boolean; formato?: Campo["formato"]; lista?: boolean };
+type Esquema = { geometria: string; campos: CampoEntrada[] };
+
+const NUMERICOS = /^(xsd:)?(int|integer|long|short|byte|double|float|decimal|number)$/i;
+const esquemas = new Map<string, Promise<Esquema>>();
+
+function esquemaWfs(c: CapaVisor): Promise<Esquema> {
   const { url, nombre } = wfsDe(c);
-  const q = new URLSearchParams({
-    service: "WFS",
-    version: "2.0.0",
-    request: "GetFeature",
-    typeNames: nombre,
-    srsName: "EPSG:3857",
-    outputFormat: "application/json",
-    count: String(cantidad),
-  });
+  const clave = `${url}#${nombre}`;
+  if (!esquemas.has(clave)) {
+    const q = new URLSearchParams({
+      service: "WFS",
+      version: "2.0.0",
+      request: "DescribeFeatureType",
+      typeNames: nombre,
+      outputFormat: "application/json",
+    });
+    const pedido = fetch(`${url}?${q}`, { signal: AbortSignal.timeout(ESPERA) })
+      .then((r) => r.json())
+      .then((d) => {
+        const props = d.featureTypes[0].properties as { name: string; type: string }[];
+        const geometria = props.find((p) => p.type.startsWith("gml:"))?.name;
+        if (!geometria) throw new Error("sin geometría");
+        return {
+          geometria,
+          campos: props
+            .filter((p) => !p.type.startsWith("gml:") && !ATRIBUTOS_INTERNOS.test(p.name))
+            .map((p) => {
+              const propio = c.nodo?.campos.find((x) => x.atributo === p.name);
+              return { atributo: p.name, etiqueta: propio?.etiqueta ?? etiquetaDe(p.name), numerico: NUMERICOS.test(p.type), formato: propio?.formato, lista: propio?.lista };
+            }),
+        };
+      });
+    pedido.catch(() => esquemas.delete(clave)); // se reintenta la próxima vez
+    esquemas.set(clave, pedido);
+  }
+  return esquemas.get(clave)!;
+}
+
+// Campos de un archivo, dibujo o resultado: los de sus elementos (numérico si todos los valores lo son)
+function camposVectoriales(features: Feature[]): CampoEntrada[] {
+  const tipos = new Map<string, boolean>();
+  for (const f of features) {
+    for (const [k, v] of Object.entries(f.getProperties())) {
+      if (k === f.getGeometryName() || (v != null && typeof v === "object")) continue;
+      tipos.set(k, (tipos.get(k) ?? true) && (v == null || v === "" || typeof v === "number"));
+    }
+  }
+  return [...tipos].map(([atributo, numerico]) => ({ atributo, numerico, etiqueta: etiquetaDe(atributo) }));
+}
+
+export async function camposDe(entrada: Entrada): Promise<CampoEntrada[]> {
+  return esVectorial(entrada) ? camposVectoriales(featuresDe(entrada)) : (await esquemaWfs(entrada.capa!)).campos;
+}
+
+// --- Pedidos WFS con el área de análisis aplicada en el servidor ---
+
+async function filtroCql(c: CapaVisor, area: Polygon | null) {
   // Las capas del nodo respetan el filtro elegido en el panel de capas (tipo de persona, localidad)
-  const filtro = c.origen === "nodo" ? ((c.capa.getSource() as ImageWMS).getParams().CQL_FILTER as string | undefined) : undefined;
-  if (filtro === "EXCLUDE") return { features: [] as Feature[], truncado: false };
-  const caja = extension && extension.map((n) => n.toFixed(2)).join(",");
-  if (filtro) {
-    // GeoServer no combina BBOX y CQL_FILTER: el recorte va dentro del filtro
-    q.set("CQL_FILTER", caja ? `(${filtro}) AND BBOX(geom,${caja},'EPSG:3857')` : filtro);
-  } else if (caja) {
-    q.set("bbox", `${caja},EPSG:3857`);
+  const propio = c.origen === "nodo" ? ((c.capa.getSource() as ImageWMS).getParams().CQL_FILTER as string | undefined) : undefined;
+  if (propio === "EXCLUDE") return "EXCLUDE";
+  const partes = propio ? [`(${propio})`] : [];
+  if (area) {
+    const { geometria } = await esquemaWfs(c);
+    partes.push(`INTERSECTS(${geometria}, SRID=3857;${wkt.writeGeometry(area, { decimals: 2 })})`);
   }
-  const r = await fetch(`${url}?${q}`);
-  if (!r.ok) throw new Error(`El servicio de ${c.titulo} respondió con error ${r.status}.`);
-  let datos;
-  try {
-    datos = await r.json();
-  } catch {
-    throw new Error(`El servicio de ${c.titulo} no devolvió datos en GeoJSON.`);
-  }
-  const features = formato.readFeatures(datos);
-  return { features, truncado: features.length >= cantidad };
+  return partes.join(" AND ") || undefined;
+}
+
+// POST como el INDEC: un área dibujada con muchos vértices no entra en la URL
+async function pedirWfs(c: CapaVisor, extra: Record<string, string>, area: Polygon | null) {
+  const { url, nombre } = wfsDe(c);
+  const filtro = await filtroCql(c, area);
+  if (filtro === "EXCLUDE") return null;
+  const q = new URLSearchParams({ service: "WFS", version: "2.0.0", request: "GetFeature", typeNames: nombre, ...extra });
+  if (filtro) q.set("CQL_FILTER", filtro);
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: q,
+    signal: AbortSignal.timeout(ESPERA),
+  }).catch(() => {
+    throw new Error(`El servicio de ${c.titulo} no respondió a tiempo: puede estar saturado. Probá de nuevo en unos minutos o achicá el área de análisis.`);
+  });
+  if (!r.ok) throw new Error(`El servicio de ${c.titulo} respondió con error ${r.status}. Probá de nuevo en unos minutos.`);
+  return r;
+}
+
+// Cantidad exacta de elementos en el área (el servidor la cuenta sin descargarlos)
+export async function contar(entrada: Entrada, area: Polygon | null): Promise<number> {
+  if (esVectorial(entrada)) return (await obtener(entrada, area)).features.length;
+  const r = await pedirWfs(entrada.capa!, { resultType: "hits" }, area);
+  if (!r) return 0;
+  const n = (await r.text()).match(/numberMatched="(\d+)"/)?.[1];
+  if (n == null) throw new Error(`El servicio de ${entrada.titulo} no informó la cantidad de elementos.`);
+  return Number(n);
 }
 
 export type Datos = { features: GFeatures; truncado: boolean };
 
-// Elementos de la capa que tocan el área de análisis (en EPSG:4326)
+// Elementos de la capa que intersectan con el área de análisis (null: toda la capa), en EPSG:4326
 export async function obtener(entrada: Entrada, area: Polygon | null): Promise<Datos> {
-  const turf = await cargarTurf();
-  let ol: Feature[];
-  let truncado = false;
-  if (entrada.features) ol = entrada.features();
-  else if (entrada.capa!.origen === "archivo")
-    ol = ((entrada.capa!.capa as VectorLayer<VectorSource>).getSource()?.getFeatures() ?? []) as Feature[];
-  else ({ features: ol, truncado } = await pedirWfs(entrada.capa!, area?.getExtent() ?? null));
-
-  let features = a4326(ol.filter((f) => f.getGeometry()));
-  if (area) {
-    const recorte = a4326Geom(area);
-    features = features.filter((f) => turf.booleanIntersects(recorte, f));
-  }
-  return { features, truncado };
-}
-
-const a4326Geom = (g: Geometry) =>
-  formato.writeGeometryObject(g, { featureProjection: "EPSG:3857", dataProjection: "EPSG:4326" }) as GGeometry;
-
-export const areaDeExtension = (extension: Extent) => fromExtent(extension);
-
-// --- Campos para las estadísticas ---
-
-export type CampoEntrada = { atributo: string; etiqueta: string; numerico: boolean };
-
-// Atributos de la capa, a partir de una muestra de elementos
-export async function camposDe(entrada: Entrada): Promise<CampoEntrada[]> {
-  let muestra: Feature[];
-  if (entrada.features) muestra = entrada.features();
-  else if (entrada.capa!.origen === "archivo")
-    muestra = ((entrada.capa!.capa as VectorLayer<VectorSource>).getSource()?.getFeatures() ?? []) as Feature[];
-  else muestra = (await pedirWfs(entrada.capa!, null, 20)).features;
-
-  const tipos = new Map<string, boolean>(); // atributo → ¿todos los valores son números?
-  for (const f of muestra.slice(0, 200)) {
-    for (const [k, v] of Object.entries(f.getProperties())) {
-      if (k === f.getGeometryName() || ATRIBUTOS_INTERNOS.test(k) || (v != null && typeof v === "object")) continue;
-      const numero = v == null || v === "" || (typeof v === "number" ? true : typeof v === "string" && /^-?\d+([.,]\d+)?$/.test(v));
-      tipos.set(k, (tipos.get(k) ?? true) && numero);
+  if (esVectorial(entrada)) {
+    let features = a4326(featuresDe(entrada).filter((f) => f.getGeometry()));
+    if (area) {
+      const turf = await cargarTurf();
+      const recorte = a4326Geom(area);
+      features = features.filter((f) => turf.booleanIntersects(recorte, f));
     }
+    return { features, truncado: false };
   }
-  const nodo = entrada.capa?.nodo;
-  return [...tipos].map(([atributo, numerico]) => ({
-    atributo,
-    numerico,
-    etiqueta: nodo?.campos.find((c) => c.atributo === atributo)?.etiqueta ?? etiquetaDe(atributo),
-  }));
+  // En EPSG:3857 para evitar la ambigüedad del orden de ejes de EPSG:4326 en WFS 2.0
+  const r = await pedirWfs(entrada.capa!, { outputFormat: "application/json", srsName: "EPSG:3857", count: String(MAXIMO) }, area);
+  if (!r) return { features: [], truncado: false };
+  let datos;
+  try {
+    datos = await r.json();
+  } catch {
+    throw new Error(`El servicio de ${entrada.titulo} no devolvió datos en GeoJSON.`);
+  }
+  const features = a4326(formato.readFeatures(datos).filter((f) => f.getGeometry()));
+  return { features, truncado: features.length >= MAXIMO };
 }
 
 // --- Geoprocesos ---
 
-export type Fila = { grupo: string; valor: number; elementos: number };
-
 const numero = (v: unknown) => {
-  if (typeof v === "number") return v;
-  if (typeof v === "string" && v.trim() !== "") {
-    const n = Number(v.replace(",", "."));
-    return isNaN(n) ? null : n;
-  }
+  if (typeof v === "number") return isNaN(v) ? null : v;
+  if (typeof v === "string" && v.trim() !== "" && !isNaN(Number(v))) return Number(v);
   return null;
 };
 
-export function estadisticas(features: GFeatures, campo: string | null, operacion: Operacion, agrupar: string | null): Fila[] {
+export type Fila = { grupo: string; valor: number; elementos: number };
+
+// Como en el INDEC: la operación se aplica a los valores numéricos del campo, en total o por cada valor
+// del campo de sumarización. Sin campo, se cuentan los elementos. Si el campo de sumarización tiene varios
+// valores por elemento (los rubros de un proveedor), el elemento cuenta en cada uno.
+export function estadisticas(features: GFeatures, campo: string | null, operacion: Operacion, sumarizar: CampoEntrada | null): Fila[] {
   const grupos = new Map<string, number[]>();
   for (const f of features) {
-    const clave = agrupar ? String(f.properties?.[agrupar] ?? "(sin dato)") : "Total";
-    const valor = operacion === "cuenta" || !campo ? 1 : numero(f.properties?.[campo]);
-    if (!grupos.has(clave)) grupos.set(clave, []);
-    if (valor != null) grupos.get(clave)!.push(valor);
+    const crudo = sumarizar ? f.properties?.[sumarizar.atributo] : "Total";
+    const claves = crudo == null || crudo === "" ? ["(sin dato)"] : sumarizar?.lista ? String(crudo).split(" | ") : [String(crudo)];
+    const valor = campo ? numero(f.properties?.[campo]) : 1;
+    for (const clave of claves) {
+      if (!grupos.has(clave)) grupos.set(clave, []);
+      if (valor != null) grupos.get(clave)!.push(valor);
+    }
   }
   const calcular = (vs: number[]) => {
     if (operacion === "cuenta") return vs.length;
     if (!vs.length) return NaN;
     if (operacion === "suma") return vs.reduce((a, b) => a + b, 0);
     if (operacion === "promedio") return vs.reduce((a, b) => a + b, 0) / vs.length;
-    return operacion === "maximo" ? Math.max(...vs) : Math.min(...vs);
+    return vs.reduce((a, b) => (operacion === "maximo" ? Math.max(a, b) : Math.min(a, b)));
   };
-  return [...grupos]
-    .map(([grupo, vs]) => ({ grupo, valor: calcular(vs), elementos: vs.length }))
-    .sort((a, b) => (agrupar ? b.valor - a.valor || a.grupo.localeCompare(b.grupo, "es") : 0));
+  return [...grupos].map(([grupo, vs]) => ({ grupo, valor: calcular(vs), elementos: vs.length }));
 }
 
 const esPoligono = (f: GFeature): f is GFeature<GPolygon | GMultiPolygon> =>
@@ -252,21 +317,42 @@ async function disolver(features: GFeatures) {
   return turf.union(turf.featureCollection(poligonos));
 }
 
-export async function influencia(features: GFeatures, distancia: number, unidad: "meters" | "kilometers", disolverlas: boolean) {
+const etiquetaDistancia = (d: number, u: "meters" | "kilometers") => `${d.toLocaleString("es-AR")} ${u === "meters" ? "m" : "km"}`;
+
+export async function influencia(features: GFeatures, distancia: number, unidad: "meters" | "kilometers") {
   const turf = await cargarTurf();
-  const areas = features.flatMap((f) => {
+  return features.flatMap((f) => {
     const b = turf.buffer(f as GFeature<GGeometry>, distancia, { units: unidad });
-    return b ? [{ ...b, properties: { ...f.properties, distancia: `${distancia} ${unidad === "meters" ? "m" : "km"}` } }] : [];
+    return b ? [{ ...b, properties: { ...f.properties, distancia: etiquetaDistancia(distancia, unidad) } }] : [];
   }) as GFeatures;
-  if (!disolverlas) return areas;
-  const unida = await disolver(areas);
-  return unida ? [{ ...unida, properties: { distancia: `${distancia} ${unidad === "meters" ? "m" : "km"}`, elementos: features.length } }] : [];
 }
 
-export async function superposicion(entrada: GFeatures, otra: GFeatures, relacion: Relacion, tituloOtra: string, tituloEntrada: string) {
+// "Disolver áreas de influencia" de una capa de resultado: une todas sus áreas en una
+export async function disolverCapa(features: Feature[], titulo: string) {
+  const unida = await disolver(a4326(features));
+  return unida ? aMapa([{ ...unida, properties: { origen: titulo, elementos: features.length } }]) : [];
+}
+
+// Atributos de los dos elementos cruzados; los de la capa de superposición que repiten nombre llevan "_2"
+function unirAtributos(a: GeoJsonProperties, b: GeoJsonProperties) {
+  const salida = { ...a };
+  for (const [k, v] of Object.entries(b ?? {})) {
+    if (ATRIBUTOS_INTERNOS.test(k)) continue;
+    salida[k in salida ? `${k}_2` : k] = v;
+  }
+  return salida;
+}
+
+// Igual que el INDEC: cada elemento de la entrada se cruza con cada elemento de la superposición
+export async function superposicion(entrada: GFeatures, otra: GFeatures, relacion: Relacion, tituloEntrada: string, tituloOtra: string, alAvanzar?: (hechos: number) => void) {
   const turf = await cargarTurf();
+  const cajasOtra = otra.map((f) => turf.bbox(f));
+  const tocan = (caja: number[], j: number) =>
+    caja[0] <= cajasOtra[j][2] && caja[2] >= cajasOtra[j][0] && caja[1] <= cajasOtra[j][3] && caja[3] >= cajasOtra[j][1];
+  const salida: GFeatures = [];
+
   if (relacion === "union") {
-    // Dos capas de polígonos se funden en uno; si no, se juntan los elementos de ambas
+    // Dos capas de polígonos se funden en una sola geometría; si no, se juntan los elementos de ambas
     if (entrada.every(esPoligono) && otra.every(esPoligono)) {
       const unida = await disolver([...entrada, ...otra]);
       return unida ? [{ ...unida, properties: { capas: `${tituloEntrada} + ${tituloOtra}` } }] : [];
@@ -276,34 +362,49 @@ export async function superposicion(entrada: GFeatures, otra: GFeatures, relacio
       ...otra.map((f) => ({ ...f, properties: { ...f.properties, capa_origen: tituloOtra } })),
     ] as GFeatures;
   }
-  const mascara = await disolver(otra);
-  if (!mascara) throw new Error(`Para la ${RELACIONES[relacion].toLowerCase()}, la capa de superposición tiene que tener polígonos (por ejemplo, un área de influencia o los departamentos).`);
-  return entrada.flatMap((f): GFeatures => {
-    if (esPoligono(f)) {
-      const recorte =
-        relacion === "interseccion"
-          ? turf.intersect(turf.featureCollection([f, mascara]))
-          : turf.difference(turf.featureCollection([f, mascara]));
-      return recorte ? [{ ...recorte, properties: f.properties }] : [];
+
+  // La diferencia se calcula contra todas las áreas juntas: restar elemento por elemento duplicaría el resultado
+  const mascara = relacion === "diferencia" ? await disolver(otra) : null;
+
+  for (let i = 0; i < entrada.length; i++) {
+    const f = entrada[i];
+    const caja = turf.bbox(f);
+    const vecinos = otra.map((_, j) => j).filter((j) => tocan(caja, j));
+    if (relacion === "interseccion" && esPoligono(f)) {
+      // Polígono con polígono: una pieza por cada par que se superpone, con los datos de los dos
+      for (const j of vecinos) {
+        const g = otra[j];
+        const recorte = esPoligono(g) ? turf.intersect(turf.featureCollection([f, g])) : null;
+        if (recorte) salida.push({ ...recorte, properties: unirAtributos(f.properties, g.properties) });
+      }
+    } else if (relacion === "interseccion") {
+      // Puntos y líneas no se cortan: el elemento queda una sola vez aunque caiga en varias áreas
+      // superpuestas, con los datos de la primera y la cantidad de áreas que lo tocan
+      const tocan = vecinos.filter((j) => turf.booleanIntersects(f, otra[j]));
+      if (tocan.length) salida.push({ ...f, properties: { ...unirAtributos(f.properties, otra[tocan[0]].properties), coincidencias: tocan.length } });
+    } else if (esPoligono(f) && mascara) {
+      const resto = vecinos.length ? turf.difference(turf.featureCollection([f, mascara])) : f;
+      if (resto) salida.push({ ...resto, properties: f.properties });
+    } else if (!vecinos.some((j) => turf.booleanIntersects(f, otra[j]))) {
+      salida.push(f);
     }
-    // Puntos y líneas no se cortan: se conservan los que caen dentro (o fuera) de la máscara
-    const toca = turf.booleanIntersects(f, mascara);
-    return toca === (relacion === "interseccion") ? [f] : [];
-  });
+    if (i % 200 === 199) {
+      alAvanzar?.(i + 1);
+      await new Promise((r) => setTimeout(r)); // deja respirar a la página
+    }
+  }
+  return salida;
 }
 
 export async function derivadas(features: GFeatures, tipo: Derivada) {
   const turf = await cargarTurf();
-  const calcular = {
-    centroide: turf.centroid,
-    envolvente: turf.envelope,
-    masa: turf.centerOfMass,
-    interior: turf.pointOnFeature,
-  }[tipo] as (f: GFeature) => GFeature;
+  const calcular = { centroide: turf.centroid, envolvente: turf.envelope, masa: turf.centerOfMass, interior: turf.pointOnFeature }[
+    tipo
+  ] as (f: GFeature) => GFeature;
   return features.map((f) => ({ ...calcular(f), properties: { ...f.properties } })) as GFeatures;
 }
 
-// Nombre legible de un elemento (para las tablas de resultados)
+// Nombre legible de un elemento
 export function nombreDe(p: GeoJsonProperties, c?: CapaVisor) {
   if (!p) return "Sin nombre";
   const atributo = c?.nodo?.atributoTitulo ?? ATRIBUTOS_NOMBRE.find((n) => Object.keys(p).some((k) => k.toLowerCase() === n && p[k]));
@@ -311,79 +412,94 @@ export function nombreDe(p: GeoJsonProperties, c?: CapaVisor) {
   return clave ? String(p[clave]) : "Sin nombre";
 }
 
-export type Distancia = { nombre: string; km: number; minutos?: number; origen: number[] };
+export type Distancia = { origen: number; destino: number; metros: number; segundos?: number; punto: number[] };
 
-// Distancia de cada elemento (su centroide) al destino [lon, lat]
+// Distancia de cada elemento (su centroide, como en el INDEC) a cada destino [lon, lat]
 export async function distancias(
   features: GFeatures,
-  destino: number[],
+  destinos: number[][],
   tipo: "recta" | "red",
   modo: ModoTransporte,
-  c?: CapaVisor,
   alAvanzar?: (hechos: number) => void,
 ): Promise<Distancia[]> {
   const turf = await cargarTurf();
-  const origenes = features.map((f) => ({
-    nombre: nombreDe(f.properties, c),
-    origen: (f.geometry.type === "Point" ? f.geometry.coordinates : turf.centroid(f).geometry.coordinates) as number[],
-  }));
+  const puntos = features.map((f) => (f.geometry.type === "Point" ? f.geometry.coordinates : turf.centroid(f).geometry.coordinates) as number[]);
   if (tipo === "recta") {
-    return origenes
-      .map((o) => ({ ...o, km: turf.distance(o.origen, destino, { units: "kilometers" }) }))
-      .sort((a, b) => a.km - b.km);
+    return puntos.flatMap((p, origen) =>
+      destinos.map((d, destino) => ({ origen, destino, punto: p, metros: turf.distance(p, d, { units: "meters" }) })),
+    );
   }
-  if (origenes.length > MAXIMO_RUTEO)
-    throw new Error(`Por red vial se calculan hasta ${MAXIMO_RUTEO} elementos por vez; hay ${origenes.length}. Achicá el área de análisis.`);
+  if (puntos.length > MAXIMO_RUTEO)
+    throw new Error(`Por red vial se calculan hasta ${MAXIMO_RUTEO} elementos por vez y hay ${puntos.length.toLocaleString("es-AR")}. Achicá el área de análisis.`);
   const salida: Distancia[] = [];
-  for (let i = 0; i < origenes.length; i += LOTE_RUTEO) {
-    const lote = origenes.slice(i, i + LOTE_RUTEO);
-    const puntos = [...lote.map((o) => o.origen), destino].map(([lon, lat]) => `${lon.toFixed(6)},${lat.toFixed(6)}`).join(";");
+  const lote = PUNTOS_RUTEO - destinos.length;
+  for (let i = 0; i < puntos.length; i += lote) {
+    const origenes = puntos.slice(i, i + lote);
+    const coords = [...origenes, ...destinos].map(([lon, lat]) => `${lon.toFixed(6)},${lat.toFixed(6)}`).join(";");
     const q = new URLSearchParams({
-      sources: lote.map((_, j) => j).join(";"),
-      destinations: String(lote.length),
+      sources: origenes.map((_, j) => j).join(";"),
+      destinations: destinos.map((_, j) => origenes.length + j).join(";"),
       annotations: "distance,duration",
     });
-    const r = await fetch(`${RUTEO}/routed-${PERFIL[modo]}/table/v1/driving/${puntos}?${q}`);
-    const datos = await r.json().catch(() => null);
-    if (!r.ok || datos?.code !== "Ok") throw new Error("El servicio de ruteo no respondió. Probá de nuevo en unos minutos o usá línea recta.");
-    lote.forEach((o, j) => {
-      const metros = datos.distances[j][0] as number | null;
-      const segundos = datos.durations[j][0] as number | null;
-      salida.push({ ...o, km: metros == null ? NaN : metros / 1000, minutos: segundos == null ? undefined : segundos / 60 });
-    });
-    alAvanzar?.(salida.length);
+    const r = await fetch(`${RUTEO}/routed-${PERFIL[modo]}/table/v1/driving/${coords}?${q}`).catch(() => null);
+    const datos = await r?.json().catch(() => null);
+    if (!r?.ok || datos?.code !== "Ok") throw new Error("El servicio de ruteo no respondió. Probá de nuevo en unos minutos o usá línea recta.");
+    origenes.forEach((p, j) =>
+      destinos.forEach((_, k) =>
+        salida.push({
+          origen: i + j,
+          destino: k,
+          punto: p,
+          metros: datos.distances[j][k] ?? NaN,
+          segundos: datos.durations[j][k] ?? undefined,
+        }),
+      ),
+    );
+    alAvanzar?.(Math.min(i + lote, puntos.length));
   }
-  return salida.sort((a, b) => (isNaN(a.km) ? 1 : isNaN(b.km) ? -1 : a.km - b.km));
+  return salida;
 }
 
-// Líneas de cada elemento al destino, con la distancia como atributo (para la capa de resultado)
-export function lineasDistancia(filas: Distancia[], destino: number[]): GFeatures {
-  const lineas = filas.map(
-    (f): GFeature<GLineString> => ({
-      type: "Feature",
-      geometry: { type: "LineString", coordinates: [f.origen, destino] },
-      properties: {
-        nombre: f.nombre,
-        distancia_km: isNaN(f.km) ? "sin ruta" : Number(f.km.toFixed(2)),
-        ...(f.minutos != null && { tiempo_min: Math.round(f.minutos) }),
-      },
-    }),
-  );
-  const punto: GFeature<GPoint> = { type: "Feature", geometry: { type: "Point", coordinates: destino }, properties: { nombre: "Destino" } };
-  return [...lineas, punto];
-}
-
-// --- Salidas ---
+// --- Formatos ---
 
 export const formatoNumero = (n: number, decimales = 2) =>
   isNaN(n) ? "—" : n.toLocaleString("es-AR", { maximumFractionDigits: decimales });
 
+// Como en el INDEC: metros hasta 1 km y después kilómetros; minutos hasta 90 y después horas
+export const formatoDistancia = (m: number) => (isNaN(m) ? "sin ruta" : m < 1000 ? `${formatoNumero(m, 0)} m` : `${formatoNumero(m / 1000, 1)} km`);
+export const formatoDuracion = (s?: number) => {
+  if (s == null || isNaN(s)) return "—";
+  const min = s / 60;
+  return min <= 90 ? `${formatoNumero(min, 0)} min` : `${formatoNumero(min / 60, 1)} h`;
+};
+
 // CSV para planillas en español: separador ";" y coma decimal
-export function csv(encabezados: string[], filas: (string | number | undefined)[][]) {
-  const celda = (v: string | number | undefined) => {
+export function csv(columnas: Columna[], filas: Record<string, unknown>[]) {
+  const celda = (v: unknown) => {
     if (v == null || (typeof v === "number" && isNaN(v))) return "";
-    const s = typeof v === "number" ? String(v).replace(".", ",") : v;
-    return /[;"\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
+    const s = typeof v === "number" ? String(v).replace(".", ",") : String(v);
+    return /[;"\n\r]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
   };
-  return "﻿" + [encabezados, ...filas].map((f) => f.map(celda).join(";")).join("\r\n");
+  return "﻿" + [columnas.map((c) => celda(c.etiqueta)), ...filas.map((f) => columnas.map((c) => celda(f[c.clave])))].map((f) => f.join(";")).join("\r\n");
+}
+
+// Columnas de los atributos de una capa, para las tablas
+export async function columnasDe(entrada: Entrada): Promise<Columna[]> {
+  const campos = await camposDe(entrada).catch(() => []);
+  return campos.map((c) => ({ clave: c.atributo, etiqueta: c.etiqueta, numerico: c.numerico, formato: c.formato as Columna["formato"] }));
+}
+
+// Tabla de atributos de una capa (botón "Tabla de atributos" del panel de capas)
+export async function tablaDeAtributos(entrada: Entrada, area: Polygon | null): Promise<Tabla> {
+  const [{ features, truncado }, columnas] = await Promise.all([obtener(entrada, area), columnasDe(entrada)]);
+  const visibles = columnas.length ? columnas : camposVectoriales(aMapa(features)).map((c) => ({ clave: c.atributo, etiqueta: c.etiqueta, numerico: c.numerico }));
+  return {
+    titulo: entrada.titulo,
+    subtitulo: area ? "Elementos en la extensión del mapa" : undefined,
+    columnas: visibles,
+    filas: features.map((f) => f.properties ?? {}),
+    geometrias: aMapa(features).map((f) => f.getGeometry()),
+    archivo: entrada.titulo,
+    aviso: truncado ? `Se muestran los primeros ${MAXIMO.toLocaleString("es-AR")} elementos.` : undefined,
+  };
 }

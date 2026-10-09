@@ -23,7 +23,7 @@ import { fromLonLat, toLonLat, transformExtent } from "ol/proj";
 import { boundingExtent, type Extent } from "ol/extent";
 import type { FeatureLike } from "ol/Feature";
 import "ol/ol.css";
-import { Minus, Plus, X } from "lucide-react";
+import { Check, Minus, Plus, X } from "lucide-react";
 import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, SIN_BASE, WORKSPACE, temaDe, type CapaNodo } from "@/lib/config";
 import catalogoIdera from "@/lib/capas-idera.json";
 import FichaConsulta, { type Consulta } from "./FichaConsulta";
@@ -33,11 +33,13 @@ import PanelAgregar, { type CapaWms } from "./PanelAgregar";
 import { PanelAccesibilidad, PanelAyuda, PanelMapasBase, usePreferenciasAccesibilidad } from "./PanelesInfo";
 import BarraHerramientas from "./BarraHerramientas";
 import PanelAnalisis from "./PanelAnalisis";
+import PanelDatos, { type EstadoDatos } from "./PanelDatos";
+import { MAXIMO_DESTINOS, areaDeExtension, disolverCapa, tablaDeAtributos, type Proceso } from "./analisis";
 import { consultar, hayDatoEn } from "./consulta";
 import { useHerramientas } from "./useHerramientas";
 import { capturaPng, imprimirPdf } from "./exportar";
 import { BotonIcono, botonPrimario, botonSecundario, campo, tarjeta } from "./ui";
-import { Z, type CapaVisor, type Localidad, type Panel } from "./tipos";
+import { Z, type CapaVisor, type Localidad, type OpcionFiltro, type Panel } from "./tipos";
 import type { Lugar } from "./Buscador";
 
 const VISTA_INICIAL = { lon: -68.5, lat: -43.7, zoom: 6 }; // Chubut
@@ -79,8 +81,16 @@ const estiloMarcaAnalisis = new Style({
 });
 
 const GRUPO_RESULTADOS = "Resultados de análisis";
+let idArchivo = 0;
 
-const CLAVES_URL = ["zoom", "lat", "lng", "base", "capas", "localidad"];
+const estiloVector = (color: string) =>
+  new Style({
+    fill: new Fill({ color: `${color}40` }),
+    stroke: new Stroke({ color, width: 2 }),
+    image: new Circle({ radius: 6, fill: new Fill({ color }), stroke: new Stroke({ color: "#fff", width: 1.5 }) }),
+  });
+
+const CLAVES_URL = ["zoom", "lat", "lng", "base", "capas", "localidad", "rubro"];
 
 const lista = (valores: string[]) => valores.map((v) => `'${v.replaceAll("'", "''")}'`).join(", ");
 
@@ -91,11 +101,19 @@ export function cqlDe(atributo: string, elegidos: string[], total: number) {
   return `${atributo} IN (${lista(elegidos)})`;
 }
 
-// Filtro CQL de una capa del nodo: valores del atributo y localidades elegidas (sin localidades: todas)
-function cqlCapa(c: CapaNodo, elegidos?: string[], localidades?: string[]) {
+// Un rubro dentro de "rubros" (valores separados por " | "): coincidencia exacta, no por parte del nombre
+// ("CONSTRUCCION" no debe traer "SERVICIO DE CONSTRUCCION Y MANTENIMIENTO")
+function cqlRubro(rubro: string) {
+  const r = rubro.replaceAll("'", "''");
+  return `rubros = '${r}' OR rubros LIKE '${r} | %' OR rubros LIKE '% | ${r}' OR rubros LIKE '% | ${r} | %'`;
+}
+
+// Filtro CQL de una capa del nodo: valores del atributo, localidades y rubros elegidos (sin elegir: todos)
+function cqlCapa(c: CapaNodo, elegidos?: string[], localidades?: string[], rubros?: string[]) {
   const partes = [
     c.filtro && elegidos && cqlDe(c.filtro.atributo, elegidos, c.filtro.opciones.length),
     c.filtroLocalidad && localidades?.length ? `localidad IN (${lista(localidades)})` : undefined,
+    c.filtroRubro && rubros?.length ? `(${rubros.map(cqlRubro).join(" OR ")})` : undefined,
   ].filter((p): p is string => p !== undefined);
   if (partes.includes("EXCLUDE")) return "EXCLUDE";
   return partes.length ? partes.join(" AND ") : undefined;
@@ -125,7 +143,24 @@ async function cargarLocalidades(capa: string): Promise<Localidad[]> {
     .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 }
 
-// Vista y capas compartibles por URL: ?zoom=&lat=&lng=&base=&capas=&localidad=
+// Rubros con proveedores (tabla de rubros por WFS), de más a menos proveedores
+async function cargarRubros(capa: string): Promise<OpcionFiltro[]> {
+  const q = new URLSearchParams({
+    service: "WFS",
+    version: "2.0.0",
+    request: "GetFeature",
+    typeNames: capa,
+    propertyName: "rubro,cant_proveedores",
+    outputFormat: "application/json",
+  });
+  const datos = await (await fetch(`${PUBLIC_GEOSERVER}/${WORKSPACE}/wfs?${q}`)).json();
+  return (datos.features as { properties: { rubro: string; cant_proveedores: number } }[])
+    .map((f) => ({ nombre: f.properties.rubro, cantidad: Number(f.properties.cant_proveedores) }))
+    .sort((a, b) => b.cantidad - a.cantidad);
+}
+
+// Vista y capas compartibles por URL: ?zoom=&lat=&lng=&base=&capas=&localidad=&rubro= (rubros separados por "|":
+// llevan comas en el nombre)
 function leerUrl() {
   const q = new URLSearchParams(location.search);
   const num = (k: string, defecto: number) => (q.has(k) && !isNaN(Number(q.get(k))) ? Number(q.get(k)) : defecto);
@@ -136,6 +171,7 @@ function leerUrl() {
     base: [...MAPAS_BASE.map((b) => b.id), SIN_BASE].includes(q.get("base")!) ? q.get("base")! : BASE_INICIAL,
     capas: q.has("capas") ? q.get("capas")!.split(",").filter(Boolean) : null,
     localidades: q.get("localidad")?.split(",").filter(Boolean) ?? [],
+    rubros: q.get("rubro")?.split("|").filter(Boolean) ?? [],
     // Filtros de capas: un parámetro por atributo, con los valores elegidos (?tipo_persona=juridica)
     filtros: Object.fromEntries([...q.entries()].filter(([k]) => !CLAVES_URL.includes(k))),
   };
@@ -156,6 +192,7 @@ function capasCatalogo(activas: string[] | null): CapaVisor[] {
       consultable: c.consultable,
       exportable: c.cors,
       wfs: c.wfs,
+      capaWfs: c.capaWfs,
       leyenda: `${c.url}?service=WMS&version=1.3.0&request=GetLegendGraphic&format=image/png&layer=${encodeURIComponent(c.capa)}`,
       capa: new ImageLayer({
         visible,
@@ -176,12 +213,14 @@ function crearMapa() {
   const resaltado = new VectorSource();
   const ubicacion = new VectorSource();
   const marcaAnalisis = new VectorSource();
+  const capaMarcas = new VectorLayer({ source: marcaAnalisis, style: estiloMarcaAnalisis, zIndex: Z.dibujo });
   const nodo: CapaVisor[] = CAPAS_NODO.map((c) => {
     const visible = inicial.capas ? inicial.capas.includes(corto(c.nombre)) : true;
     const todos = c.filtro?.opciones.map((o) => o.valor) ?? [];
     const enUrl = c.filtro && inicial.filtros[c.filtro.atributo]?.split(",").filter((v) => todos.includes(v));
     const filtro = c.filtro ? (enUrl ?? todos) : undefined;
     const localidades = c.filtroLocalidad ? inicial.localidades : undefined;
+    const rubros = c.filtroRubro ? inicial.rubros : undefined;
     return {
       id: c.nombre,
       titulo: c.titulo,
@@ -192,13 +231,14 @@ function crearMapa() {
       nodo: c,
       filtro,
       localidades,
+      rubros,
       // Imagen única (no teselas): GeoServer no corta las etiquetas en los bordes
       capa: new ImageLayer({
         visible,
         zIndex: Z.superpuesta,
         source: new ImageWMS({
           url: `${PUBLIC_GEOSERVER}/wms`,
-          params: { LAYERS: c.nombre, CQL_FILTER: cqlCapa(c, filtro, localidades) },
+          params: { LAYERS: c.nombre, CQL_FILTER: cqlCapa(c, filtro, localidades, rubros) },
           serverType: "geoserver",
           crossOrigin: "anonymous",
         }),
@@ -231,14 +271,14 @@ function crearMapa() {
       ...nodo.map((c) => c.capa),
       ...catalogo.map((c) => c.capa),
       new VectorLayer({ source: ubicacion, style: estiloUbicacion, zIndex: Z.resaltado }),
-      new VectorLayer({ source: marcaAnalisis, style: estiloMarcaAnalisis, zIndex: Z.dibujo }),
+      capaMarcas,
       new VectorLayer({ source: resaltado, style: estiloResaltado, zIndex: Z.resaltado }),
     ],
     overlays: [popup, editor],
     view: new View({ center: fromLonLat([inicial.lon, inicial.lat]), zoom: inicial.zoom, maxZoom: 20 }),
   });
 
-  return { mapa, nodo, catalogo, inicial, bases, popup, editor, resaltado, ubicacion, marcaAnalisis, nodoPopup, nodoTexto };
+  return { mapa, nodo, catalogo, inicial, bases, popup, editor, resaltado, ubicacion, marcaAnalisis, capaMarcas, nodoPopup, nodoTexto };
 }
 
 export default function Visor() {
@@ -247,7 +287,7 @@ export default function Visor() {
   const contenedor = useRef<HTMLDivElement>(null);
   const escalaRef = useRef<HTMLDivElement>(null);
   const [v] = useState(crearMapa);
-  const { mapa, inicial, bases, popup, editor, resaltado, ubicacion, marcaAnalisis } = v;
+  const { mapa, inicial, bases, popup, editor, resaltado, ubicacion, marcaAnalisis, capaMarcas } = v;
   const [capas, setCapas] = useState<CapaVisor[]>(() => [...v.nodo, ...v.catalogo]);
   const [base, setBase] = useState(inicial.base);
   const [panel, setPanel] = useState<Panel | null>(() => (window.innerWidth < 640 ? null : "capas"));
@@ -258,11 +298,16 @@ export default function Visor() {
   const [ubicando, setUbicando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [localidades, setLocalidades] = useState<Localidad[]>([]);
+  const [rubros, setRubros] = useState<OpcionFiltro[]>([]);
+  const [datos, setDatos] = useState<EstadoDatos | null>(null); // panel de datos (derecha)
+  const [datosAmpliado, setDatosAmpliado] = useState(false);
   const herramientas = useHerramientas(mapa);
 
   // Análisis geográfico: el panel pide un área o un punto y el visor lo dibuja
   const [captura, setCaptura] = useState<"Polygon" | "Point" | null>(null);
-  const alCapturar = useRef<((g: Geometry | null) => void) | null>(null);
+  const alCapturar = useRef<((g: Geometry[] | null) => void) | null>(null);
+  const capturados = useRef<Feature[]>([]); // destinos marcados en esta captura
+  const [cantidadCapturada, setCantidadCapturada] = useState(0);
   const finCaptura = useRef(0); // el clic que cierra el dibujo no debe abrir la ficha de consulta
 
   // Consulta por clic
@@ -309,6 +354,8 @@ export default function Visor() {
     // Lista para el filtro por localidad; si el WFS no responde, el filtro no se muestra
     const fuente = CAPAS_NODO.find((c) => c.filtroLocalidad)?.filtroLocalidad;
     if (fuente) cargarLocalidades(fuente).then(setLocalidades).catch(() => {});
+    const fuenteRubros = CAPAS_NODO.find((c) => c.filtroRubro)?.filtroRubro;
+    if (fuenteRubros) cargarRubros(fuenteRubros).then(setRubros).catch(() => {});
 
     return () => {
       mapa.removeControl(escala);
@@ -396,6 +443,7 @@ export default function Visor() {
       const f = c.nodo?.filtro;
       if (f && c.filtro && c.filtro.length < f.opciones.length) q.set(f.atributo, c.filtro.join(","));
       if (c.localidades?.length) q.set("localidad", c.localidades.join(","));
+      if (c.rubros?.length) q.set("rubro", c.rubros.join("|"));
     }
     history.replaceState(null, "", `${location.pathname}?${q}`);
   }
@@ -444,20 +492,38 @@ export default function Visor() {
     return () => clearTimeout(t);
   }, [aviso]);
 
-  // Dibujo del área de análisis o del destino de las distancias
-  const terminarCaptura = useCallback((g: Geometry | null) => {
-    alCapturar.current?.(g);
-    alCapturar.current = null;
-    finCaptura.current = Date.now();
-    setCaptura(null);
-  }, []);
+  // Dibujo del área de análisis (un polígono) o de los destinos de las distancias (uno o más puntos)
+  const borrarMarca = useCallback(
+    (tipo: "Polygon" | "Point", salvo: Feature[] = []) =>
+      marcaAnalisis
+        .getFeatures()
+        .filter((f) => f.getGeometry()?.getType() === tipo && !salvo.includes(f))
+        .forEach((f) => marcaAnalisis.removeFeature(f)),
+    [marcaAnalisis],
+  );
+
+  // listo: con los puntos marcados; cancelado: se descartan y quedan los anteriores
+  const terminarCaptura = useCallback(
+    (listo: boolean) => {
+      const nuevos = capturados.current;
+      capturados.current = [];
+      setCantidadCapturada(0);
+      if (listo && nuevos.length) borrarMarca(nuevos[0].getGeometry()!.getType() as "Polygon" | "Point", nuevos);
+      else nuevos.forEach((f) => marcaAnalisis.removeFeature(f));
+      alCapturar.current?.(listo && nuevos.length ? nuevos.map((f) => f.getGeometry()!) : null);
+      alCapturar.current = null;
+      finCaptura.current = Date.now();
+      setCaptura(null);
+    },
+    [borrarMarca, marcaAnalisis],
+  );
 
   function capturar(tipo: "Polygon" | "Point") {
-    alCapturar.current?.(null);
+    if (alCapturar.current) terminarCaptura(false);
     herramientas.setModo(null);
     cerrarConsulta();
     setCaptura(tipo);
-    return new Promise<Geometry | null>((resolver) => {
+    return new Promise<Geometry[] | null>((resolver) => {
       alCapturar.current = resolver;
     });
   }
@@ -466,17 +532,18 @@ export default function Visor() {
     if (!captura) return;
     const draw = new Draw({ type: captura, style: estiloMarcaAnalisis });
     draw.on("drawend", (e) => {
-      const g = e.feature.getGeometry()!;
-      // Una sola marca de cada tipo: el área nueva reemplaza a la anterior, igual que el destino
-      marcaAnalisis
-        .getFeatures()
-        .filter((f) => f.getGeometry()?.getType() === g.getType())
-        .forEach((f) => marcaAnalisis.removeFeature(f));
-      marcaAnalisis.addFeature(new Feature(g));
-      terminarCaptura(g);
+      const marca = new Feature(e.feature.getGeometry()!);
+      marcaAnalisis.addFeature(marca);
+      capturados.current.push(marca);
+      setCantidadCapturada(capturados.current.length);
+      // El área es un solo polígono; los destinos se suman hasta tocar "Listo"
+      if (captura === "Polygon" || capturados.current.length >= MAXIMO_DESTINOS) terminarCaptura(true);
     });
     mapa.addInteraction(draw);
-    const teclado = (e: KeyboardEvent) => e.key === "Escape" && terminarCaptura(null);
+    const teclado = (e: KeyboardEvent) => {
+      if (e.key === "Escape") terminarCaptura(false);
+      if (e.key === "Enter" && captura === "Point") terminarCaptura(true);
+    };
     window.addEventListener("keydown", teclado);
     return () => {
       mapa.removeInteraction(draw);
@@ -484,12 +551,51 @@ export default function Visor() {
     };
   }, [captura, mapa, marcaAnalisis, terminarCaptura]);
 
-  // Al salir del panel de análisis se borran sus marcas
+  // Las marcas del análisis se ven solo con su panel abierto (el panel conserva lo elegido)
   useEffect(() => {
-    if (panel === "analisis") return;
-    marcaAnalisis.clear();
-    if (alCapturar.current) terminarCaptura(null);
-  }, [panel, marcaAnalisis, terminarCaptura]);
+    capaMarcas.setVisible(panel === "analisis");
+    if (panel !== "analisis" && alCapturar.current) terminarCaptura(false);
+  }, [panel, capaMarcas, terminarCaptura]);
+
+  // Elemento elegido en el panel de datos: se resalta y se encuadra
+  function irAGeometria(g: Geometry) {
+    cerrarConsulta();
+    resaltado.clear();
+    const marca = new Feature(g);
+    marca.set("color", "#21708c");
+    resaltado.addFeature(marca);
+    encuadrar(g.getExtent(), 16);
+  }
+
+  // Tabla de atributos de una capa: las del catálogo nacional, solo en la extensión del mapa (son de todo el país)
+  async function verAtributos(c: CapaVisor) {
+    setDatos({ estado: "cargando", titulo: c.titulo });
+    try {
+      const area = c.origen === "catalogo" ? areaDeExtension(mapa.getView().calculateExtent(mapa.getSize())) : null;
+      setDatos({ estado: "listo", tabla: await tablaDeAtributos({ id: c.id, titulo: c.titulo, capa: c }, area) });
+    } catch (e) {
+      setDatos({ estado: "error", titulo: c.titulo, mensaje: e instanceof Error ? e.message : "No se pudieron leer los datos de la capa." });
+    }
+  }
+
+  function colorearCapa(id: string, color: string) {
+    setCapas((actuales) =>
+      actuales.map((c) => {
+        if (c.id !== id) return c;
+        (c.capa as VectorLayer).setStyle(estiloVector(color));
+        return { ...c, color };
+      }),
+    );
+  }
+
+  async function disolver(c: CapaVisor) {
+    const fuente = (c.capa as VectorLayer<VectorSource>).getSource()!;
+    const unida = await disolverCapa(fuente.getFeatures(), c.titulo);
+    if (!unida.length) return;
+    fuente.clear();
+    fuente.addFeatures(unida);
+    setCapas((actuales) => actuales.map((x) => (x.id === c.id ? { ...x, proceso: "influencia-disuelta", titulo: `${x.titulo} (disuelta)` } : x)));
+  }
 
   // --- Acciones ---
 
@@ -505,11 +611,11 @@ export default function Visor() {
   }
 
   // El filtro se aplica en GeoServer: cambia la imagen y también lo que devuelve la consulta por clic
-  function filtrarCapa(id: string, cambios: Partial<Pick<CapaVisor, "filtro" | "localidades">>) {
+  function filtrarCapa(id: string, cambios: Partial<Pick<CapaVisor, "filtro" | "localidades" | "rubros">>) {
     const c = capas.find((x) => x.id === id);
     if (!c?.nodo) return;
     const nueva = { ...c, ...cambios };
-    (c.capa.getSource() as ImageWMS).updateParams({ CQL_FILTER: cqlCapa(c.nodo, nueva.filtro, nueva.localidades) });
+    (c.capa.getSource() as ImageWMS).updateParams({ CQL_FILTER: cqlCapa(c.nodo, nueva.filtro, nueva.localidades, nueva.rubros) });
     setCapas((actuales) => actuales.map((x) => (x.id === id ? nueva : x)));
     // Al sumar localidades, el mapa va hacia ellas (los proveedores se ven al acercar)
     const agregadas = cambios.localidades?.filter((l) => !c.localidades?.includes(l)) ?? [];
@@ -548,26 +654,31 @@ export default function Visor() {
     ]);
   }
 
-  function agregarArchivo(titulo: string, features: Feature[], grupo = "Capas agregadas") {
+  // Archivos del usuario y resultados del análisis. Los resultados no mueven el mapa: la vista es el área de
+  // análisis de los procesos siguientes
+  function agregarArchivo(titulo: string, features: Feature[], proceso?: Proceso) {
     if (!mapa) return;
     const color = COLORES_ARCHIVO[capas.filter((c) => c.origen === "archivo").length % COLORES_ARCHIVO.length];
     const fuente = new VectorSource({ features });
-    const capa = new VectorLayer({
-      source: fuente,
-      zIndex: grupo === GRUPO_RESULTADOS ? Z.resultado : Z.superpuesta,
-      style: new Style({
-        fill: new Fill({ color: `${color}33` }),
-        stroke: new Stroke({ color, width: 2 }),
-        image: new Circle({ radius: 6, fill: new Fill({ color }), stroke: new Stroke({ color: "#fff", width: 1.5 }) }),
-      }),
-    });
+    const capa = new VectorLayer({ source: fuente, zIndex: proceso ? Z.resultado : Z.superpuesta, style: estiloVector(color) });
     mapa.addLayer(capa);
     const extension = fuente.getExtent() ?? undefined;
     setCapas((actuales) => [
       ...actuales,
-      { id: `archivo-${Date.now()}`, titulo, grupo, origen: "archivo", capa, visible: true, opacidad: 1, color, extension },
+      {
+        id: `archivo-${++idArchivo}`,
+        titulo: proceso ? `Resultado: ${titulo}` : titulo,
+        grupo: proceso ? GRUPO_RESULTADOS : "Capas agregadas",
+        origen: "archivo",
+        capa,
+        visible: true,
+        opacidad: 1,
+        color,
+        extension,
+        proceso,
+      },
     ]);
-    if (extension) encuadrar(extension);
+    if (extension && !proceso) encuadrar(extension);
   }
 
   function quitarCapa(id: string) {
@@ -652,6 +763,10 @@ export default function Visor() {
       <PanelCapas
         capas={capas}
         localidades={localidades}
+        rubros={rubros}
+        onAtributos={verAtributos}
+        onColor={colorearCapa}
+        onDisolver={disolver}
         onCambiar={cambiarCapa}
         onFiltrar={filtrarCapa}
         onZoom={(c) => c.extension && encuadrar(c.extension)}
@@ -659,14 +774,16 @@ export default function Visor() {
       />
     ),
     base: <PanelMapasBase base={base} onElegir={elegirBase} />,
-    agregar: <PanelAgregar onAgregarWms={agregarWms} onAgregarArchivo={agregarArchivo} />,
+    agregar: <PanelAgregar onAgregarWms={agregarWms} onAgregarArchivo={(titulo, features) => agregarArchivo(titulo, features)} />,
     analisis: (
       <PanelAnalisis
         capas={capas}
         dibujos={herramientas.dibujados}
         extensionMapa={() => mapa.getView().calculateExtent(mapa.getSize())}
         capturar={capturar}
-        onResultado={(titulo, features) => agregarArchivo(titulo, features, GRUPO_RESULTADOS)}
+        onBorrarMarca={(tipo) => borrarMarca(tipo)}
+        onResultado={agregarArchivo}
+        onDatos={setDatos}
       />
     ),
     ayuda: <PanelAyuda />,
@@ -676,18 +793,25 @@ export default function Visor() {
   const baseActual = MAPAS_BASE.find((b) => b.id === base);
 
   return (
-    <div ref={raiz} className="relative h-dvh w-full overflow-hidden bg-fondo text-texto">
+    <div
+      ref={raiz}
+      className="relative h-dvh w-full overflow-hidden bg-fondo text-texto"
+      // Con el panel de datos abierto, la barra de herramientas y el zoom se corren a su izquierda
+      style={{ "--panel-datos": datos ? (datosAmpliado ? "calc(50vw + 0.75rem)" : "calc(21rem + 0.75rem)") : "0px" } as React.CSSProperties}
+    >
       <div ref={contenedor} className="absolute inset-0" />
 
       <PanelLateral panel={panel} onPanel={setPanel} onLugar={irA} minimizado={captura != null}>
-        {panel && contenidoPanel[panel]}
+        {panel && panel !== "analisis" && contenidoPanel[panel]}
+        {/* El análisis queda montado: conserva lo elegido y el resultado al pasar a otro panel */}
+        <div hidden={panel !== "analisis"}>{contenidoPanel.analisis}</div>
       </PanelLateral>
 
       <BarraHerramientas
         modo={herramientas.modo}
         onModo={(m) => {
           if (m) cerrarConsulta(); // una herramienta activa cierra la ficha de consulta
-          if (m && captura) terminarCaptura(null);
+          if (m && captura) terminarCaptura(false);
           herramientas.setModo(m);
         }}
         cantidad={herramientas.cantidad}
@@ -716,7 +840,7 @@ export default function Visor() {
       />
 
       {/* Abajo a la derecha: zoom con nivel, como en el visor de IDERA */}
-      <div className={`${tarjeta} absolute right-3 bottom-10 z-10 flex flex-col items-center p-1`}>
+      <div className={`${tarjeta} absolute right-3 bottom-10 z-10 flex flex-col items-center p-1 sm:right-[calc(var(--panel-datos)+0.75rem)]`}>
         <BotonIcono icono={Plus} etiqueta="Acercar" onClick={() => mapa?.getView().animate({ zoom: zoom + 1, duration: duracion() / 2 })} />
         <span className="py-0.5 text-sm font-semibold tabular-nums" aria-label={`Nivel de zoom ${Math.round(zoom)}`}>
           {Math.round(zoom)}
@@ -740,6 +864,16 @@ export default function Visor() {
         )}
       </div>
 
+      {datos && (
+        <PanelDatos
+          datos={datos}
+          ampliado={datosAmpliado}
+          onAmpliar={() => setDatosAmpliado(!datosAmpliado)}
+          onCerrar={() => setDatos(null)}
+          onIr={irAGeometria}
+        />
+      )}
+
       {captura && (
         <div
           role="status"
@@ -748,9 +882,16 @@ export default function Visor() {
           <span>
             {captura === "Polygon"
               ? "Dibujá el área de análisis: un clic por vértice y doble clic para terminar."
-              : "Hacé clic en el mapa para marcar el destino."}
+              : cantidadCapturada === 0
+                ? "Hacé clic en el mapa para marcar el destino. Podés marcar varios."
+                : `${cantidadCapturada} ${cantidadCapturada === 1 ? "destino marcado" : "destinos marcados"}. Marcá otro o tocá Listo.`}
           </span>
-          <button type="button" className={botonSecundario} onClick={() => terminarCaptura(null)}>
+          {captura === "Point" && (
+            <button type="button" className={botonPrimario} disabled={cantidadCapturada === 0} onClick={() => terminarCaptura(true)}>
+              <Check className="size-4" aria-hidden /> Listo
+            </button>
+          )}
+          <button type="button" className={botonSecundario} onClick={() => terminarCaptura(false)}>
             <X className="size-4" aria-hidden /> Cancelar
           </button>
         </div>

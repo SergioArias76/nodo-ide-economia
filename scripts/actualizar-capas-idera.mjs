@@ -68,27 +68,35 @@ for (const c of capas) c.cors = cors[c.url];
 
 // ¿La capa se puede descargar por WFS en GeoJSON desde otro sitio? Es lo que necesita el análisis
 // geográfico del visor (conteo, áreas de influencia, superposición…). Se prueba pidiendo un elemento.
-for (const c of capas) {
-  c.wfs = false;
-  if (!c.cors) continue;
+async function tieneWfs(url, nombre) {
   const q = new URLSearchParams({
     service: "WFS",
     version: "2.0.0",
     request: "GetFeature",
-    typeNames: c.capa,
+    typeNames: nombre,
     count: "1",
     outputFormat: "application/json",
   });
   try {
-    const r = await fetch(`${c.url}?${q}`, {
-      headers: { Origin: "https://ide.chubut.example" },
-      signal: AbortSignal.timeout(20000),
-    });
-    c.wfs = r.ok && r.headers.has("access-control-allow-origin") && Array.isArray((await r.json()).features);
+    const r = await fetch(`${url}?${q}`, { headers: { Origin: "https://ide.chubut.example" }, signal: AbortSignal.timeout(60000) });
+    return r.ok && r.headers.has("access-control-allow-origin") && Array.isArray((await r.json()).features);
   } catch {
-    // sin WFS o con respuesta que no es GeoJSON
+    return false; // sin WFS o con respuesta que no es GeoJSON
   }
-  console.log(`${c.wfs ? "WFS   " : "sin WFS"} ${c.titulo}`);
+}
+
+for (const c of capas) {
+  c.wfs = false;
+  if (!c.cors) continue;
+  // IDERA cita algunas capas con un prefijo viejo ("ign:...") que el WFS ya no reconoce; en el punto de
+  // acceso del workspace alcanza con el nombre sin prefijo
+  const local = c.capa.split(":").pop();
+  if (await tieneWfs(c.url, c.capa)) c.wfs = true;
+  else if (local !== c.capa && (await tieneWfs(c.url, local))) {
+    c.wfs = true;
+    c.capaWfs = local;
+  }
+  console.log(`${c.wfs ? "WFS   " : "sin WFS"} ${c.titulo}${c.capaWfs ? ` (como ${c.capaWfs})` : ""}`);
 }
 
 writeFileSync(DESTINO, JSON.stringify({ origen: ORIGEN, generado: new Date().toISOString().slice(0, 10), capas }, null, 2) + "\n");

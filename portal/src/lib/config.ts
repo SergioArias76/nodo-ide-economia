@@ -26,6 +26,9 @@ export type CapaNodo = {
   // Filtro por localidad (buscador en el panel; CQL_FILTER sobre el atributo "localidad"). La lista
   // sale por WFS de esta capa (localidad, departamento, provincia, cant_proveedores y punto)
   filtroLocalidad?: string;
+  // Filtro por rubro (buscador en el panel; CQL_FILTER sobre "rubros", valores separados por " | "). La
+  // lista sale por WFS de esta tabla (rubro, cant_proveedores)
+  filtroRubro?: string;
   campos: Campo[];
 };
 
@@ -69,6 +72,7 @@ export const CAPAS_NODO: CapaNodo[] = [
     nota: "Visible al acercar el mapa",
     simbolo: { color: "#ff682c" },
     filtroLocalidad: `${WORKSPACE}:proveedores_por_localidad`,
+    filtroRubro: `${WORKSPACE}:proveedores_rubros`,
     filtro: {
       atributo: "tipo_persona",
       opciones: [
