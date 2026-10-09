@@ -221,5 +221,8 @@ export function useHerramientas(mapa: Map | null) {
     descargarTexto(json, "dibujos-ide-economia.geojson", "application/geo+json");
   }
 
-  return { modo, setModo: cambiarModo, cantidad, editorTexto, confirmarTexto, borrarTodo, exportarDibujos };
+  // Puntos, líneas y polígonos dibujados (sin los textos), para el análisis geográfico
+  const dibujados = () => dibujos.current.getFeatures().filter((f) => f.get("texto") == null);
+
+  return { modo, setModo: cambiarModo, cantidad, editorTexto, confirmarTexto, borrarTodo, exportarDibujos, dibujados };
 }

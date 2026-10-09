@@ -17,12 +17,13 @@ import WMSCapabilities from "ol/format/WMSCapabilities";
 import { Point, type Geometry } from "ol/geom";
 import { circular } from "ol/geom/Polygon";
 import { ScaleLine } from "ol/control";
+import { Draw } from "ol/interaction";
 import { Circle, Fill, Stroke, Style } from "ol/style";
 import { fromLonLat, toLonLat, transformExtent } from "ol/proj";
 import { boundingExtent, type Extent } from "ol/extent";
 import type { FeatureLike } from "ol/Feature";
 import "ol/ol.css";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, SIN_BASE, WORKSPACE, temaDe, type CapaNodo } from "@/lib/config";
 import catalogoIdera from "@/lib/capas-idera.json";
 import FichaConsulta, { type Consulta } from "./FichaConsulta";
@@ -31,10 +32,11 @@ import PanelCapas from "./PanelCapas";
 import PanelAgregar, { type CapaWms } from "./PanelAgregar";
 import { PanelAccesibilidad, PanelAyuda, PanelMapasBase, usePreferenciasAccesibilidad } from "./PanelesInfo";
 import BarraHerramientas from "./BarraHerramientas";
+import PanelAnalisis from "./PanelAnalisis";
 import { consultar, hayDatoEn } from "./consulta";
 import { useHerramientas } from "./useHerramientas";
 import { capturaPng, imprimirPdf } from "./exportar";
-import { BotonIcono, botonPrimario, campo, tarjeta } from "./ui";
+import { BotonIcono, botonPrimario, botonSecundario, campo, tarjeta } from "./ui";
 import { Z, type CapaVisor, type Localidad, type Panel } from "./tipos";
 import type { Lugar } from "./Buscador";
 
@@ -68,6 +70,15 @@ const estiloUbicacion = new Style({
   fill: new Fill({ color: "rgba(28, 126, 214, 0.12)" }),
   stroke: new Stroke({ color: "rgba(28, 126, 214, 0.5)", width: 1 }),
 });
+
+// Área y destino marcados para el análisis geográfico
+const estiloMarcaAnalisis = new Style({
+  fill: new Fill({ color: "rgba(33, 112, 140, 0.08)" }),
+  stroke: new Stroke({ color: "#21708c", width: 2.5, lineDash: [10, 6] }),
+  image: new Circle({ radius: 8, fill: new Fill({ color: "#21708c" }), stroke: new Stroke({ color: "#fff", width: 3 }) }),
+});
+
+const GRUPO_RESULTADOS = "Resultados de análisis";
 
 const CLAVES_URL = ["zoom", "lat", "lng", "base", "capas", "localidad"];
 
@@ -144,6 +155,7 @@ function capasCatalogo(activas: string[] | null): CapaVisor[] {
       resumen: c.resumen,
       consultable: c.consultable,
       exportable: c.cors,
+      wfs: c.wfs,
       leyenda: `${c.url}?service=WMS&version=1.3.0&request=GetLegendGraphic&format=image/png&layer=${encodeURIComponent(c.capa)}`,
       capa: new ImageLayer({
         visible,
@@ -163,6 +175,7 @@ function crearMapa() {
   const bases: Record<string, TileLayer<XYZ>> = {};
   const resaltado = new VectorSource();
   const ubicacion = new VectorSource();
+  const marcaAnalisis = new VectorSource();
   const nodo: CapaVisor[] = CAPAS_NODO.map((c) => {
     const visible = inicial.capas ? inicial.capas.includes(corto(c.nombre)) : true;
     const todos = c.filtro?.opciones.map((o) => o.valor) ?? [];
@@ -218,13 +231,14 @@ function crearMapa() {
       ...nodo.map((c) => c.capa),
       ...catalogo.map((c) => c.capa),
       new VectorLayer({ source: ubicacion, style: estiloUbicacion, zIndex: Z.resaltado }),
+      new VectorLayer({ source: marcaAnalisis, style: estiloMarcaAnalisis, zIndex: Z.dibujo }),
       new VectorLayer({ source: resaltado, style: estiloResaltado, zIndex: Z.resaltado }),
     ],
     overlays: [popup, editor],
     view: new View({ center: fromLonLat([inicial.lon, inicial.lat]), zoom: inicial.zoom, maxZoom: 20 }),
   });
 
-  return { mapa, nodo, catalogo, inicial, bases, popup, editor, resaltado, ubicacion, nodoPopup, nodoTexto };
+  return { mapa, nodo, catalogo, inicial, bases, popup, editor, resaltado, ubicacion, marcaAnalisis, nodoPopup, nodoTexto };
 }
 
 export default function Visor() {
@@ -233,7 +247,7 @@ export default function Visor() {
   const contenedor = useRef<HTMLDivElement>(null);
   const escalaRef = useRef<HTMLDivElement>(null);
   const [v] = useState(crearMapa);
-  const { mapa, inicial, bases, popup, editor, resaltado, ubicacion } = v;
+  const { mapa, inicial, bases, popup, editor, resaltado, ubicacion, marcaAnalisis } = v;
   const [capas, setCapas] = useState<CapaVisor[]>(() => [...v.nodo, ...v.catalogo]);
   const [base, setBase] = useState(inicial.base);
   const [panel, setPanel] = useState<Panel | null>(() => (window.innerWidth < 640 ? null : "capas"));
@@ -246,6 +260,11 @@ export default function Visor() {
   const [localidades, setLocalidades] = useState<Localidad[]>([]);
   const herramientas = useHerramientas(mapa);
 
+  // Análisis geográfico: el panel pide un área o un punto y el visor lo dibuja
+  const [captura, setCaptura] = useState<"Polygon" | "Point" | null>(null);
+  const alCapturar = useRef<((g: Geometry | null) => void) | null>(null);
+  const finCaptura = useRef(0); // el clic que cierra el dibujo no debe abrir la ficha de consulta
+
   // Consulta por clic
   const [consulta, setConsulta] = useState<Consulta | null>(null);
   const [geometrias, setGeometrias] = useState<(Geometry | undefined)[]>([]);
@@ -254,10 +273,10 @@ export default function Visor() {
 
   // Los manejadores de eventos del mapa leen el estado actual por refs
   const capasRef = useRef(capas);
-  const modoRef = useRef(herramientas.modo);
+  const modoRef = useRef<string | null>(herramientas.modo);
   useEffect(() => {
     capasRef.current = capas;
-    modoRef.current = herramientas.modo;
+    modoRef.current = herramientas.modo ?? captura; // mientras se dibuja, el clic no consulta
   });
 
   // Creación del mapa (una sola vez)
@@ -326,7 +345,7 @@ export default function Visor() {
     mapa.getViewport()!.addEventListener("mouseleave", alSalir);
 
     const alClic = mapa.on("singleclick", async (e) => {
-      if (modoRef.current) return; // la herramienta activa usa el clic
+      if (modoRef.current || Date.now() - finCaptura.current < 600) return; // la herramienta activa usa el clic
       if (!capasRef.current.some((c) => c.visible)) return;
       const id = ++ultimaConsulta.current;
       popup.setPosition(e.coordinate);
@@ -425,6 +444,53 @@ export default function Visor() {
     return () => clearTimeout(t);
   }, [aviso]);
 
+  // Dibujo del área de análisis o del destino de las distancias
+  const terminarCaptura = useCallback((g: Geometry | null) => {
+    alCapturar.current?.(g);
+    alCapturar.current = null;
+    finCaptura.current = Date.now();
+    setCaptura(null);
+  }, []);
+
+  function capturar(tipo: "Polygon" | "Point") {
+    alCapturar.current?.(null);
+    herramientas.setModo(null);
+    cerrarConsulta();
+    setCaptura(tipo);
+    return new Promise<Geometry | null>((resolver) => {
+      alCapturar.current = resolver;
+    });
+  }
+
+  useEffect(() => {
+    if (!captura) return;
+    const draw = new Draw({ type: captura, style: estiloMarcaAnalisis });
+    draw.on("drawend", (e) => {
+      const g = e.feature.getGeometry()!;
+      // Una sola marca de cada tipo: el área nueva reemplaza a la anterior, igual que el destino
+      marcaAnalisis
+        .getFeatures()
+        .filter((f) => f.getGeometry()?.getType() === g.getType())
+        .forEach((f) => marcaAnalisis.removeFeature(f));
+      marcaAnalisis.addFeature(new Feature(g));
+      terminarCaptura(g);
+    });
+    mapa.addInteraction(draw);
+    const teclado = (e: KeyboardEvent) => e.key === "Escape" && terminarCaptura(null);
+    window.addEventListener("keydown", teclado);
+    return () => {
+      mapa.removeInteraction(draw);
+      window.removeEventListener("keydown", teclado);
+    };
+  }, [captura, mapa, marcaAnalisis, terminarCaptura]);
+
+  // Al salir del panel de análisis se borran sus marcas
+  useEffect(() => {
+    if (panel === "analisis") return;
+    marcaAnalisis.clear();
+    if (alCapturar.current) terminarCaptura(null);
+  }, [panel, marcaAnalisis, terminarCaptura]);
+
   // --- Acciones ---
 
   function cambiarCapa(id: string, cambios: Partial<Pick<CapaVisor, "visible" | "opacidad">>) {
@@ -482,13 +548,13 @@ export default function Visor() {
     ]);
   }
 
-  function agregarArchivo(titulo: string, features: Feature[]) {
+  function agregarArchivo(titulo: string, features: Feature[], grupo = "Capas agregadas") {
     if (!mapa) return;
     const color = COLORES_ARCHIVO[capas.filter((c) => c.origen === "archivo").length % COLORES_ARCHIVO.length];
     const fuente = new VectorSource({ features });
     const capa = new VectorLayer({
       source: fuente,
-      zIndex: Z.superpuesta,
+      zIndex: grupo === GRUPO_RESULTADOS ? Z.resultado : Z.superpuesta,
       style: new Style({
         fill: new Fill({ color: `${color}33` }),
         stroke: new Stroke({ color, width: 2 }),
@@ -499,7 +565,7 @@ export default function Visor() {
     const extension = fuente.getExtent() ?? undefined;
     setCapas((actuales) => [
       ...actuales,
-      { id: `archivo-${Date.now()}`, titulo, grupo: "Capas agregadas", origen: "archivo", capa, visible: true, opacidad: 1, color, extension },
+      { id: `archivo-${Date.now()}`, titulo, grupo, origen: "archivo", capa, visible: true, opacidad: 1, color, extension },
     ]);
     if (extension) encuadrar(extension);
   }
@@ -594,6 +660,15 @@ export default function Visor() {
     ),
     base: <PanelMapasBase base={base} onElegir={elegirBase} />,
     agregar: <PanelAgregar onAgregarWms={agregarWms} onAgregarArchivo={agregarArchivo} />,
+    analisis: (
+      <PanelAnalisis
+        capas={capas}
+        dibujos={herramientas.dibujados}
+        extensionMapa={() => mapa.getView().calculateExtent(mapa.getSize())}
+        capturar={capturar}
+        onResultado={(titulo, features) => agregarArchivo(titulo, features, GRUPO_RESULTADOS)}
+      />
+    ),
     ayuda: <PanelAyuda />,
     accesibilidad: <PanelAccesibilidad />,
   };
@@ -604,7 +679,7 @@ export default function Visor() {
     <div ref={raiz} className="relative h-dvh w-full overflow-hidden bg-fondo text-texto">
       <div ref={contenedor} className="absolute inset-0" />
 
-      <PanelLateral panel={panel} onPanel={setPanel} onLugar={irA}>
+      <PanelLateral panel={panel} onPanel={setPanel} onLugar={irA} minimizado={captura != null}>
         {panel && contenidoPanel[panel]}
       </PanelLateral>
 
@@ -612,6 +687,7 @@ export default function Visor() {
         modo={herramientas.modo}
         onModo={(m) => {
           if (m) cerrarConsulta(); // una herramienta activa cierra la ficha de consulta
+          if (m && captura) terminarCaptura(null);
           herramientas.setModo(m);
         }}
         cantidad={herramientas.cantidad}
@@ -663,6 +739,22 @@ export default function Visor() {
           />
         )}
       </div>
+
+      {captura && (
+        <div
+          role="status"
+          className={`${tarjeta} absolute top-3 left-1/2 z-30 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center gap-3 py-2 pr-2 pl-3.5 text-sm max-sm:top-auto max-sm:bottom-16`}
+        >
+          <span>
+            {captura === "Polygon"
+              ? "Dibujá el área de análisis: un clic por vértice y doble clic para terminar."
+              : "Hacé clic en el mapa para marcar el destino."}
+          </span>
+          <button type="button" className={botonSecundario} onClick={() => terminarCaptura(null)}>
+            <X className="size-4" aria-hidden /> Cancelar
+          </button>
+        </div>
+      )}
 
       {aviso && (
         <div role="alert" className="absolute bottom-16 left-1/2 z-30 max-w-sm -translate-x-1/2 rounded-lg bg-tinta px-4 py-2.5 text-sm text-white shadow-lg">

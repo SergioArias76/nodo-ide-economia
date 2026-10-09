@@ -1,8 +1,12 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Building, ChevronDown, EyeOff, MapPin, Search, SlidersHorizontal, Trash, User, X, ZoomIn, type LucideIcon } from "lucide-react";
+import { Building, ChevronDown, Download, EyeOff, MapPin, Search, SlidersHorizontal, Trash, User, X, ZoomIn, type LucideIcon } from "lucide-react";
+import type VectorLayer from "ol/layer/Vector";
+import type VectorSource from "ol/source/Vector";
+import GeoJSON from "ol/format/GeoJSON";
 import { temaDe } from "@/lib/config";
+import { descargarTexto } from "./exportar";
 import { BotonIcono, IconoTema, Titulo, campo, reset } from "./ui";
 import type { CapaVisor, Localidad } from "./tipos";
 
@@ -179,6 +183,14 @@ function Simbolo({ c }: { c: CapaVisor }) {
   );
 }
 
+// Capas de archivo y resultados de análisis: se bajan en GeoJSON (EPSG:4326)
+function descargarCapa(c: CapaVisor) {
+  const features = (c.capa as VectorLayer<VectorSource>).getSource()?.getFeatures() ?? [];
+  const json = new GeoJSON().writeFeatures(features, { featureProjection: "EPSG:3857", dataProjection: "EPSG:4326" });
+  const nombre = normalizar(c.titulo).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+  descargarTexto(json, `${nombre || "capa"}.geojson`, "application/geo+json");
+}
+
 function FilaCapa({ c, localidades, onCambiar, onFiltrar, onZoom, onQuitar }: { c: CapaVisor } & Omit<Props, "capas">) {
   const [ajustes, setAjustes] = useState(false);
   return (
@@ -207,6 +219,9 @@ function FilaCapa({ c, localidades, onCambiar, onFiltrar, onZoom, onQuitar }: { 
           className={ajustes ? "" : "text-tenue"}
           onClick={() => setAjustes(!ajustes)}
         />
+        {c.origen === "archivo" && (
+          <BotonIcono icono={Download} etiqueta="Descargar GeoJSON" tamano="sm" className="text-tenue" onClick={() => descargarCapa(c)} />
+        )}
         {(c.origen === "wms" || c.origen === "archivo") && (
           <BotonIcono icono={Trash} etiqueta="Quitar capa" tamano="sm" className="text-tenue" onClick={() => onQuitar(c.id)} />
         )}

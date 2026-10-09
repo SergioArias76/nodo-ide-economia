@@ -14,7 +14,7 @@ export type Hallazgo = { resultado: Resultado; geometria?: Geometry };
 const geojson = new GeoJSON(); // GetFeatureInfo devuelve la geometría en la proyección del mapa
 const capitalizar = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 // Identificadores internos de las bases de origen: no le dicen nada a quien consulta
-const ATRIBUTOS_INTERNOS = /^(gid|fid|id|ogc_fid|objectid|the_geom|geom|shape_(area|leng|length)|bbox)$/i;
+export const ATRIBUTOS_INTERNOS = /^(gid|fid|id|ogc_fid|objectid|the_geom|geom|shape_(area|leng|length)|bbox)$/i;
 // "depto_partido_comuna" → "Depto partido comuna"
 const ETIQUETAS: Record<string, string> = {
   cueanexo: "CUE-Anexo",
@@ -41,12 +41,12 @@ const ETIQUETAS: Record<string, string> = {
   sag: "Organismo",
   objeto: "Objeto",
 };
-const etiquetaDe = (k: string) => {
+export const etiquetaDe = (k: string) => {
   if (ETIQUETAS[k.toLowerCase()]) return ETIQUETAS[k.toLowerCase()];
   const t = k.replace(/[_.]+/g, " ").trim();
   return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 };
-const ATRIBUTOS_NOMBRE = ["nombre", "name", "fna", "gna", "nam", "titulo", "entidad", "localidad"];
+export const ATRIBUTOS_NOMBRE = ["nombre", "name", "fna", "gna", "nam", "titulo", "entidad", "localidad"];
 
 // Ficha con los campos y formatos definidos para la capa en lib/config.ts
 function fichaNodo(nodo: CapaNodo, p: Record<string, unknown>): Resultado {

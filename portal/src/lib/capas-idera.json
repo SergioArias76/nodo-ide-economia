@@ -1,6 +1,6 @@
 {
   "origen": "https://mapa.idera.gob.ar/src/config/data.json",
-  "generado": "2026-10-07",
+  "generado": "2026-10-09",
   "capas": [
     {
       "id": "area-de-explotacion-hidrocarburifera",
@@ -10,7 +10,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "planosbase_concesiones_explotacion",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "central-electrica",
@@ -20,7 +21,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "visor_centrales_unificacion",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "linea-de-transmision-electrica",
@@ -30,7 +32,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "union_cammesa_lineas_transporte",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "planta-transformadora",
@@ -40,7 +43,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "electrica_transporte_visor_eett",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "ductos-de-hidrocarburos-y-agua",
@@ -50,7 +54,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "planosbase_ductos",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "ductos-de-gas-de-distribucion",
@@ -60,7 +65,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "enargas_gasoductos_distribucion",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "ductos-de-gas-troncales",
@@ -70,7 +76,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "enargas_visor_gasoductos_transporte",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "yacimiento-hidrocarburifero-cuencas-de-shale-gas",
@@ -80,7 +87,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "shale_gas_basins",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "pozo-de-hidrocarburos-shale-res-319-93",
@@ -90,7 +98,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "pozos_noconvencionales_shale",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "pozo-de-hidrocarburos-tight-res-319-93",
@@ -100,7 +109,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "pozos_noconvencionales_tight",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "pozo-de-hidrocarburos-res-319-93",
@@ -110,7 +120,8 @@
       "url": "https://sig.energia.gob.ar/wmsenergia",
       "capa": "pozos_noinformados",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "planta-potabilizadora-de-agua",
@@ -120,7 +131,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/industria-servicios/wms",
       "capa": "planta_potabilizadora_de_agua",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "area-de-fabricacion-y-procesamiento",
@@ -130,7 +142,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/wms",
       "capa": "ign:areas_de_fabricacion_y_procesamiento_AC070",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "asentamientos-humanos-de-la-republica-argentina-bahra",
@@ -140,7 +153,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "bahra",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "edificio-de-salud",
@@ -150,7 +164,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/infraestructura-social/wms",
       "capa": "salud_020801",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "planta-urbana",
@@ -160,7 +175,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/wms",
       "capa": "ign:areas_de_asentamientos_y_edificios_020105",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "establecimiento-educativo",
@@ -170,7 +186,8 @@
       "url": "https://mapa.educacion.gob.ar/geoserver/wms",
       "capa": "publico:unidades_servicio",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "institucion-universitaria",
@@ -180,7 +197,8 @@
       "url": "https://mapa.educacion.gob.ar/geoserver/wms",
       "capa": "publico:institucion_universitaria",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "ferrocarril",
@@ -190,7 +208,8 @@
       "url": "https://ide.transporte.gob.ar/geoserver/wms",
       "capa": "idera:Ferrocarril",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "rutas-aereas-nacionales",
@@ -200,7 +219,8 @@
       "url": "https://ide.transporte.gob.ar/geoserver/wms",
       "capa": "observ:_3.4.4.8.rutas_cabotaje_2017.view",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "estacion-ferroviaria",
@@ -210,7 +230,8 @@
       "url": "https://ide.transporte.gob.ar/geoserver/wms",
       "capa": "idera:Estacion_Ferroviaria",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "puerto",
@@ -220,7 +241,8 @@
       "url": "https://ide.transporte.gob.ar/geoserver/wms",
       "capa": "idera:Puertos",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "aerodromo-predios-aeroportuarios",
@@ -230,7 +252,8 @@
       "url": "https://ide.transporte.gob.ar/geoserver/wms",
       "capa": "orsna:_3.4.4.6.Predios_Aeroportuarios_jun17.view",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "aerodromo-aeropuertos",
@@ -240,7 +263,8 @@
       "url": "https://ide.transporte.gob.ar/geoserver/wms",
       "capa": "orsna:_3.4.4.5_SNA_jun17.view",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "aerodromo",
@@ -250,7 +274,8 @@
       "url": "https://ide.transporte.gob.ar/geoserver/wms",
       "capa": "observ:_3.4.4.1.2.aerodromos_ont_a_view",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "puentes",
@@ -260,7 +285,8 @@
       "url": "https://ide.transporte.gob.ar/geoserver/wms",
       "capa": "observ:_3.4.1.1.7.puentes_DNV_2018.view",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "estacion-de-omnibus",
@@ -270,7 +296,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/wms",
       "capa": "ign:infraestructura_de_transporte_AQ125",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "red-vial-rutas-provinciales",
@@ -280,7 +307,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/transporte/wms",
       "capa": "vial_provincial",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "tuneles",
@@ -290,7 +318,8 @@
       "url": "https://sigvial.vialidad.gob.ar/geoserver/dnv/ows",
       "capa": "Túneles",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "puente",
@@ -300,7 +329,8 @@
       "url": "https://sigvial.vialidad.gob.ar/geoserver/dnv/ows",
       "capa": "dnv:Puentes_DNV_2022",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "red-vial-rutas-nacionales",
@@ -310,7 +340,8 @@
       "url": "https://sigvial.vialidad.gob.ar/geoserver/dnv/ows",
       "capa": "dnv:RVN_2022",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "isla",
@@ -320,7 +351,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "isla",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "corriente-de-agua-lineas-perenne",
@@ -330,7 +362,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "lineas_de_aguas_continentales_perenne",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "corriente-de-agua-lineas-intermitente",
@@ -340,7 +373,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "lineas_de_aguas_continentales_intermitentes",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "espejo-de-agua",
@@ -350,7 +384,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "espejo_de_agua",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "corriente-de-agua-areas",
@@ -360,7 +395,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "areas_de_aguas_continentales",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "dique",
@@ -370,7 +406,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/wms",
       "capa": "ign:puntos_de_aguas_continentales_BH051",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "curva-batimetrica",
@@ -380,7 +417,8 @@
       "url": "https://wms.shn.gob.ar/geoserver/wms",
       "capa": "IDERA:curvas_batimetricas",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "cerro",
@@ -390,7 +428,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/relieve-suelo/wms",
       "capa": "puntos_de_geomorfologia_NA100",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "volcan",
@@ -400,7 +439,8 @@
       "url": "https://sigam.segemar.gov.ar/geoserver217/ows",
       "capa": "sigam:PeligroVolcanes",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "epicentro-de-sismo",
@@ -410,7 +450,8 @@
       "url": "https://sigam.segemar.gov.ar/geoserver217/ows",
       "capa": "sigam:PeligroSismos",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "falla",
@@ -420,7 +461,8 @@
       "url": "https://sigam.segemar.gov.ar/geoserver217/ows",
       "capa": "sigam:e250K.Fallas",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "unidad-geologica",
@@ -430,7 +472,8 @@
       "url": "https://sigam.segemar.gov.ar/geoserver217/ows",
       "capa": "sigam:e5M.UnidadesGeologicas",
       "consultable": false,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "area-marina-protegida",
@@ -440,7 +483,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "areas_protegidas:AMP-APN_limites_marzo2022",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "reservas-provinciales",
@@ -450,7 +494,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "areas_protegidas:app280_noviembre2020",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "ordenamiento-territorial-de-bosques-nativos",
@@ -460,7 +505,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "bosques:otbn_nacional",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "glaciar-continental",
@@ -470,7 +516,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "dgarh:ing_sin_ias",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "ecorregion",
@@ -480,7 +527,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "areas_protegidas:eco-regiones_Arg",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "tierras-aridas",
@@ -490,7 +538,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "suelos:indice_aridez_",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "areas-protegidas-nacionales",
@@ -500,7 +549,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "areas_protegidas:APN_limite_areas_wgs84",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "reservas-de-biosfera",
@@ -510,7 +560,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "areas_protegidas:reservas_mab",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "sitios-ramsar",
@@ -520,7 +571,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "areas_protegidas:sitios_ramsar",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "departamento",
@@ -530,7 +582,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "departamento",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "limite-de-zona-de-frontera",
@@ -540,7 +593,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "limite_zona_de_frontera",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "limite-interdepartamental-o-de-partido",
@@ -550,7 +604,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "limite_interdepartamental",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "limite-internacional",
@@ -560,7 +615,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "limite_internacional",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "limite-interprovincial",
@@ -570,7 +626,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "limite_interprovincial",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "pais",
@@ -580,7 +637,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "pais",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "provincia",
@@ -590,7 +648,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "provincia",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "red-altimetrica",
@@ -600,7 +659,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "red_altimetrica",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "red-geocentrica",
@@ -610,7 +670,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "red_geocentrica",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "red-gravimetrica",
@@ -620,7 +681,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "red_gravimetrica",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "red-ramsac",
@@ -630,7 +692,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "red_ramsac",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "zona-de-frontera",
@@ -640,7 +703,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "zona_de_frontera",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "limites-de-espacios-maritimos",
@@ -650,7 +714,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "linea_limite_maritimos",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "gobierno-local",
@@ -660,7 +725,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/idera/wms",
       "capa": "gobiernoslocales_2022",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "paso-fronterizo",
@@ -670,7 +736,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/defensa-seguridad/wms",
       "capa": "ign:pasos_de_fronteras_internacionales",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "linea-de-costa",
@@ -680,7 +747,8 @@
       "url": "https://wms.shn.gob.ar/geoserver/wms",
       "capa": "IDERA:linea_de_costa",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "localidad-censal",
@@ -690,7 +758,8 @@
       "url": "https://geoservicios.indec.gob.ar/geoserver/wms",
       "capa": "geocenso2010:localidades_codigo",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "envolvente-urbana",
@@ -700,7 +769,8 @@
       "url": "https://geoservicios.indec.gob.ar/geoserver/wms",
       "capa": "desarrollo:envolventes",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "vias-de-circulacion-censal",
@@ -710,7 +780,8 @@
       "url": "https://geoservicios.indec.gob.ar/geoserver/wms",
       "capa": "desarrollo:vias",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "radio-censal",
@@ -720,7 +791,8 @@
       "url": "https://geoservicios.indec.gob.ar/geoserver/wms",
       "capa": "eph:radios_eph",
       "consultable": true,
-      "cors": false
+      "cors": false,
+      "wfs": false
     },
     {
       "id": "edificio-de-seguridad",
@@ -730,7 +802,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/defensa-seguridad/wms",
       "capa": "ign:estructuras_operativas_y_defensivas_FA517",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "cuartel-de-bomberos",
@@ -740,7 +813,8 @@
       "url": "https://wms.ign.gob.ar/geoserver/defensa-seguridad/wms",
       "capa": "ign:estructuras_operativas_y_defensivas_090102",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": false
     },
     {
       "id": "area-de-vegetacion-natural-arborea-cerrada",
@@ -750,7 +824,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "bosque_nativo:cobertura_bn",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     },
     {
       "id": "estacion-meteorologica",
@@ -760,7 +835,8 @@
       "url": "https://geo.ambiente.gob.ar/geoserver/wms",
       "capa": "indicadoresyestadistica:estaciones_meteorologicas",
       "consultable": true,
-      "cors": true
+      "cors": true,
+      "wfs": true
     }
   ]
 }
