@@ -9,7 +9,8 @@ import WKT from "ol/format/WKT";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { MultiPolygon, Polygon } from "ol/geom";
-import { buffer, type Extent } from "ol/extent";
+import type { Extent } from "ol/extent";
+import { transformExtent } from "ol/proj";
 import { getRenderPixel } from "ol/render";
 import { apply } from "ol/transform";
 import { Fill, Stroke, Style } from "ol/style";
@@ -21,8 +22,9 @@ const leer = (g: unknown) => formato.readGeometry(g, { dataProjection: "EPSG:432
 
 export const CHUBUT = leer(limite.geometria); // EPSG:3857
 export const EXTENSION_CHUBUT: Extent = CHUBUT.getExtent();
-// Hasta dónde se puede mover el centro del mapa: la provincia y un margen de 150 km
-export const LIMITE_VISTA: Extent = buffer(EXTENSION_CHUBUT, 150_000);
+// Hasta dónde se puede mover el centro del mapa: la Argentina continental, para ver los proveedores de
+// todo el país (las demás capas siguen recortadas al Chubut)
+export const LIMITE_VISTA: Extent = transformExtent([-74, -56, -53, -21], "EPSG:4326", "EPSG:3857");
 
 // Filtro CQL para WFS (la geometría se nombra según la capa)
 const WKT_FILTRO = `SRID=3857;${new WKT().writeGeometry(CHUBUT, { decimals: 1 })}`;

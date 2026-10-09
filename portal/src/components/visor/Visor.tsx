@@ -120,6 +120,21 @@ function cqlCapa(c: CapaNodo, elegidos?: string[], localidades?: string[], rubro
   return partes.length ? partes.join(" AND ") : undefined;
 }
 
+// Workspace de GeoServer con las copias de las capas nacionales recortadas al Chubut
+const WS_NACIONAL = "nacional";
+
+// Capas publicadas en un workspace del nodo, con su extensión (EPSG:3857)
+async function extensionesDe(workspace: string): Promise<Record<string, Extent>> {
+  const xml = await (await fetch(`${PUBLIC_GEOSERVER}/${workspace}/wms?service=WMS&request=GetCapabilities&version=1.3.0`)).text();
+  const extensiones: Record<string, Extent> = {};
+  const recorrer = (c: { Name?: string; EX_GeographicBoundingBox?: Extent; Layer?: unknown[] }) => {
+    if (c.Name && c.EX_GeographicBoundingBox) extensiones[corto(c.Name)] = transformExtent(c.EX_GeographicBoundingBox, "EPSG:4326", "EPSG:3857");
+    (c.Layer as (typeof c)[] | undefined)?.forEach(recorrer);
+  };
+  recorrer(new WMSCapabilities().read(xml).Capability.Layer);
+  return extensiones;
+}
+
 // Localidades con proveedores (WFS de la capa de conteo), ordenadas por nombre
 async function cargarLocalidades(capa: string): Promise<Localidad[]> {
   const q = new URLSearchParams({
@@ -133,7 +148,7 @@ async function cargarLocalidades(capa: string): Promise<Localidad[]> {
   });
   const datos = await (await fetch(`${PUBLIC_GEOSERVER}/${WORKSPACE}/wfs?${q}`)).json();
   return (datos.features as { properties: Record<string, string | number>; geometry: { coordinates: number[] } }[])
-    .filter((f) => f.properties.localidad && f.geometry && enChubut(f.geometry.coordinates))
+    .filter((f) => f.properties.localidad && f.geometry)
     .map((f) => ({
       nombre: String(f.properties.localidad),
       departamento: String(f.properties.departamento ?? ""),
@@ -234,8 +249,9 @@ function crearMapa() {
       filtro,
       localidades,
       rubros,
-      // Imagen única (no teselas): GeoServer no corta las etiquetas en los bordes
-      capa: recortarAChubut(new ImageLayer({
+      // Imagen única (no teselas): GeoServer no corta las etiquetas en los bordes. Sin recorte al Chubut:
+      // los proveedores del Estado provincial están en todo el país
+      capa: new ImageLayer({
         visible,
         zIndex: Z.superpuesta,
         source: new ImageWMS({
@@ -244,7 +260,7 @@ function crearMapa() {
           serverType: "geoserver",
           crossOrigin: "anonymous",
         }),
-      })),
+      }),
     };
   });
 
@@ -278,12 +294,12 @@ function crearMapa() {
       new VectorLayer({ source: resaltado, style: estiloResaltado, zIndex: Z.resaltado }),
     ],
     overlays: [popup, editor],
-    // El mapa no se aleja del Chubut: el centro queda dentro de la provincia y 150 km alrededor
+    // El centro del mapa queda dentro de la Argentina continental (los proveedores están en todo el país)
     view: new View({
       center: fromLonLat([inicial.lon, inicial.lat]),
       zoom: inicial.zoom,
       maxZoom: 20,
-      minZoom: 5,
+      minZoom: 4,
       extent: LIMITE_VISTA,
       constrainOnlyCenter: true,
     }),
@@ -349,23 +365,48 @@ export default function Visor() {
     mapa.addControl(escala);
 
     // Extensión de cada capa del nodo, para "zoom a la capa"
-    fetch(`${PUBLIC_GEOSERVER}/${WORKSPACE}/wms?service=WMS&request=GetCapabilities&version=1.3.0`)
-      .then((r) => r.text())
-      .then((xml) => {
-        const extensiones: Record<string, Extent> = {};
-        const recorrer = (c: { Name?: string; EX_GeographicBoundingBox?: Extent; Layer?: unknown[] }) => {
-          if (c.Name && c.EX_GeographicBoundingBox) extensiones[corto(c.Name)] = c.EX_GeographicBoundingBox;
-          (c.Layer as (typeof c)[] | undefined)?.forEach(recorrer);
-        };
-        recorrer(new WMSCapabilities().read(xml).Capability.Layer);
+    extensionesDe(WORKSPACE)
+      .then((extensiones) =>
         setCapas((actuales) =>
           actuales.map((c) => {
             const e = extensiones[corto(c.id)];
-            return c.origen === "nodo" && e ? { ...c, extension: transformExtent(e, "EPSG:4326", "EPSG:3857") } : c;
+            return c.origen === "nodo" && e ? { ...c, extension: e } : c;
           }),
-        );
-      })
+        ),
+      )
       .catch(() => {}); // sin extensión no se muestra el botón de zoom
+
+    // Capas nacionales copiadas al nodo (scripts/importar-capas-nacionales.mjs): se usan en lugar del
+    // servicio original, que puede tardar o no responder. Las que no están copiadas siguen igual.
+    extensionesDe(WS_NACIONAL)
+      .then((copias) =>
+        setCapas((actuales) =>
+          actuales.map((c) => {
+            const tabla = c.id.replaceAll("-", "_");
+            if (c.origen !== "catalogo" || !copias[tabla]) return c;
+            c.capa.setSource(
+              new ImageWMS({
+                url: `${PUBLIC_GEOSERVER}/${WS_NACIONAL}/wms`,
+                params: { LAYERS: `${WS_NACIONAL}:${tabla}` },
+                serverType: "geoserver",
+                crossOrigin: "anonymous",
+              }),
+            );
+            return {
+              ...c,
+              enNodo: true,
+              resumen: [c.resumen, "Copia del nodo, recortada al Chubut y actualizada cada semana."].filter(Boolean).join(" "),
+              consultable: true,
+              exportable: true,
+              wfs: true,
+              capaWfs: undefined,
+              extension: copias[tabla],
+              leyenda: `${PUBLIC_GEOSERVER}/${WS_NACIONAL}/wms?service=WMS&version=1.3.0&request=GetLegendGraphic&format=image/png&layer=${WS_NACIONAL}:${tabla}`,
+            };
+          }),
+        ),
+      )
+      .catch(() => {}); // sin copias, las capas nacionales se piden a su servicio original
 
     // Lista para el filtro por localidad; si el WFS no responde, el filtro no se muestra
     const fuente = CAPAS_NODO.find((c) => c.filtroLocalidad)?.filtroLocalidad;
@@ -400,7 +441,7 @@ export default function Visor() {
       }
       const archivos = capasRef.current.filter((c) => c.origen === "archivo" && c.visible).map((c) => c.capa);
       const sobreDato =
-        (enChubut(e.coordinate) && hayDatoEn(capasRef.current.filter((c) => c.origen !== "archivo"), e.pixel)) ||
+        hayDatoEn(capasRef.current.filter((c) => c.origen === "nodo" || (c.origen !== "archivo" && enChubut(e.coordinate))), e.pixel) ||
         mapa.hasFeatureAtPixel(e.pixel, { layerFilter: (l) => archivos.includes(l), hitTolerance: 5 });
       elemento.style.cursor = sobreDato ? "pointer" : "";
     });
@@ -409,8 +450,8 @@ export default function Visor() {
 
     const alClic = mapa.on("singleclick", async (e) => {
       if (modoRef.current || Date.now() - finCaptura.current < 600) return; // la herramienta activa usa el clic
-      // Las capas están recortadas al Chubut: afuera solo se consultan los archivos del usuario
-      const consultables = enChubut(e.coordinate) ? capasRef.current : capasRef.current.filter((c) => c.origen === "archivo");
+      // Las capas están recortadas al Chubut: afuera solo se consultan los proveedores y los archivos del usuario
+      const consultables = enChubut(e.coordinate) ? capasRef.current : capasRef.current.filter((c) => c.origen === "archivo" || c.origen === "nodo");
       if (!consultables.some((c) => c.visible)) return;
       const id = ++ultimaConsulta.current;
       popup.setPosition(e.coordinate);

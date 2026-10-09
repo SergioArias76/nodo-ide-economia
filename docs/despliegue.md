@@ -50,6 +50,13 @@ docker compose logs -f
 - [ ] Verificar login de GeoServer con las credenciales del `.env`.
 - [ ] En GeoServer: crear workspace `economia` y store PostGIS (ver [geoserver/README.md](../geoserver/README.md)).
 - [ ] Programar backup diario: `scripts/backup.sh` en cron.
+- [ ] Copiar al nodo las capas nacionales recortadas al Chubut: `node scripts/importar-capas-nacionales.mjs` (requiere Node 20 o más y `npm ci` en `portal/`, de donde toma Turf). El visor las usa en lugar de los servicios originales, que pueden tardar o no responder. Programarlo semanal en cron, por ejemplo los domingos a las 4:
+
+  ```cron
+  0 4 * * 0  cd /opt/nodo-ide-economia && node scripts/importar-capas-nacionales.mjs >> /var/log/capas-nacionales.log 2>&1
+  ```
+
+  Si una capa falla, queda la copia anterior y el visor la sigue usando; si nunca se copió, el visor la pide al servicio original. Se puede reintentar una sola: `node scripts/importar-capas-nacionales.mjs edificio-de-salud`.
 
 ## Actualizaciones
 

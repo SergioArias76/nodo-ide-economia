@@ -70,7 +70,7 @@ export type Proceso = keyof typeof PROCESOS;
 export type AreaAnalisis = "mapa" | "capa" | "dibujo";
 export const AREAS: { valor: AreaAnalisis; etiqueta: string }[] = [
   { valor: "mapa", etiqueta: "Extensión del mapa" },
-  { valor: "capa", etiqueta: "Extensión de la capa de entrada (todo el Chubut)" },
+  { valor: "capa", etiqueta: "Extensión de la capa de entrada" },
   { valor: "dibujo", etiqueta: "Dibujar área" },
 ];
 
@@ -211,9 +211,9 @@ async function filtroCql(c: CapaVisor, area: Polygon | null) {
   const propio = c.origen === "nodo" ? ((c.capa.getSource() as ImageWMS).getParams().CQL_FILTER as string | undefined) : undefined;
   if (propio === "EXCLUDE") return "EXCLUDE";
   const partes = propio ? [`(${propio})`] : [];
-  // Todo el visor se limita al Chubut: el área de análisis se cruza siempre con la provincia
+  // Las capas se limitan al Chubut, salvo las del nodo: los proveedores están en todo el país
   const { geometria } = await esquemaWfs(c);
-  partes.push(cqlChubut(geometria));
+  if (c.origen !== "nodo") partes.push(cqlChubut(geometria));
   if (area) partes.push(`INTERSECTS(${geometria}, SRID=3857;${wkt.writeGeometry(area, { decimals: 2 })})`);
   return partes.join(" AND ");
 }
