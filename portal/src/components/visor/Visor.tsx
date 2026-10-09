@@ -33,6 +33,7 @@ import PanelAgregar, { type CapaWms } from "./PanelAgregar";
 import { PanelAccesibilidad, PanelAyuda, PanelMapasBase, usePreferenciasAccesibilidad } from "./PanelesInfo";
 import BarraHerramientas from "./BarraHerramientas";
 import PanelAnalisis from "./PanelAnalisis";
+import { EXTENSION_CHUBUT, LIMITE_VISTA, capaMascara, enChubut, recortarAChubut } from "./chubut";
 import PanelDatos, { type EstadoDatos } from "./PanelDatos";
 import { MAXIMO_DESTINOS, areaDeExtension, disolverCapa, tablaDeAtributos, type Proceso } from "./analisis";
 import { consultar, hayDatoEn } from "./consulta";
@@ -132,7 +133,7 @@ async function cargarLocalidades(capa: string): Promise<Localidad[]> {
   });
   const datos = await (await fetch(`${PUBLIC_GEOSERVER}/${WORKSPACE}/wfs?${q}`)).json();
   return (datos.features as { properties: Record<string, string | number>; geometry: { coordinates: number[] } }[])
-    .filter((f) => f.properties.localidad && f.geometry)
+    .filter((f) => f.properties.localidad && f.geometry && enChubut(f.geometry.coordinates))
     .map((f) => ({
       nombre: String(f.properties.localidad),
       departamento: String(f.properties.departamento ?? ""),
@@ -165,6 +166,7 @@ function leerUrl() {
   const q = new URLSearchParams(location.search);
   const num = (k: string, defecto: number) => (q.has(k) && !isNaN(Number(q.get(k))) ? Number(q.get(k)) : defecto);
   return {
+    conVista: q.has("zoom") && q.has("lat") && q.has("lng"), // sin vista en la URL se encuadra la provincia
     zoom: num("zoom", VISTA_INICIAL.zoom),
     lat: num("lat", VISTA_INICIAL.lat),
     lon: num("lng", VISTA_INICIAL.lon),
@@ -194,12 +196,12 @@ function capasCatalogo(activas: string[] | null): CapaVisor[] {
       wfs: c.wfs,
       capaWfs: c.capaWfs,
       leyenda: `${c.url}?service=WMS&version=1.3.0&request=GetLegendGraphic&format=image/png&layer=${encodeURIComponent(c.capa)}`,
-      capa: new ImageLayer({
+      capa: recortarAChubut(new ImageLayer({
         visible,
         zIndex: Z.catalogo,
         // crossOrigin solo si el servicio lo permite: si no, la imagen no cargaría
         source: new ImageWMS({ url: c.url, params: { LAYERS: c.capa }, crossOrigin: c.cors ? "anonymous" : undefined }),
-      }),
+      })),
     };
   });
 }
@@ -233,7 +235,7 @@ function crearMapa() {
       localidades,
       rubros,
       // Imagen única (no teselas): GeoServer no corta las etiquetas en los bordes
-      capa: new ImageLayer({
+      capa: recortarAChubut(new ImageLayer({
         visible,
         zIndex: Z.superpuesta,
         source: new ImageWMS({
@@ -242,7 +244,7 @@ function crearMapa() {
           serverType: "geoserver",
           crossOrigin: "anonymous",
         }),
-      }),
+      })),
     };
   });
 
@@ -268,6 +270,7 @@ function crearMapa() {
         bases[b.id] = capa;
         return capa;
       }),
+      capaMascara(Z.mascara),
       ...nodo.map((c) => c.capa),
       ...catalogo.map((c) => c.capa),
       new VectorLayer({ source: ubicacion, style: estiloUbicacion, zIndex: Z.resaltado }),
@@ -275,7 +278,15 @@ function crearMapa() {
       new VectorLayer({ source: resaltado, style: estiloResaltado, zIndex: Z.resaltado }),
     ],
     overlays: [popup, editor],
-    view: new View({ center: fromLonLat([inicial.lon, inicial.lat]), zoom: inicial.zoom, maxZoom: 20 }),
+    // El mapa no se aleja del Chubut: el centro queda dentro de la provincia y 150 km alrededor
+    view: new View({
+      center: fromLonLat([inicial.lon, inicial.lat]),
+      zoom: inicial.zoom,
+      maxZoom: 20,
+      minZoom: 5,
+      extent: LIMITE_VISTA,
+      constrainOnlyCenter: true,
+    }),
   });
 
   return { mapa, nodo, catalogo, inicial, bases, popup, editor, resaltado, ubicacion, marcaAnalisis, capaMarcas, nodoPopup, nodoTexto };
@@ -329,6 +340,11 @@ export default function Visor() {
   // El mapa se monta en el contenedor; la escala va en la barra inferior
   useEffect(() => {
     mapa.setTarget(contenedor.current!);
+    // Al abrir sin vista en la URL, la provincia entera, a la derecha del panel lateral
+    if (!inicial.conVista) {
+      const ancho = contenedor.current!.clientWidth;
+      mapa.getView().fit(EXTENSION_CHUBUT, { padding: [24, 24, 48, ancho >= 640 ? 440 : 24] });
+    }
     const escala = new ScaleLine({ target: escalaRef.current!, minWidth: 80 });
     mapa.addControl(escala);
 
@@ -361,7 +377,7 @@ export default function Visor() {
       mapa.removeControl(escala);
       mapa.setTarget(undefined);
     };
-  }, [mapa]);
+  }, [mapa, inicial.conVista]);
 
 
   // Eventos del mapa
@@ -384,7 +400,7 @@ export default function Visor() {
       }
       const archivos = capasRef.current.filter((c) => c.origen === "archivo" && c.visible).map((c) => c.capa);
       const sobreDato =
-        hayDatoEn(capasRef.current.filter((c) => c.origen !== "archivo"), e.pixel) ||
+        (enChubut(e.coordinate) && hayDatoEn(capasRef.current.filter((c) => c.origen !== "archivo"), e.pixel)) ||
         mapa.hasFeatureAtPixel(e.pixel, { layerFilter: (l) => archivos.includes(l), hitTolerance: 5 });
       elemento.style.cursor = sobreDato ? "pointer" : "";
     });
@@ -393,14 +409,16 @@ export default function Visor() {
 
     const alClic = mapa.on("singleclick", async (e) => {
       if (modoRef.current || Date.now() - finCaptura.current < 600) return; // la herramienta activa usa el clic
-      if (!capasRef.current.some((c) => c.visible)) return;
+      // Las capas están recortadas al Chubut: afuera solo se consultan los archivos del usuario
+      const consultables = enChubut(e.coordinate) ? capasRef.current : capasRef.current.filter((c) => c.origen === "archivo");
+      if (!consultables.some((c) => c.visible)) return;
       const id = ++ultimaConsulta.current;
       popup.setPosition(e.coordinate);
       setConsulta({ estado: "cargando" });
       setGeometrias([]);
       setIndice(0);
       try {
-        const hallazgos = await consultar(mapa, capasRef.current, e.coordinate, e.pixel);
+        const hallazgos = await consultar(mapa, consultables, e.coordinate, e.pixel);
         if (id !== ultimaConsulta.current) return; // llegó una consulta más nueva
         setConsulta({ estado: "listo", resultados: hallazgos.map((h) => h.resultado) });
         setGeometrias(hallazgos.map((h) => h.geometria));
@@ -631,11 +649,13 @@ export default function Visor() {
 
   function agregarWms(w: CapaWms) {
     if (!mapa) return;
-    const capa = new ImageLayer({
-      zIndex: Z.superpuesta,
-      // Sin crossOrigin: muchos servidores no envían CORS para las imágenes (la captura puede fallar)
-      source: new ImageWMS({ url: w.url, params: { LAYERS: w.nombre } }),
-    });
+    const capa = recortarAChubut(
+      new ImageLayer({
+        zIndex: Z.superpuesta,
+        // Sin crossOrigin: muchos servidores no envían CORS para las imágenes (la captura puede fallar)
+        source: new ImageWMS({ url: w.url, params: { LAYERS: w.nombre } }),
+      }),
+    );
     mapa.addLayer(capa);
     setCapas((actuales) => [
       ...actuales,

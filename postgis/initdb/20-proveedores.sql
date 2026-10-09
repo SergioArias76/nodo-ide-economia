@@ -105,14 +105,15 @@ JOIN proveedores.domicilio d ON d.proveedor_id = p.id
 WHERE d.precision <> 'provincia'
 GROUP BY d.provincia, d.departamento, d.localidad;
 
--- Rubros con la cantidad de proveedores publicados: lista del filtro por rubro del visor (solo WFS,
--- sin geometría). Cuenta los mismos proveedores que v_proveedores_publico.
-CREATE VIEW proveedores.v_proveedores_rubros AS
+-- Rubros con la cantidad de proveedores publicados con domicilio en el Chubut: lista del filtro por rubro
+-- del visor, que está limitado a la provincia (solo WFS, sin geometría).
+CREATE OR REPLACE VIEW proveedores.v_proveedores_rubros AS
 SELECT row_number() OVER (ORDER BY r.rubro) AS id,
        r.rubro,
        count(*) AS cant_proveedores
 FROM proveedores.proveedor_rubro r
 JOIN proveedores.v_proveedores_publico p ON p.id = r.proveedor_id
+WHERE p.provincia = 'Chubut'
 GROUP BY r.rubro;
 
 GRANT SELECT ON proveedores.v_proveedores_publico, proveedores.v_proveedores_por_localidad, proveedores.v_proveedores_rubros TO geoserver_ro;

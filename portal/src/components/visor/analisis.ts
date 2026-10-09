@@ -24,6 +24,7 @@ import type {
 } from "geojson";
 import { PUBLIC_GEOSERVER, WORKSPACE, type Campo } from "@/lib/config";
 import { ATRIBUTOS_INTERNOS, ATRIBUTOS_NOMBRE, etiquetaDe } from "./consulta";
+import { cqlChubut } from "./chubut";
 import type { CapaVisor } from "./tipos";
 
 type Turf = typeof import("@turf/turf");
@@ -69,7 +70,7 @@ export type Proceso = keyof typeof PROCESOS;
 export type AreaAnalisis = "mapa" | "capa" | "dibujo";
 export const AREAS: { valor: AreaAnalisis; etiqueta: string }[] = [
   { valor: "mapa", etiqueta: "Extensión del mapa" },
-  { valor: "capa", etiqueta: "Extensión de la capa de entrada" },
+  { valor: "capa", etiqueta: "Extensión de la capa de entrada (todo el Chubut)" },
   { valor: "dibujo", etiqueta: "Dibujar área" },
 ];
 
@@ -96,6 +97,7 @@ const PERFIL: Record<ModoTransporte, string> = { auto: "car", bici: "bike", pie:
 export type Columna = { clave: string; etiqueta: string; numerico?: boolean; formato?: (v: unknown) => string };
 export type Tabla = {
   titulo: string;
+  pestana?: string; // nombre corto, cuando el resultado tiene varias tablas
   subtitulo?: string;
   columnas: Columna[];
   filas: Record<string, unknown>[];
@@ -209,11 +211,11 @@ async function filtroCql(c: CapaVisor, area: Polygon | null) {
   const propio = c.origen === "nodo" ? ((c.capa.getSource() as ImageWMS).getParams().CQL_FILTER as string | undefined) : undefined;
   if (propio === "EXCLUDE") return "EXCLUDE";
   const partes = propio ? [`(${propio})`] : [];
-  if (area) {
-    const { geometria } = await esquemaWfs(c);
-    partes.push(`INTERSECTS(${geometria}, SRID=3857;${wkt.writeGeometry(area, { decimals: 2 })})`);
-  }
-  return partes.join(" AND ") || undefined;
+  // Todo el visor se limita al Chubut: el área de análisis se cruza siempre con la provincia
+  const { geometria } = await esquemaWfs(c);
+  partes.push(cqlChubut(geometria));
+  if (area) partes.push(`INTERSECTS(${geometria}, SRID=3857;${wkt.writeGeometry(area, { decimals: 2 })})`);
+  return partes.join(" AND ");
 }
 
 // POST como el INDEC: un área dibujada con muchos vértices no entra en la URL
@@ -327,6 +329,47 @@ export async function influencia(features: GFeatures, distancia: number, unidad:
   }) as GFeatures;
 }
 
+// Área de influencia comparada con otra capa (por ejemplo, edificios de salud y proveedores de cuidado a
+// domicilio): cuántos elementos de la otra capa caen en cada área y, para cada uno de ellos, cuál es el
+// elemento de entrada más cercano, a qué distancia y si está dentro de alguna área.
+export type Comparacion = {
+  porArea: number[]; // elementos de la otra capa dentro de cada área (mismo orden que las áreas)
+  cercanos: { indice: number; metros: number; dentro: boolean }[]; // por elemento de la otra capa
+};
+
+export async function compararInfluencia(entrada: GFeatures, areas: GFeatures, otra: GFeatures, alAvanzar?: (hechos: number) => void): Promise<Comparacion> {
+  const turf = await cargarTurf();
+  const cajas = areas.map((a) => turf.bbox(a));
+  const centros = entrada.map((f) => (f.geometry.type === "Point" ? f.geometry.coordinates : turf.centroid(f).geometry.coordinates) as number[]);
+  const porArea = areas.map(() => 0);
+  const cercanos: Comparacion["cercanos"] = [];
+  for (let i = 0; i < otra.length; i++) {
+    const g = otra[i];
+    const caja = turf.bbox(g);
+    let dentro = false;
+    areas.forEach((a, j) => {
+      const c = cajas[j];
+      if (caja[0] <= c[2] && caja[2] >= c[0] && caja[1] <= c[3] && caja[3] >= c[1] && turf.booleanIntersects(g, a)) {
+        porArea[j]++;
+        dentro = true;
+      }
+    });
+    const punto = g.geometry.type === "Point" ? (g.geometry.coordinates as number[]) : turf.centroid(g).geometry.coordinates;
+    let indice = -1;
+    let metros = Infinity;
+    centros.forEach((c, j) => {
+      const m = turf.distance(punto, c, { units: "meters" });
+      if (m < metros) [metros, indice] = [m, j];
+    });
+    cercanos.push({ indice, metros, dentro });
+    if (i % 500 === 499) {
+      alAvanzar?.(i + 1);
+      await new Promise((r) => setTimeout(r));
+    }
+  }
+  return { porArea, cercanos };
+}
+
 // "Disolver áreas de influencia" de una capa de resultado: une todas sus áreas en una
 export async function disolverCapa(features: Feature[], titulo: string) {
   const unida = await disolver(a4326(features));
@@ -408,7 +451,10 @@ export async function derivadas(features: GFeatures, tipo: Derivada) {
 export function nombreDe(p: GeoJsonProperties, c?: CapaVisor) {
   if (!p) return "Sin nombre";
   const atributo = c?.nodo?.atributoTitulo ?? ATRIBUTOS_NOMBRE.find((n) => Object.keys(p).some((k) => k.toLowerCase() === n && p[k]));
-  const clave = atributo && Object.keys(p).find((k) => k.toLowerCase() === atributo.toLowerCase());
+  // Si no hay uno conocido, el primer atributo con valor cuyo nombre diga "nombre"
+  const clave =
+    (atributo && Object.keys(p).find((k) => k.toLowerCase() === atributo.toLowerCase())) ||
+    Object.keys(p).find((k) => /nombre|name/i.test(k) && p[k] != null && p[k] !== "");
   return clave ? String(p[clave]) : "Sin nombre";
 }
 
