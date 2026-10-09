@@ -43,7 +43,7 @@ existe "/workspaces/$WS/datastores/$STORE" || ok "store $STORE" "$(api POST "/wo
   {"@key":"dbtype","\$":"postgis"},{"@key":"host","\$":"postgis"},{"@key":"port","\$":"5432"},
   {"@key":"database","\$":"$IDE_DB"},{"@key":"schema","\$":"proveedores"},
   {"@key":"user","\$":"geoserver_ro"},{"@key":"passwd","\$":"$GEOSERVER_DB_PASSWORD"},
-  {"@key":"Expose primary keys","\$":"true"}]}}}
+  {"@key":"Expose primary keys","\$":"true"},{"@key":"validate connections","\$":"true"}]}}}
 EOF
 )"
 

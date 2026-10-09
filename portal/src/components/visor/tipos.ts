@@ -20,6 +20,7 @@ export type CapaVisor = {
   exportable?: boolean; // false: el servicio no permite CORS y bloquea la captura
   wfs?: boolean; // capas del catálogo: se pueden descargar por WFS para el análisis geográfico
   capaWfs?: string; // nombre de la capa en el WFS, si no es el mismo que en el WMS
+  enNodo?: boolean; // capa nacional servida desde la copia del nodo (recortada al Chubut)
   filtro?: string[]; // valores elegidos del filtro de la capa (nodo.filtro)
   localidades?: string[]; // localidades elegidas (nodo.filtroLocalidad); vacío: todas
   rubros?: string[]; // rubros elegidos (nodo.filtroRubro); vacío: todos
