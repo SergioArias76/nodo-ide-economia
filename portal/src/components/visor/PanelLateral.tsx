@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Accessibility, CirclePlus, CircleQuestionMark, Layers, Map as IconoMapa, Moon, PanelLeftClose, Sun } from "lucide-react";
+import { Accessibility, CirclePlus, CircleQuestionMark, Cog, Layers, Map as IconoMapa, Moon, PanelLeftClose, Sun } from "lucide-react";
 import { elegirTema, useTema } from "@/lib/tema";
 import Buscador, { type Lugar } from "./Buscador";
 import { BotonIcono, tarjeta } from "./ui";
@@ -12,6 +12,7 @@ const PANELES = [
   { id: "capas", icono: Layers, etiqueta: "Capas" },
   { id: "base", icono: IconoMapa, etiqueta: "Mapa base" },
   { id: "agregar", icono: CirclePlus, etiqueta: "Agregar capas" },
+  { id: "analisis", icono: Cog, etiqueta: "Análisis geográfico" },
   { id: "ayuda", icono: CircleQuestionMark, etiqueta: "Ayuda" },
   { id: "accesibilidad", icono: Accessibility, etiqueta: "Accesibilidad" },
 ] as const;
@@ -20,10 +21,11 @@ type Props = {
   panel: Panel | null;
   onPanel: (p: Panel | null) => void;
   onLugar: (l: Lugar) => void;
+  minimizado?: boolean; // en el celular el panel se oculta (sin desmontarse) mientras se dibuja en el mapa
   children: ReactNode;
 };
 
-export default function PanelLateral({ panel, onPanel, onLugar, children }: Props) {
+export default function PanelLateral({ panel, onPanel, onLugar, minimizado, children }: Props) {
   const { oscuro } = useTema();
   return (
     <div className="pointer-events-none absolute top-3 bottom-3 left-3 z-20 sm:bottom-16 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2">
@@ -75,7 +77,7 @@ export default function PanelLateral({ panel, onPanel, onLugar, children }: Prop
         {panel && (
           <section
             aria-label={PANELES.find((p) => p.id === panel)?.etiqueta}
-            className={`${tarjeta} pointer-events-auto max-h-full min-w-0 flex-1 overflow-y-auto p-3`}
+            className={`${tarjeta} pointer-events-auto max-h-full min-w-0 flex-1 overflow-y-auto p-3 ${minimizado ? "max-sm:hidden" : ""}`}
           >
             {children}
           </section>

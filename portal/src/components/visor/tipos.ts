@@ -18,6 +18,7 @@ export type CapaVisor = {
   resumen?: string; // descripción de la capa
   consultable?: boolean; // false: el servicio no devuelve datos en JSON
   exportable?: boolean; // false: el servicio no permite CORS y bloquea la captura
+  wfs?: boolean; // capas del catálogo: se pueden descargar por WFS para el análisis geográfico
   filtro?: string[]; // valores elegidos del filtro de la capa (nodo.filtro)
   localidades?: string[]; // localidades elegidas (nodo.filtroLocalidad); vacío: todas
 };
@@ -25,7 +26,7 @@ export type CapaVisor = {
 // Localidad con proveedores, para el filtro por localidad (coordenada en EPSG:3857)
 export type Localidad = { nombre: string; departamento: string; provincia: string; cantidad: number; coordenada: number[] };
 
-export type Panel = "capas" | "base" | "agregar" | "ayuda" | "accesibilidad";
+export type Panel = "capas" | "base" | "agregar" | "analisis" | "ayuda" | "accesibilidad";
 
 export type Modo =
   | "medir-distancia"
@@ -40,4 +41,4 @@ export type Modo =
   | "borrar";
 
 // Orden de dibujo de las capas
-export const Z = { base: 0, catalogo: 5, superpuesta: 10, grilla: 40, dibujo: 50, resaltado: 60 } as const;
+export const Z = { base: 0, catalogo: 5, superpuesta: 10, resultado: 20, grilla: 40, dibujo: 50, resaltado: 60 } as const;

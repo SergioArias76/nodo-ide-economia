@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  Camera, CirclePlus, Grid3x3, Layers, Link, LocateFixed, Map as IconoMapa, Maximize, MousePointerClick, PenLine,
+  Camera, CirclePlus, Cog, Grid3x3, Layers, Link, LocateFixed, Map as IconoMapa, Maximize, MousePointerClick, PenLine,
   Monitor, Moon, Printer, Ruler, Search, SquareDashed, Sun,
 } from "lucide-react";
 import { MAPAS_BASE, SIN_BASE, miniatura } from "@/lib/config";
@@ -60,6 +60,7 @@ const AYUDA = [
   { icono: IconoMapa, titulo: "Mapa base", texto: "Elegí el fondo: OpenStreetMap, Argenmap del IGN o ninguno." },
   { icono: Moon, titulo: "Modo claro u oscuro", texto: "Cambialo con el botón de luna o sol de la barra; en Accesibilidad podés volver al del sistema." },
   { icono: CirclePlus, titulo: "Agregar capas", texto: "Sumá capas de otros servicios WMS o abrí archivos GeoJSON, KML, GPX o Shapefile." },
+  { icono: Cog, titulo: "Análisis geográfico", texto: "Contá, sumá o promediá datos en un área, generá áreas de influencia, cruzá capas y calculá distancias. Los resultados quedan como capas nuevas." },
   { icono: Ruler, titulo: "Medir", texto: "Distancias y superficies. Doble clic termina la medición." },
   { icono: LocateFixed, titulo: "Mi ubicación", texto: "Centra el mapa en tu posición (el navegador pide permiso)." },
   { icono: Grid3x3, titulo: "Grilla", texto: "Muestra meridianos y paralelos con sus coordenadas." },

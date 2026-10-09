@@ -28,5 +28,6 @@
 
 ## Fase 4 – Consumo
 - [x] Visor con las herramientas del de IDERA, capas nacionales por tema, consulta GetFeatureInfo e identidad provincial
+- [x] Visor: análisis geográfico como el geoportal del INDEC (conteo, estadísticas, área de influencia, superposición, distancias, geometrías derivadas)
 - [ ] Visor: capas de la IDE Chubut y búsqueda de proveedores por nombre, CUIT o rubro
 - [ ] Integración con tableros de gestión del Ministerio

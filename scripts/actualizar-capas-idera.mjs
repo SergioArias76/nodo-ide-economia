@@ -66,5 +66,30 @@ for (const url of new Set(capas.map((c) => c.url))) {
 }
 for (const c of capas) c.cors = cors[c.url];
 
+// ¿La capa se puede descargar por WFS en GeoJSON desde otro sitio? Es lo que necesita el análisis
+// geográfico del visor (conteo, áreas de influencia, superposición…). Se prueba pidiendo un elemento.
+for (const c of capas) {
+  c.wfs = false;
+  if (!c.cors) continue;
+  const q = new URLSearchParams({
+    service: "WFS",
+    version: "2.0.0",
+    request: "GetFeature",
+    typeNames: c.capa,
+    count: "1",
+    outputFormat: "application/json",
+  });
+  try {
+    const r = await fetch(`${c.url}?${q}`, {
+      headers: { Origin: "https://ide.chubut.example" },
+      signal: AbortSignal.timeout(20000),
+    });
+    c.wfs = r.ok && r.headers.has("access-control-allow-origin") && Array.isArray((await r.json()).features);
+  } catch {
+    // sin WFS o con respuesta que no es GeoJSON
+  }
+  console.log(`${c.wfs ? "WFS   " : "sin WFS"} ${c.titulo}`);
+}
+
 writeFileSync(DESTINO, JSON.stringify({ origen: ORIGEN, generado: new Date().toISOString().slice(0, 10), capas }, null, 2) + "\n");
 console.log(`${capas.length} capas en ${new Set(capas.map((c) => c.grupo)).size} grupos → ${DESTINO}`);
