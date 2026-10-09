@@ -46,14 +46,14 @@ bash scripts/configurar-geonetwork.sh           # contraseña de admin de GeoNet
 
 ## Visor
 
-Visor propio en `/visor`, con las herramientas del visor de IDERA (mapa.idera.gob.ar) y la identidad del Gobierno del Chubut:
+Visor propio en `/visor`, con las herramientas del visor de IDERA (mapa.idera.gob.ar) y la identidad del Gobierno del Chubut. Está limitado a la provincia: todas las capas se recortan al límite del Chubut (IGN, con 250 m de margen para no perder domicilios sobre la costa), fuera de él el mapa queda velado, el buscador solo trae localidades chubutenses y la consulta, las tablas y el análisis piden los datos únicamente dentro de la provincia. El límite se regenera con `node scripts/generar-limite-chubut.mjs`.
 
 - **Capas del nodo**: proveedores del Estado (ícono por domicilio: edificio para persona jurídica, persona para física; con filtros por persona jurídica o física, por localidad y por rubro) y cantidad de proveedores por localidad.
 - **Capas nacionales** del catálogo de IDERA agrupadas por tema (escuelas, hospitales, transporte, hidrografía…), con opacidad, leyenda y zoom a la extensión.
 - **Mapas base**: OpenStreetMap (por defecto), Argenmap del IGN (normal, gris y oscuro) o sin mapa base.
 - **Herramientas**: búsqueda de localidades, consulta de datos con clic, medición de distancias y superficies, dibujo (con exportación a GeoJSON), grilla de coordenadas, mi ubicación, captura PNG e impresión en PDF.
 - **Análisis geográfico**, con las funciones y el comportamiento del geoportal estadístico del INDEC:
-  - Conteo por área (exacto, lo cuenta el servidor), estadísticas (cuenta, suma, promedio, máximo o mínimo de un campo, en total o sumarizadas por otro campo; los rubros se cuentan uno por uno), área de influencia (con "Disolver áreas de influencia" en la capa de resultado), superposición elemento por elemento (intersección, diferencia, unión), distancias a uno o más destinos (en línea recta o por red vial a pie, en bicicleta o en vehículo, con duración) y geometrías derivadas (centroide, envolvente, centro de masa, punto en el elemento).
+  - Conteo por área (exacto, lo cuenta el servidor), estadísticas (cuenta, suma, promedio, máximo o mínimo de un campo, en total o sumarizadas por otro campo; los rubros se cuentan uno por uno), área de influencia (comparable con otra capa: por ejemplo, cuántos proveedores del rubro "Cuidador a domicilio" quedan a menos de 1 km de cada edificio de salud y cuál es el más cercano a cada proveedor; con "Disolver áreas de influencia" en la capa de resultado), superposición elemento por elemento (intersección, diferencia, unión), distancias a uno o más destinos (en línea recta o por red vial a pie, en bicicleta o en vehículo, con duración) y geometrías derivadas (centroide, envolvente, centro de masa, punto en el elemento).
   - Área de análisis: extensión del mapa, toda la capa o un área dibujada; se aplica en el servidor (WFS con `INTERSECTS`).
   - Capas de entrada: las encendidas del nodo, con sus filtros (por ejemplo, proveedores de un rubro), las nacionales que publican WFS (42 de 76, como edificios de seguridad, escuelas o salud), archivos, dibujos y resultados anteriores.
   - Panel de datos a la derecha, como el del INDEC: tablas de estadísticas, distancias y atributos de cualquier capa analizable, con columnas ordenables, descarga CSV y clic en la fila para ir al elemento. Las capas de resultado tienen color, tabla de atributos y descarga GeoJSON.
@@ -86,6 +86,7 @@ datos/           Datos de trabajo locales y cachés de geocodificación (no vers
 | `publicar-geoserver.sh` | Workspace, store, capas, estilos y ajustes de seguridad de GeoServer |
 | `configurar-geonetwork.sh` | Reemplaza la contraseña de fábrica de GeoNetwork |
 | `actualizar-capas-idera.mjs` | Regenera el catálogo de capas nacionales del visor |
+| `generar-limite-chubut.mjs` | Regenera el límite del Chubut que recorta y filtra las capas del visor |
 | `backup.sh` | Respaldo de la base y de los datos de GeoServer y GeoNetwork |
 
 ## Documentación

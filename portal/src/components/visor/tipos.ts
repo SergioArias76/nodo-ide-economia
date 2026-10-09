@@ -47,4 +47,4 @@ export type Modo =
   | "borrar";
 
 // Orden de dibujo de las capas
-export const Z = { base: 0, catalogo: 5, superpuesta: 10, resultado: 20, grilla: 40, dibujo: 50, resaltado: 60 } as const;
+export const Z = { base: 0, mascara: 2, catalogo: 5, superpuesta: 10, resultado: 20, grilla: 40, dibujo: 50, resaltado: 60 } as const;

@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type Feature from "ol/Feature";
 import type { Extent } from "ol/extent";
 import { Point, Polygon, type Geometry } from "ol/geom";
+import { extend } from "ol/extent";
 import { getArea } from "ol/sphere";
 import { toLonLat } from "ol/proj";
 import {
@@ -12,7 +13,7 @@ import {
 } from "lucide-react";
 import {
   AREAS, DERIVADAS, MAXIMO, MAXIMO_DESTINOS, MODOS, OPERACIONES, PROCESOS, RELACIONES, aMapa, areaDeExtension, camposDe,
-  columnasDe, contar, derivadas, distancias, esAnalizable, estadisticas, formatoDistancia, formatoDuracion, formatoNumero,
+  columnasDe, compararInfluencia, contar, derivadas, distancias, esAnalizable, estadisticas, formatoDistancia, formatoDuracion, formatoNumero,
   influencia, nombreDe, obtener, superposicion,
   type AreaAnalisis, type CampoEntrada, type Derivada, type Entrada, type GFeatures, type ModoTransporte, type Operacion,
   type Proceso, type Relacion,
@@ -89,6 +90,7 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
   const [sumarizar, setSumarizar] = useState("");
   const [distancia, setDistancia] = useState("");
   const [unidad, setUnidad] = useState<"meters" | "kilometers">("meters");
+  const [comparaId, setComparaId] = useState(""); // área de influencia: capa a comparar ("" = ninguna)
   const [otraId, setOtraId] = useState("");
   const [relacion, setRelacion] = useState<Relacion>("interseccion");
   const [destinoTipo, setDestinoTipo] = useState<"puntos" | "coordenada">("puntos");
@@ -107,6 +109,7 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
   const entrada = entradas.find((e) => e.id === entradaId) ?? entradas[0];
   const otras = entradas.filter((e) => e.id !== entrada?.id);
   const otra = otras.find((e) => e.id === otraId) ?? otras[0];
+  const compara = otras.find((e) => e.id === comparaId);
   const apagadas = capas.filter((c) => !c.visible && esAnalizable(c)).length;
 
   // Campos de la capa de entrada (tipos reales del servicio), para las estadísticas
@@ -255,7 +258,104 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
 
         case "influencia": {
           const d = num(distancia);
-          return capa(nombre(` de ${d.toLocaleString("es-AR")} ${unidad === "meters" ? "m" : "km"}`), await influencia(features, d, unidad), aviso);
+          const radio = `${d.toLocaleString("es-AR")} ${unidad === "meters" ? "m" : "km"}`;
+          const areas = await influencia(features, d, unidad);
+          if (!compara) return capa(nombre(` de ${radio}`), areas, aviso);
+
+          // Comparación con otra capa: se pide en el área de análisis ampliada hasta cubrir las áreas de influencia
+          const capaAreas = aMapa(areas);
+          let zona: Polygon | null = null;
+          if (recorte) {
+            const e = recorte.getExtent().slice();
+            capaAreas.forEach((f) => extend(e, f.getGeometry()!.getExtent()));
+            zona = areaDeExtension(e);
+          }
+          setEstado({ tipo: "corriendo", mensaje: `Obteniendo los datos de ${compara.titulo}…` });
+          const segunda = await obtener(compara, zona);
+          const tituloCompara = sinPrefijo(compara.titulo) + detalleFiltro(compara.capa);
+          setEstado({ tipo: "corriendo", mensaje: `Comparando ${segunda.features.length.toLocaleString("es-AR")} elementos con las áreas…` });
+          await esperar();
+          const { porArea, cercanos } = await compararInfluencia(features, areas, segunda.features, (n) =>
+            setEstado({ tipo: "corriendo", mensaje: `Comparando: ${n.toLocaleString("es-AR")} de ${segunda.features.length.toLocaleString("es-AR")}…` }),
+          );
+          const nombres = features.map((f) => nombreDe(f.properties, entrada.capa));
+
+          // Capas de resultado: las áreas con la cantidad de elementos dentro, y los elementos que quedan dentro
+          onResultado(
+            nombre(` de ${radio}`),
+            aMapa(areas.map((a, j) => ({ ...a, properties: { ...a.properties, capa_comparada: tituloCompara, cantidad_dentro: porArea[j] } }))),
+            proceso,
+          );
+          const dentro = segunda.features.flatMap((f, i) =>
+            cercanos[i].dentro
+              ? [{ ...f, properties: { ...f.properties, mas_cercano: nombres[cercanos[i].indice], distancia: formatoDistancia(cercanos[i].metros) } }]
+              : [],
+          );
+          if (dentro.length) onResultado(`${tituloCompara} a menos de ${radio} de ${tituloEntrada}`, aMapa(dentro), "superposicion");
+
+          // Tablas: por elemento de entrada y por elemento comparado
+          const [columnasEntrada, columnasCompara] = await Promise.all([columnasDe(entrada), columnasDe(compara)]);
+          const etiquetaDentro = `${sinPrefijo(compara.titulo)} a menos de ${radio}`;
+          const ordenAreas = features.map((_, j) => j).sort((a, b) => porArea[b] - porArea[a]);
+          const ordenCompara = segunda.features.map((_, i) => i).sort((a, b) => cercanos[a].metros - cercanos[b].metros);
+          const geomEntrada = aMapa(features).map((f) => f.getGeometry());
+          const geomCompara = aMapa(segunda.features).map((f) => f.getGeometry());
+          onDatos({
+            estado: "listo",
+            tabla: {
+              titulo: `Resultado: ${nombre(` de ${radio}`)} comparada con ${tituloCompara}`,
+              pestana: `Por ${sinPrefijo(entrada.titulo).toLowerCase()}`,
+              subtitulo: `Cantidad de ${tituloCompara} dentro de cada área de influencia`,
+              columnas: [
+                // la cantidad primero: con nombres largos sigue a la vista en el panel angosto
+                { clave: "_dentro", etiqueta: etiquetaDentro, numerico: true },
+                { clave: "_nombre", etiqueta: sinPrefijo(entrada.titulo) },
+                // sin repetir el atributo que ya se muestra como nombre
+                ...columnasEntrada.filter((c) => !features.some((f) => f.properties?.[c.clave] != null && String(f.properties[c.clave]) === nombreDe(f.properties, entrada.capa))),
+              ],
+              filas: ordenAreas.map((j) => ({ ...features[j].properties, _nombre: nombres[j], _dentro: porArea[j] })),
+              geometrias: ordenAreas.map((j) => geomEntrada[j]),
+              archivo: `influencia ${entrada.titulo} con ${compara.titulo}`,
+              aviso,
+            },
+            otras: [
+              {
+                titulo: tituloCompara,
+                pestana: sinPrefijo(compara.titulo),
+                subtitulo: `Cada elemento con el más cercano de ${tituloEntrada} (distancia en línea recta)`,
+                columnas: [
+                  { clave: "_dentro", etiqueta: `A menos de ${radio}` },
+                  { clave: "_cercano", etiqueta: `${sinPrefijo(entrada.titulo)} más cercano` },
+                  { clave: "_metros", etiqueta: "Distancia", numerico: true, formato: (v) => formatoDistancia(Number(v)) },
+                  ...columnasCompara,
+                ],
+                filas: ordenCompara.map((i) => ({
+                  ...segunda.features[i].properties,
+                  _dentro: cercanos[i].dentro ? "Sí" : "No",
+                  _cercano: nombres[cercanos[i].indice] ?? "",
+                  _metros: Math.round(cercanos[i].metros),
+                })),
+                geometrias: ordenCompara.map((i) => geomCompara[i]),
+                archivo: `${compara.titulo} cerca de ${entrada.titulo}`,
+                aviso: avisoTope(segunda.truncado, compara.titulo),
+              },
+            ],
+          });
+
+          const total = segunda.features.length;
+          const sinNinguno = porArea.filter((n) => n === 0).length;
+          return setEstado({
+            tipo: "listo",
+            numero: dentro.length,
+            aviso: [aviso, avisoTope(segunda.truncado, compara.titulo)].filter(Boolean).join(" ") || undefined,
+            mensaje: (
+              <>
+                de {total.toLocaleString("es-AR")} {tituloCompara} ({total ? formatoNumero((dentro.length / total) * 100, 0) : 0} %) quedan a
+                menos de {radio} de {tituloEntrada}. {sinNinguno.toLocaleString("es-AR")} de {features.length.toLocaleString("es-AR")}{" "}
+                {sinNinguno === 1 ? "no tiene" : "no tienen"} ninguno dentro de su área. El detalle está en el panel de datos y en las capas de resultado.
+              </>
+            ),
+          });
         }
 
         case "superposicion": {
@@ -472,17 +572,34 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
           )}
 
           {proceso === "influencia" && (
-            <div className="flex gap-2">
-              <Campo etiqueta="Distancia de área de influencia">
-                <input className={campo} inputMode="decimal" placeholder="500" value={distancia} onChange={(e) => setDistancia(e.target.value)} />
-              </Campo>
-              <Campo etiqueta="Unidad de distancia">
-                <select className={campo} value={unidad} onChange={(e) => setUnidad(e.target.value as typeof unidad)}>
-                  <option value="meters">Metros</option>
-                  <option value="kilometers">Kilómetros</option>
+            <>
+              <div className="flex gap-2">
+                <Campo etiqueta="Distancia de área de influencia">
+                  <input className={campo} inputMode="decimal" placeholder="500" value={distancia} onChange={(e) => setDistancia(e.target.value)} />
+                </Campo>
+                <Campo etiqueta="Unidad de distancia">
+                  <select className={campo} value={unidad} onChange={(e) => setUnidad(e.target.value as typeof unidad)}>
+                    <option value="meters">Metros</option>
+                    <option value="kilometers">Kilómetros</option>
+                  </select>
+                </Campo>
+              </div>
+              <Campo etiqueta="Comparar con otra capa">
+                <select className={campo} value={compara?.id ?? ""} onChange={(e) => setComparaId(e.target.value)}>
+                  <option value="">Ninguna</option>
+                  {otras.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.titulo + detalleFiltro(e.capa)}
+                    </option>
+                  ))}
                 </select>
               </Campo>
-            </div>
+              <p className="m-0 -mt-1 text-xs text-tenue">
+                {compara
+                  ? `Cuenta los elementos de ${sinPrefijo(compara.titulo)} que quedan dentro de cada área y, para cada uno, el más cercano de la capa de entrada.`
+                  : "Por ejemplo: edificios de salud comparados con proveedores filtrados por el rubro «Cuidador a domicilio»."}
+              </p>
+            </>
           )}
 
           {proceso === "superposicion" && (

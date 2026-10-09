@@ -12,7 +12,7 @@ import { BotonIcono, reset, tarjeta } from "./ui";
 export type EstadoDatos =
   | { estado: "cargando"; titulo: string }
   | { estado: "error"; titulo: string; mensaje: string }
-  | { estado: "listo"; tabla: Tabla };
+  | { estado: "listo"; tabla: Tabla; otras?: Tabla[] }; // otras: más tablas del mismo resultado, en pestañas
 
 type Props = {
   datos: EstadoDatos;
@@ -48,14 +48,6 @@ export default function PanelDatos({ datos, ampliado, onAmpliar, onCerrar, onIr 
       <header className="flex items-start gap-2 border-b border-borde/70 p-2 pl-3">
         <Table className="mt-1 size-4 shrink-0 text-acento" aria-hidden />
         <h2 className="m-0 min-w-0 flex-1 py-0.5 text-sm leading-snug font-semibold">{titulo}</h2>
-        {datos.estado === "listo" && (
-          <BotonIcono
-            icono={Download}
-            etiqueta="Descargar tabla (CSV)"
-            tamano="sm"
-            onClick={() => descargarTexto(csv(datos.tabla.columnas, datos.tabla.filas), `${nombreArchivo(datos.tabla.archivo)}.csv`, "text/csv")}
-          />
-        )}
         <BotonIcono icono={ampliado ? Minimize2 : Maximize2} etiqueta={ampliado ? "Achicar" : "Ampliar"} tamano="sm" className="max-sm:hidden" onClick={onAmpliar} />
         <BotonIcono icono={X} etiqueta="Cerrar" tamano="sm" onClick={onCerrar} />
       </header>
@@ -65,8 +57,46 @@ export default function PanelDatos({ datos, ampliado, onAmpliar, onCerrar, onIr 
         </p>
       )}
       {datos.estado === "error" && <p className="m-0 p-3 text-sm">{datos.mensaje}</p>}
-      {datos.estado === "listo" && <Contenido key={datos.tabla.titulo + datos.tabla.filas.length} tabla={datos.tabla} onIr={onIr} />}
+      {datos.estado === "listo" && <Listo key={datos.tabla.titulo + datos.tabla.filas.length} tablas={[datos.tabla, ...(datos.otras ?? [])]} onIr={onIr} />}
     </aside>
+  );
+}
+
+function Listo({ tablas, onIr }: { tablas: Tabla[]; onIr: (g: Geometry) => void }) {
+  const [activa, setActiva] = useState(0);
+  const tabla = tablas[activa];
+  return (
+    <>
+      <div className="flex items-end gap-1 border-b border-borde/70 px-2 pt-1.5">
+        {tablas.length > 1 && (
+          <div role="tablist" className="flex min-w-0 flex-1 flex-wrap gap-1">
+            {tablas.map((t, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={i === activa}
+                onClick={() => setActiva(i)}
+                className={
+                  `${reset} -mb-px cursor-pointer rounded-t-md border border-b-0 px-2.5 py-1 text-xs ` +
+                  (i === activa ? "border-borde/70 bg-fondo font-semibold text-texto" : "border-transparent text-tenue hover:text-texto")
+                }
+              >
+                {t.pestana ?? t.titulo}
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => descargarTexto(csv(tabla.columnas, tabla.filas), `${nombreArchivo(tabla.archivo)}.csv`, "text/csv")}
+          className={`${reset} mb-1 ml-auto inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs text-acento hover:underline`}
+        >
+          <Download className="size-3.5" aria-hidden /> CSV
+        </button>
+      </div>
+      <Contenido key={activa} tabla={tabla} onIr={onIr} />
+    </>
   );
 }
 
@@ -144,7 +174,7 @@ function Contenido({ tabla, onIr }: { tabla: Tabla; onIr: (g: Geometry) => void 
                     }
                   >
                     {tabla.columnas.map((c) => (
-                      <td key={c.clave} className={"max-w-[18rem] px-2.5 py-1 align-top " + (c.numerico ? "text-right tabular-nums" : "")}>
+                      <td key={c.clave} className={"max-w-[14rem] px-2.5 py-1 align-top " + (c.numerico ? "text-right tabular-nums" : "")}>
                         {celda(i, c.clave)}
                       </td>
                     ))}

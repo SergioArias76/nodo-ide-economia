@@ -33,7 +33,8 @@ export default function Buscador({ onElegir }: { onElegir: (l: Lugar) => void })
     const espera = setTimeout(async () => {
       setCargando(true);
       try {
-        const url = `${GEOREF}?nombre=${encodeURIComponent(consulta)}&max=10&campos=nombre,centroide,departamento.nombre,provincia.nombre`;
+        // Solo localidades del Chubut (código INDEC 26): el visor está limitado a la provincia
+        const url = `${GEOREF}?nombre=${encodeURIComponent(consulta)}&provincia=26&max=10&campos=nombre,centroide,departamento.nombre,provincia.nombre`;
         const datos: RespuestaGeoref = await (await fetch(url, { signal: control.signal })).json();
         const lista = datos.localidades.map((l) => ({
           nombre: l.nombre,
@@ -74,8 +75,8 @@ export default function Buscador({ onElegir }: { onElegir: (l: Lugar) => void })
         aria-expanded={mostrar}
         aria-controls={id}
         aria-activedescendant={activo >= 0 ? `${id}-${activo}` : undefined}
-        aria-label="Buscar localidad"
-        placeholder="Buscar localidad…"
+        aria-label="Buscar localidad del Chubut"
+        placeholder="Buscar localidad del Chubut…"
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value);
