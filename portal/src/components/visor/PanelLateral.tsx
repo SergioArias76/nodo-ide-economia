@@ -29,11 +29,11 @@ export default function PanelLateral({ panel, onPanel, onLugar, minimizado, chil
   const { oscuro } = useTema();
   return (
     <div className="pointer-events-none absolute top-3 bottom-3 left-3 z-20 sm:bottom-16 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2">
-      <header className={`${tarjeta} pointer-events-auto relative flex flex-col gap-2.5 overflow-hidden p-3 pt-[calc(0.75rem+3px)]`}>
+      <header className={`${tarjeta} pointer-events-auto relative z-10 flex flex-col gap-2.5 p-3 pt-[calc(0.75rem+3px)]`}>
         {/* Las seis franjas del isotipo, de sol a mar */}
         <span
           aria-hidden
-          className="absolute inset-x-0 top-0 h-[3px]"
+          className="absolute inset-x-0 top-0 h-[3px] rounded-t-xl"
           style={{
             background:
               "linear-gradient(90deg, var(--sol) 0 16.66%, var(--sol-2) 0 33.33%, var(--meseta) 0 50%, var(--meseta-2) 0 66.66%, var(--mar) 0 83.33%, var(--mar-2) 0)",
