@@ -341,6 +341,7 @@ export default function Visor() {
   const [consulta, setConsulta] = useState<Consulta | null>(null);
   const [geometrias, setGeometrias] = useState<(Geometry | undefined)[]>([]);
   const [indice, setIndice] = useState(0);
+  const [reinicioAnalisis, setReinicioAnalisis] = useState(0); // Limpiar el visor: cambia la key del análisis y del buscador para vaciarlos
   const ultimaConsulta = useRef(0);
 
   // Los manejadores de eventos del mapa leen el estado actual por refs
@@ -748,6 +749,25 @@ export default function Visor() {
     setCapas((actuales) => actuales.filter((x) => x.id !== id));
   }
 
+  // Vuelve el visor a como estaba antes de usar herramientas: quita mediciones, dibujos, la ficha, la
+  // ubicación, las marcas y capas de resultado del análisis y el panel de datos. Las capas encendidas,
+  // sus filtros y las capas agregadas por el usuario (archivos y WMS) quedan como están.
+  function limpiarVisor() {
+    if (!mapa) return;
+    if (alCapturar.current) terminarCaptura(false);
+    herramientas.setModo(null);
+    herramientas.borrarTodo();
+    cerrarConsulta();
+    resaltado.clear();
+    ubicacion.clear();
+    marcaAnalisis.clear();
+    capas.filter((c) => c.proceso).forEach((c) => mapa.removeLayer(c.capa));
+    setCapas((actuales) => actuales.filter((c) => !c.proceso));
+    setDatos(null);
+    setReinicioAnalisis((n) => n + 1);
+    setAviso("Se limpió el visor.");
+  }
+
   function elegirBase(id: string) {
     for (const [clave, capa] of Object.entries(bases)) capa.setVisible(clave === id);
     setBase(id);
@@ -858,6 +878,7 @@ export default function Visor() {
     agregar: <PanelAgregar onAgregarWms={agregarWms} onAgregarArchivo={(titulo, features) => agregarArchivo(titulo, features)} />,
     analisis: (
       <PanelAnalisis
+        key={reinicioAnalisis}
         capas={capas}
         dibujos={herramientas.dibujados}
         extensionMapa={() => mapa.getView().calculateExtent(mapa.getSize())}
@@ -882,7 +903,7 @@ export default function Visor() {
     >
       <div ref={contenedor} className="absolute inset-0" />
 
-      <PanelLateral panel={panel} onPanel={setPanel} onLugar={irA} minimizado={captura != null}>
+      <PanelLateral panel={panel} onPanel={setPanel} onLugar={irA} reinicio={reinicioAnalisis} minimizado={captura != null}>
         {panel && panel !== "analisis" && contenidoPanel[panel]}
         {/* El análisis queda montado: conserva lo elegido y el resultado al pasar a otro panel */}
         <div hidden={panel !== "analisis"}>{contenidoPanel.analisis}</div>
@@ -911,11 +932,13 @@ export default function Visor() {
                   orientacion,
                   atribuciones: atribuciones(),
                   leyenda: capas.filter((c) => c.visible).map((c) => c.titulo),
+                  consultado: consulta?.estado === "listo" ? consulta.resultados[indice] : undefined,
                 }),
               )
             : Promise.resolve()
         }
         onBorrarTodo={herramientas.borrarTodo}
+        onLimpiar={limpiarVisor}
         onExportar={herramientas.exportarDibujos}
         ocultaEnMovil={panel !== null}
       />

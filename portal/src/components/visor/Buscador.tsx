@@ -103,7 +103,8 @@ export default function Buscador({ onElegir }: { onElegir: (l: Lugar) => void })
 
   function elegir(l: Lugar) {
     onElegir(l);
-    setTexto(l.nombre);
+    // Con el CUIT en el buscador, al volver a abrirlo aparece el mismo proveedor
+    setTexto(l.proveedor ? conGuiones(String(l.proveedor.cuit ?? "")) : l.nombre);
     setAbierto(false);
   }
 
