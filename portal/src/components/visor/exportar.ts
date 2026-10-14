@@ -69,11 +69,74 @@ type OpcionesPdf = {
   atribuciones: string;
   leyenda: string[];
   consultado?: Resultado; // ficha abierta (un proveedor buscado o consultado): se imprime debajo del mapa
+  marca?: { coordenada: number[]; color: string }; // punto de la ficha: se destaca en la imagen del mapa
 };
+
+// Destaca el punto consultado sobre la imagen: halo, anillo y etiqueta con el nombre unida al punto.
+// La marca del visor (un anillo chico) se pierde entre los íconos de la capa al pasar al papel.
+function destacar(canvas: HTMLCanvasElement, [x, y]: number[], color: string, nombre: string) {
+  const ctx = canvas.getContext("2d")!;
+  // Medidas pensadas para una imagen de 700 px de ancho: se agrandan con la imagen para que en el papel
+  // la marca y la etiqueta mantengan su tamaño
+  const k = Math.max(1, canvas.width / 700);
+  ctx.save();
+  // El color del tema puede venir en cualquier formato CSS: la transparencia va por globalAlpha
+  ctx.globalAlpha = 0.25;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, 30 * k, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 8 * k;
+  ctx.strokeStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(x, y, 17 * k, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.lineWidth = 4 * k;
+  ctx.strokeStyle = color;
+  ctx.stroke();
+
+  // Etiqueta arriba del punto (abajo si no entra), dentro de los bordes de la imagen
+  ctx.font = `bold ${15 * k}px Helvetica, Arial, sans-serif`;
+  const texto = nombre.length > 60 ? `${nombre.slice(0, 57)}…` : nombre;
+  const ancho = ctx.measureText(texto).width + 20 * k;
+  const alto = 28 * k;
+  const separacion = 44 * k;
+  const arriba = y - separacion - alto >= 4;
+  const ey = arriba ? y - separacion - alto : y + separacion;
+  const ex = Math.min(Math.max(x - ancho / 2, 4), canvas.width - ancho - 4);
+  ctx.lineWidth = 2.5 * k;
+  ctx.strokeStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, arriba ? y - 21 * k : y + 21 * k);
+  ctx.lineTo(x, arriba ? ey + alto : ey);
+  ctx.stroke();
+  ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
+  ctx.shadowBlur = 6 * k;
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.roundRect(ex, ey, ancho, alto, 6 * k);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.stroke();
+  ctx.fillStyle = "#13262e";
+  ctx.textBaseline = "middle";
+  ctx.fillText(texto, ex + 10 * k, ey + alto / 2 + k);
+  ctx.restore();
+}
 
 // PDF A4 con título, mapa, escala, coordenadas del centro, leyenda, ficha consultada y fuente
 export async function imprimirPdf(mapa: Map, o: OpcionesPdf) {
+  // Con un punto consultado, la imagen se centra en él y después el visor vuelve a la vista que tenía
+  const vista = mapa.getView();
+  const vistaAntes = vista.getCenter();
+  if (o.marca) vista.setCenter(o.marca.coordenada);
   const [{ jsPDF }, canvas] = await Promise.all([import("jspdf"), imagenDelMapa(mapa)]);
+  if (o.marca && o.consultado) destacar(canvas, mapa.getPixelFromCoordinate(o.marca.coordenada), o.marca.color, o.consultado.titulo);
+  const [lon, lat] = toLonLat(vista.getCenter()!);
+  const escalaMapa = escala(mapa);
+  if (o.marca) vista.setCenter(vistaAntes);
+
   const pdf = new jsPDF({ orientation: o.orientacion, unit: "mm", format: "a4" });
   const W = pdf.internal.pageSize.getWidth();
   const H = pdf.internal.pageSize.getHeight();
@@ -88,17 +151,24 @@ export async function imprimirPdf(mapa: Map, o: OpcionesPdf) {
   pdf.text("Ministerio de Economía · Gobierno del Chubut · IDE", m, m + 11);
   pdf.text(new Date().toLocaleDateString("es-AR", { dateStyle: "long" }), W - m, m + 6, { align: "right" });
 
-  // Mapa: ocupa el espacio disponible respetando la proporción
+  // La ficha consultada va en una columna a la derecha del mapa en la hoja apaisada y debajo en la vertical
   const arriba = m + 16;
-  // La ficha consultada va en renglones "Etiqueta: valor" bajo el mapa; se le reserva el alto que ocupa
-  pdf.setFontSize(9);
+  const lateral = o.consultado != null && o.orientacion === "landscape";
+  const columna = lateral ? 70 : 0;
+  const anchoFicha = lateral ? columna - 6 : W - 2 * m - 4;
+  pdf.setFont("helvetica", "bold").setFontSize(10);
+  const tituloFicha = o.consultado ? (pdf.splitTextToSize(o.consultado.titulo, anchoFicha) as string[]) : [];
+  pdf.setFont("helvetica", "normal").setFontSize(9);
   const renglones = o.consultado
     ? o.consultado.campos.flatMap((c) =>
-        pdf.splitTextToSize(`${c.etiqueta}: ${Array.isArray(c.valor) ? c.valor.join(", ") : c.valor}`, W - 2 * m - 4) as string[],
+        pdf.splitTextToSize(`${c.etiqueta}: ${Array.isArray(c.valor) ? c.valor.join(", ") : c.valor}`, anchoFicha) as string[],
       )
     : [];
-  const pie = 22 + (o.consultado ? 13 + renglones.length * 4 : 0);
-  const maxW = W - 2 * m;
+  const altoFicha = o.consultado ? tituloFicha.length * 4.5 + 5 + renglones.length * 4 : 0;
+
+  // Mapa: ocupa el espacio disponible respetando la proporción
+  const pie = 22 + (o.consultado && !lateral ? altoFicha + 6 : 0);
+  const maxW = W - 2 * m - columna;
   const maxH = H - arriba - pie - m;
   const prop = canvas.width / canvas.height;
   const w = Math.min(maxW, maxH * prop);
@@ -106,23 +176,24 @@ export async function imprimirPdf(mapa: Map, o: OpcionesPdf) {
   pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", m, arriba, w, h);
   pdf.setDrawColor(211, 222, 226).rect(m, arriba, w, h);
 
-  const [lon, lat] = toLonLat(mapa.getView().getCenter()!);
   let y = arriba + h + 6;
   pdf.setFontSize(9).setTextColor(19, 38, 46);
-  pdf.text(`Escala aprox. ${escala(mapa)}  ·  Centro ${lat.toFixed(4)}°, ${lon.toFixed(4)}°  ·  EPSG:3857`, m, y);
+  pdf.text(`Escala aprox. ${escalaMapa}  ·  Centro ${lat.toFixed(4)}°, ${lon.toFixed(4)}°  ·  EPSG:3857`, m, y);
   if (o.leyenda.length) {
     y += 5;
     pdf.text(`Capas: ${o.leyenda.join(" · ")}`, m, y, { maxWidth: W - 2 * m });
   }
   if (o.consultado) {
-    y += 8;
-    pdf.setFillColor(255, 104, 44).rect(m, y - 3.6, 1.2, 9 + renglones.length * 4, "F");
+    const fx = lateral ? m + w + 6 : m;
+    const fy = lateral ? arriba + 4 : y + 9;
+    pdf.setFillColor(255, 104, 44).rect(fx, fy - 3.6, 1.2, altoFicha, "F");
     pdf.setFont("helvetica", "bold").setFontSize(10).setTextColor(19, 38, 46);
-    pdf.text(o.consultado.titulo, m + 4, y, { maxWidth: W - 2 * m - 4 });
+    pdf.text(tituloFicha, fx + 4, fy);
+    const yCapa = fy + tituloFicha.length * 4.5;
     pdf.setFont("helvetica", "normal").setFontSize(8).setTextColor(77, 100, 110);
-    pdf.text(o.consultado.capa, m + 4, y + 4);
+    pdf.text(o.consultado.capa, fx + 4, yCapa);
     pdf.setFontSize(9).setTextColor(19, 38, 46);
-    renglones.forEach((r, i) => pdf.text(r, m + 4, y + 9 + i * 4));
+    renglones.forEach((r, i) => pdf.text(r, fx + 4, yCapa + 5 + i * 4));
   }
   pdf.setFontSize(7.5).setTextColor(77, 100, 110);
   pdf.text(`Fuentes: Ministerio de Economía del Chubut${o.atribuciones ? ` · ${o.atribuciones}` : ""}`, m, H - m + 2, {

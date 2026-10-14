@@ -933,6 +933,11 @@ export default function Visor() {
                   atribuciones: atribuciones(),
                   leyenda: capas.filter((c) => c.visible).map((c) => c.titulo),
                   consultado: consulta?.estado === "listo" ? consulta.resultados[indice] : undefined,
+                  marca: (() => {
+                    const g = geometrias[indice];
+                    const grupo = consulta?.estado === "listo" ? consulta.resultados[indice]?.grupo : undefined;
+                    return g instanceof Point ? { coordenada: g.getCoordinates(), color: grupo ? colorDelTema(grupo) : "#21708c" } : undefined;
+                  })(),
                 }),
               )
             : Promise.resolve()
