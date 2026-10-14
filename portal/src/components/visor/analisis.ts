@@ -321,12 +321,19 @@ async function disolver(features: GFeatures) {
 
 const etiquetaDistancia = (d: number, u: "meters" | "kilometers") => `${d.toLocaleString("es-AR")} ${u === "meters" ? "m" : "km"}`;
 
+// Un área por elemento, sin unir. Devuelve también los elementos que la generaron, en el mismo orden: si el
+// buffer de alguno falla, se descartan los dos y la cantidad de cada área sigue correspondiendo a su elemento
 export async function influencia(features: GFeatures, distancia: number, unidad: "meters" | "kilometers") {
   const turf = await cargarTurf();
-  return features.flatMap((f) => {
+  const entrada: GFeatures = [];
+  const areas: GFeatures = [];
+  for (const f of features) {
     const b = turf.buffer(f as GFeature<GGeometry>, distancia, { units: unidad });
-    return b ? [{ ...b, properties: { ...f.properties, distancia: etiquetaDistancia(distancia, unidad) } }] : [];
-  }) as GFeatures;
+    if (!b) continue;
+    entrada.push(f);
+    areas.push({ ...b, properties: { ...f.properties, distancia: etiquetaDistancia(distancia, unidad) } } as GFeature);
+  }
+  return { entrada, areas };
 }
 
 // Área de influencia comparada con otra capa (por ejemplo, edificios de salud y proveedores de cuidado a
