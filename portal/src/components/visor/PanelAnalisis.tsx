@@ -345,7 +345,7 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
           const total = segunda.features.length;
           const sinNinguno = porArea.filter((n) => n === 0).length;
           const suma = porArea.reduce((a, b) => a + b, 0);
-          // Personas físicas de proveedores: se publican en el centro de su localidad, todas en el mismo punto
+          // Proveedores cuyo domicilio solo se ubicó a nivel localidad: están todos en el centro de la localidad
           const enCentro = segunda.features.filter((f, i) => cercanos[i].dentro && f.properties?.precision === "localidad").length;
           return setEstado({
             tipo: "listo",
@@ -365,7 +365,7 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
                   <>
                     {" "}
                     {enCentro.toLocaleString("es-AR")} de los que quedan dentro {enCentro === 1 ? "está ubicado" : "están ubicados"} en el centro de
-                    su localidad (personas físicas, sin domicilio publicado): entran o quedan afuera de un área todos juntos.
+                    su localidad (su domicilio no se pudo ubicar con más precisión): entran o quedan afuera de un área todos juntos.
                   </>
                 )}{" "}
                 El detalle está en el panel de datos y en las capas de resultado.
