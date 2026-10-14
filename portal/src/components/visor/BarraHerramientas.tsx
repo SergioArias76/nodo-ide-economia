@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  Camera, Circle, Download, Grid3x3, LocateFixed, MapPin, Maximize, Minimize, Pencil, PenLine, Pentagon, Printer,
+  BrushCleaning, Camera, Circle, Download, Grid3x3, LocateFixed, MapPin, Maximize, Minimize, Pencil, PenLine, Pentagon, Printer,
   Ruler, Spline, Square, SquareDashed, Trash, Type, Eraser, LoaderCircle,
 } from "lucide-react";
 import { BotonIcono, botonPrimario, campo, reset, tarjeta } from "./ui";
@@ -21,6 +21,7 @@ type Props = {
   onCaptura: () => void;
   onImprimir: (titulo: string, orientacion: "landscape" | "portrait") => Promise<void>;
   onBorrarTodo: () => void;
+  onLimpiar: () => void;
   onExportar: () => void;
   ocultaEnMovil: boolean; // con el panel lateral abierto la barra quedaría detrás
 };
@@ -75,6 +76,16 @@ export default function BarraHerramientas(p: Props) {
           onClick={() => {
             if (dibujo && p.modo && p.modo !== "medir-distancia" && p.modo !== "medir-area") p.onModo(null);
             setDibujo(!dibujo);
+          }}
+        />
+        {separador}
+        <BotonIcono
+          icono={BrushCleaning}
+          etiqueta="Limpiar el visor (mediciones, dibujos, consultas y resultados de análisis)"
+          onClick={() => {
+            setDibujo(false);
+            setImpresion(false);
+            p.onLimpiar();
           }}
         />
       </div>

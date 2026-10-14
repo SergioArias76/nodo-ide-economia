@@ -1,5 +1,6 @@
 import type Map from "ol/Map";
 import { getPointResolution, toLonLat } from "ol/proj";
+import type { Resultado } from "./FichaConsulta";
 
 // Une los canvas de todas las capas en una sola imagen (receta oficial de OpenLayers).
 // Requiere que todas las fuentes se carguen con CORS.
@@ -62,9 +63,15 @@ export function escala(mapa: Map) {
   return `1:${(Math.round(valor / redondeo) * redondeo).toLocaleString("es-AR")}`;
 }
 
-type OpcionesPdf = { titulo: string; orientacion: "landscape" | "portrait"; atribuciones: string; leyenda: string[] };
+type OpcionesPdf = {
+  titulo: string;
+  orientacion: "landscape" | "portrait";
+  atribuciones: string;
+  leyenda: string[];
+  consultado?: Resultado; // ficha abierta (un proveedor buscado o consultado): se imprime debajo del mapa
+};
 
-// PDF A4 con título, mapa, escala, coordenadas del centro, leyenda y fuente
+// PDF A4 con título, mapa, escala, coordenadas del centro, leyenda, ficha consultada y fuente
 export async function imprimirPdf(mapa: Map, o: OpcionesPdf) {
   const [{ jsPDF }, canvas] = await Promise.all([import("jspdf"), imagenDelMapa(mapa)]);
   const pdf = new jsPDF({ orientation: o.orientacion, unit: "mm", format: "a4" });
@@ -83,7 +90,14 @@ export async function imprimirPdf(mapa: Map, o: OpcionesPdf) {
 
   // Mapa: ocupa el espacio disponible respetando la proporción
   const arriba = m + 16;
-  const pie = 22;
+  // La ficha consultada va en renglones "Etiqueta: valor" bajo el mapa; se le reserva el alto que ocupa
+  pdf.setFontSize(9);
+  const renglones = o.consultado
+    ? o.consultado.campos.flatMap((c) =>
+        pdf.splitTextToSize(`${c.etiqueta}: ${Array.isArray(c.valor) ? c.valor.join(", ") : c.valor}`, W - 2 * m - 4) as string[],
+      )
+    : [];
+  const pie = 22 + (o.consultado ? 13 + renglones.length * 4 : 0);
   const maxW = W - 2 * m;
   const maxH = H - arriba - pie - m;
   const prop = canvas.width / canvas.height;
@@ -99,6 +113,16 @@ export async function imprimirPdf(mapa: Map, o: OpcionesPdf) {
   if (o.leyenda.length) {
     y += 5;
     pdf.text(`Capas: ${o.leyenda.join(" · ")}`, m, y, { maxWidth: W - 2 * m });
+  }
+  if (o.consultado) {
+    y += 8;
+    pdf.setFillColor(255, 104, 44).rect(m, y - 3.6, 1.2, 9 + renglones.length * 4, "F");
+    pdf.setFont("helvetica", "bold").setFontSize(10).setTextColor(19, 38, 46);
+    pdf.text(o.consultado.titulo, m + 4, y, { maxWidth: W - 2 * m - 4 });
+    pdf.setFont("helvetica", "normal").setFontSize(8).setTextColor(77, 100, 110);
+    pdf.text(o.consultado.capa, m + 4, y + 4);
+    pdf.setFontSize(9).setTextColor(19, 38, 46);
+    renglones.forEach((r, i) => pdf.text(r, m + 4, y + 9 + i * 4));
   }
   pdf.setFontSize(7.5).setTextColor(77, 100, 110);
   pdf.text(`Fuentes: Ministerio de Economía del Chubut${o.atribuciones ? ` · ${o.atribuciones}` : ""}`, m, H - m + 2, {

@@ -21,11 +21,12 @@ type Props = {
   panel: Panel | null;
   onPanel: (p: Panel | null) => void;
   onLugar: (l: Lugar) => void;
+  reinicio?: number; // al cambiar, el buscador se vacía (Limpiar el visor)
   minimizado?: boolean; // en el celular el panel se oculta (sin desmontarse) mientras se dibuja en el mapa
   children: ReactNode;
 };
 
-export default function PanelLateral({ panel, onPanel, onLugar, minimizado, children }: Props) {
+export default function PanelLateral({ panel, onPanel, onLugar, reinicio, minimizado, children }: Props) {
   const { oscuro } = useTema();
   return (
     <div className="pointer-events-none absolute top-3 bottom-3 left-3 z-20 sm:bottom-16 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2">
@@ -47,7 +48,7 @@ export default function PanelLateral({ panel, onPanel, onLugar, minimizado, chil
             <span className="block text-xs font-medium text-tenue">Gobierno del Chubut · IDE</span>
           </span>
         </Link>
-        <Buscador onElegir={onLugar} />
+        <Buscador key={reinicio} onElegir={onLugar} />
       </header>
 
       <div className="flex min-h-0 flex-1 items-start gap-2">
