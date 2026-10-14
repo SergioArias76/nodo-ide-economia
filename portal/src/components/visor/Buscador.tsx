@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { LoaderCircle, MapPin, Search } from "lucide-react";
+import { Building2, LoaderCircle, MapPin, Search, User } from "lucide-react";
+import { toLonLat } from "ol/proj";
+import { PUBLIC_GEOSERVER, WORKSPACE } from "@/lib/config";
 import { campo, reset } from "./ui";
 
-export type Lugar = { nombre: string; detalle: string; lon: number; lat: number };
+// proveedor: atributos del proveedor buscado por CUIT, para abrir su ficha al elegirlo
+export type Lugar = { nombre: string; detalle: string; lon: number; lat: number; proveedor?: Record<string, unknown> };
 
 type RespuestaGeoref = {
   localidades: {
@@ -17,6 +20,54 @@ type RespuestaGeoref = {
 
 // API Georef del Estado nacional (datos.gob.ar): localidades de todo el país, primero las del Chubut
 const GEOREF = "https://apis.datos.gob.ar/georef/api/localidades";
+const CAPA_PROVEEDORES = `${WORKSPACE}:proveedores_radicacion`;
+
+// Texto con forma de CUIT (dígitos, guiones o espacios): se busca entre los proveedores, no entre localidades
+const digitosCuit = (t: string) => (/^[\d\s-]+$/.test(t) ? t.replace(/\D/g, "") : null);
+const conGuiones = (c: string) => (c.length === 11 ? `${c.slice(0, 2)}-${c.slice(2, 10)}-${c.slice(10)}` : c);
+
+async function buscarLocalidades(consulta: string, signal: AbortSignal): Promise<Lugar[]> {
+  // Solo localidades del Chubut (código INDEC 26): el visor está limitado a la provincia
+  const url = `${GEOREF}?nombre=${encodeURIComponent(consulta)}&provincia=26&max=10&campos=nombre,centroide,departamento.nombre,provincia.nombre`;
+  const datos: RespuestaGeoref = await (await fetch(url, { signal })).json();
+  const lista = datos.localidades.map((l) => ({
+    nombre: l.nombre,
+    detalle: [l.departamento?.nombre, l.provincia.nombre].filter(Boolean).join(", "),
+    lon: l.centroide.lon,
+    lat: l.centroide.lat,
+  }));
+  lista.sort((a, b) => Number(b.detalle.endsWith("Chubut")) - Number(a.detalle.endsWith("Chubut")));
+  return lista;
+}
+
+// Proveedores cuyo CUIT empieza con los dígitos escritos (WFS de la capa publicada)
+async function buscarProveedores(digitos: string, signal: AbortSignal): Promise<Lugar[]> {
+  const q = new URLSearchParams({
+    service: "WFS",
+    version: "2.0.0",
+    request: "GetFeature",
+    typeNames: CAPA_PROVEEDORES,
+    count: "10",
+    sortBy: "cuit",
+    srsName: "EPSG:3857",
+    outputFormat: "application/json",
+    CQL_FILTER: `cuit LIKE '${digitos}%'`,
+  });
+  const datos = await (await fetch(`${PUBLIC_GEOSERVER}/${WORKSPACE}/wfs?${q}`, { signal })).json();
+  return (datos.features as { properties: Record<string, unknown>; geometry: { coordinates: number[] } | null }[])
+    .filter((f) => f.geometry)
+    .map((f) => {
+      const [lon, lat] = toLonLat(f.geometry!.coordinates);
+      const p = f.properties;
+      return {
+        nombre: String(p.entidad ?? "Sin nombre"),
+        detalle: [conGuiones(String(p.cuit ?? "")), p.localidad].filter(Boolean).join(" · "),
+        lon,
+        lat,
+        proveedor: p,
+      };
+    });
+}
 
 export default function Buscador({ onElegir }: { onElegir: (l: Lugar) => void }) {
   const [texto, setTexto] = useState("");
@@ -29,21 +80,13 @@ export default function Buscador({ onElegir }: { onElegir: (l: Lugar) => void })
   useEffect(() => {
     const consulta = texto.trim();
     if (consulta.length < 3) return;
+    const digitos = digitosCuit(consulta);
+    if (digitos != null && digitos.length < 3) return;
     const control = new AbortController();
     const espera = setTimeout(async () => {
       setCargando(true);
       try {
-        // Solo localidades del Chubut (código INDEC 26): el visor está limitado a la provincia
-        const url = `${GEOREF}?nombre=${encodeURIComponent(consulta)}&provincia=26&max=10&campos=nombre,centroide,departamento.nombre,provincia.nombre`;
-        const datos: RespuestaGeoref = await (await fetch(url, { signal: control.signal })).json();
-        const lista = datos.localidades.map((l) => ({
-          nombre: l.nombre,
-          detalle: [l.departamento?.nombre, l.provincia.nombre].filter(Boolean).join(", "),
-          lon: l.centroide.lon,
-          lat: l.centroide.lat,
-        }));
-        lista.sort((a, b) => Number(b.detalle.endsWith("Chubut")) - Number(a.detalle.endsWith("Chubut")));
-        setLugares(lista);
+        setLugares(digitos ? await buscarProveedores(digitos, control.signal) : await buscarLocalidades(consulta, control.signal));
         setActivo(-1);
         setAbierto(true);
       } catch {
@@ -75,8 +118,8 @@ export default function Buscador({ onElegir }: { onElegir: (l: Lugar) => void })
         aria-expanded={mostrar}
         aria-controls={id}
         aria-activedescendant={activo >= 0 ? `${id}-${activo}` : undefined}
-        aria-label="Buscar localidad del Chubut"
-        placeholder="Buscar localidad del Chubut…"
+        aria-label="Buscar localidad del Chubut o CUIT de proveedor"
+        placeholder="Buscar localidad o CUIT…"
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value);
@@ -116,7 +159,15 @@ export default function Buscador({ onElegir }: { onElegir: (l: Lugar) => void })
                   (i === activo ? "bg-superficie" : "hover:bg-superficie")
                 }
               >
-                <MapPin className="mt-0.5 size-4 shrink-0 text-acento" aria-hidden />
+                {l.proveedor ? (
+                  l.proveedor.tipo_persona === "fisica" ? (
+                    <User className="mt-0.5 size-4 shrink-0 text-acento" aria-hidden />
+                  ) : (
+                    <Building2 className="mt-0.5 size-4 shrink-0 text-acento" aria-hidden />
+                  )
+                ) : (
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-acento" aria-hidden />
+                )}
                 <span className="text-sm leading-tight">
                   {l.nombre}
                   <span className="block text-xs text-tenue">{l.detalle}</span>

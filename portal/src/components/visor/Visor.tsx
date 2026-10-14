@@ -36,7 +36,7 @@ import PanelAnalisis from "./PanelAnalisis";
 import { EXTENSION_CHUBUT, LIMITE_VISTA, capaMascara, enChubut, recortarAChubut } from "./chubut";
 import PanelDatos, { type EstadoDatos } from "./PanelDatos";
 import { MAXIMO_DESTINOS, areaDeExtension, disolverCapa, tablaDeAtributos, type Proceso } from "./analisis";
-import { consultar, hayDatoEn } from "./consulta";
+import { consultar, fichaNodo, hayDatoEn } from "./consulta";
 import { useHerramientas } from "./useHerramientas";
 import { capturaPng, imprimirPdf } from "./exportar";
 import { BotonIcono, botonPrimario, botonSecundario, campo, tarjeta } from "./ui";
@@ -754,7 +754,27 @@ export default function Visor() {
   }
 
   function irA(l: Lugar) {
-    mapa?.getView().animate({ center: fromLonLat([l.lon, l.lat]), zoom: 13, duration: duracion() * 2 });
+    const centro = fromLonLat([l.lon, l.lat]);
+    if (!l.proveedor) {
+      mapa?.getView().animate({ center: centro, zoom: 13, duration: duracion() * 2 });
+      return;
+    }
+    // Proveedor buscado por CUIT: se acerca con el punto en la parte baja del mapa, para que la ficha entre
+    // arriba, y al terminar se abre su ficha como al consultarlo con un clic
+    if (!mapa) return;
+    const nodo = CAPAS_NODO.find((c) => c.nombre === `${WORKSPACE}:proveedores_radicacion`)!;
+    const vista = mapa.getView();
+    const zoom = 17;
+    const alto = mapa.getSize()?.[1] ?? 0;
+    herramientas.setModo(null);
+    cerrarConsulta();
+    const id = ultimaConsulta.current;
+    vista.animate({ center: [centro[0], centro[1] + alto * 0.25 * vista.getResolutionForZoom(zoom)], zoom, duration: duracion() * 2 }, () => {
+      if (id !== ultimaConsulta.current) return; // hubo otra consulta mientras se movía el mapa
+      setIndice(0);
+      setConsulta({ estado: "listo", resultados: [fichaNodo(nodo, l.proveedor!)] });
+      setGeometrias([new Point(centro)]);
+    });
   }
 
   function miUbicacion() {
