@@ -146,6 +146,19 @@ function provinciaCoincide(res, provincia) {
   return estado === p || estado.includes(p) || p.includes(estado);
 }
 
+// ¿El resultado está en la localidad pedida? La distancia sola no alcanza: Trelew está a 18 km de Rawson
+// y comparte nombres de calles. No se mira el departamento (Trelew es del departamento Rawson).
+const mismoNombre = (a, b) => {
+  const x = sinAcentos(a ?? ""), y = sinAcentos(b ?? "");
+  return x !== "" && y !== "" && (x === y || x.includes(y) || y.includes(x));
+};
+function localidadCoincide(res, localidad) {
+  if (!localidad) return true;
+  const a = res.address ?? {};
+  return [a.city, a.town, a.village, a.hamlet, a.municipality, a.suburb, a.city_district, a.neighbourhood]
+    .some((l) => mismoNombre(l, localidad));
+}
+
 function precisionDe(res) {
   if (res.address?.house_number) return "calle_altura";
   if (res.category === "highway" || res.address?.road) return "calle_sin_altura";
@@ -168,6 +181,8 @@ async function geocodificar(c) {
     const conDistancia = candidatos
       .map((d) => ({ d, km: distanciaKm({ lon: d.ubicacion.lon, lat: d.ubicacion.lat }, c) }))
       .filter((x) => (c.precision === "localidad" ? x.km <= DISTANCIA_MAXIMA_KM : candidatos.length === 1))
+      // la cuadra tiene que ser de la localidad del padrón (si Georef informa la suya)
+      .filter((x) => !localidad || !x.d.localidad_censal?.nombre || mismoNombre(x.d.localidad_censal.nombre, localidad))
       .sort((x, y) => x.km - y.km);
     const elegido = conDistancia[0]?.d;
     if (elegido) {
@@ -197,7 +212,7 @@ async function geocodificar(c) {
 
   for (const params of intentos) {
     const res = await nominatim(params);
-    if (!res || !provinciaCoincide(res, c.provincia)) continue;
+    if (!res || !provinciaCoincide(res, c.provincia) || !localidadCoincide(res, localidad)) continue;
     const punto = { lon: Number(res.lon), lat: Number(res.lat) };
     // Con localidad conocida, el resultado tiene que caer cerca del punto actual (centro de la localidad)
     if (c.precision === "localidad" && distanciaKm(punto, c) > DISTANCIA_MAXIMA_KM) continue;
