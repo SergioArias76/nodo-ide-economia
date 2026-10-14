@@ -10,7 +10,7 @@
 //
 // Uso: node scripts/importar-capas-nacionales.mjs [id-de-capa ...]   (sin ids: todas las que tienen WFS)
 // Requiere el stack levantado (PostGIS y GeoServer), el .env de la raíz y npm ci en portal/ (usa su Turf).
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -259,7 +259,10 @@ async function importar(c) {
   if (await existe(`${ft}/${tabla}`)) ok("capa", await api("PUT", `${ft}/${tabla}?recalculate=nativebbox,latlonbbox`, datos));
   else ok("capa", await api("POST", ft, datos));
 
-  const estilo = await copiarEstilo(c, tabla);
+  // Si el nodo tiene estilo propio para la capa, lo publica scripts/publicar-geoserver.sh
+  const estilo = existsSync(`${RAIZ}geoserver/estilos/nacional/${tabla}.sld`)
+    ? "estilo propio (lo publica scripts/publicar-geoserver.sh)"
+    : await copiarEstilo(c, tabla);
   return { elementos, estilo };
 }
 

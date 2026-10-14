@@ -80,10 +80,29 @@ proveedores_por_localidad|v_proveedores_por_localidad|Proveedores del Estado pro
 proveedores_rubros|v_proveedores_rubros|Rubros de los proveedores del Estado provincial|Rubros en los que están inscriptos los proveedores del SIPPE del Chubut, con la cantidad de proveedores de cada uno. Tabla sin geometría (solo WFS).
 EOF
 
+echo "Estilos propios de capas nacionales"
+# Capas de puntos cuyo estilo de origen no dice qué son (scripts/generar-estilos-nacionales.mjs).
+# Solo si la capa ya fue importada (scripts/importar-capas-nacionales.mjs)
+NAC=nacional
+nacionales=()
+for sld in geoserver/estilos/nacional/*.sld; do
+  capa=$(basename "$sld" .sld)
+  existe "/layers/$NAC:$capa" || { echo "  - $capa sin importar"; continue; }
+  ok "ícono $capa.svg" "$(api PUT "/resource/workspaces/$NAC/styles/$capa.svg"     -H 'Content-Type: image/svg+xml' --data-binary "@geoserver/estilos/nacional/$capa.svg")"
+  sldxml=(-H 'Content-Type: application/vnd.ogc.sld+xml' --data-binary "@$sld")
+  if existe "/workspaces/$NAC/styles/$capa"; then
+    ok "estilo $capa (actualizado)" "$(api PUT "/workspaces/$NAC/styles/$capa" "${sldxml[@]}")"
+  else
+    ok "estilo $capa" "$(api POST "/workspaces/$NAC/styles?name=$capa" "${sldxml[@]}")"
+  fi
+  ok "estilo por defecto de $capa" "$(api PUT "/layers/$NAC:$capa" "${json[@]}"     -d "{\"layer\":{\"defaultStyle\":{\"name\":\"$NAC:$capa\"}}}")"
+  nacionales+=("$NAC:$capa")
+done
+
 # Las teselas cacheadas quedaron con el estilo anterior
-for capa in proveedores_radicacion proveedores_por_localidad; do
+for capa in "$WS:proveedores_radicacion" "$WS:proveedores_por_localidad" "${nacionales[@]}"; do
   curl -s "${INSEGURO[@]}" -u "$GEOSERVER_ADMIN_USER:$GEOSERVER_ADMIN_PASSWORD" -o /dev/null \
     -X POST "${REST%/rest}/gwc/rest/masstruncate" -H 'Content-Type: text/xml' \
-    -d "<truncateLayer><layerName>$WS:$capa</layerName></truncateLayer>" || true
+    -d "<truncateLayer><layerName>$capa</layerName></truncateLayer>" || true
 done
 echo "Listo: https://$DOMINIO/visor"
