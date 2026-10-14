@@ -294,7 +294,7 @@ psql(
       provincia = coalesce(c.provincia, d.provincia), precision = c.precision, fuente_geo = c.fuente_geo, geom = c.geom
   FROM proveedores.domicilio_correccion c
   JOIN proveedores.proveedor p ON p.cuit = c.cuit
-  WHERE d.proveedor_id = p.id AND d.domicilio_orig IS NOT DISTINCT FROM c.domicilio_orig;
+  WHERE d.proveedor_id = p.id AND coalesce(d.domicilio_orig, '') = c.domicilio_orig;
   COMMIT;`,
   true,
 );

@@ -53,7 +53,7 @@ SET calle = coalesce(c.calle, d.calle),
 FROM proveedores.domicilio_correccion c
 JOIN proveedores.proveedor p ON p.cuit = c.cuit
 WHERE d.proveedor_id = p.id
-  AND d.domicilio_orig IS NOT DISTINCT FROM c.domicilio_orig;
+  AND coalesce(d.domicilio_orig, '') = c.domicilio_orig;  -- '' si el padrón no trae domicilio
 
 COMMIT;
 

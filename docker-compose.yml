@@ -13,6 +13,7 @@ services:
       GEONETWORK_DB: ${GEONETWORK_DB}
       GEONETWORK_DB_USER: ${GEONETWORK_DB_USER}
       GEONETWORK_DB_PASSWORD: ${GEONETWORK_DB_PASSWORD}
+      UBICACIONES_DB_PASSWORD: ${UBICACIONES_DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgis/initdb:/docker-entrypoint-initdb.d:ro
@@ -89,6 +90,13 @@ services:
     environment:
       GEOSERVER_URL: http://geoserver:8080/geoserver
       GEONETWORK_URL: http://geonetwork:8080/geonetwork
+      # Pantalla interna de ubicación manual de proveedores (/ubicaciones)
+      UBICACIONES_DB_URL: postgres://ide_ubicaciones:${UBICACIONES_DB_PASSWORD}@postgis:5432/${IDE_DB}
+      UBICACIONES_USUARIO: ${UBICACIONES_USUARIO}
+      UBICACIONES_PASSWORD: ${UBICACIONES_PASSWORD}
+    depends_on:
+      postgis:
+        condition: service_healthy
     mem_limit: 512m
 
   nginx:
