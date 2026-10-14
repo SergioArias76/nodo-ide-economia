@@ -259,7 +259,7 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
         case "influencia": {
           const d = num(distancia);
           const radio = `${d.toLocaleString("es-AR")} ${unidad === "meters" ? "m" : "km"}`;
-          const areas = await influencia(features, d, unidad);
+          const { entrada: conArea, areas } = await influencia(features, d, unidad);
           if (!compara) return capa(nombre(` de ${radio}`), areas, aviso);
 
           // Comparación con otra capa: se pide en el área de análisis ampliada hasta cubrir las áreas de influencia
@@ -275,10 +275,10 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
           const tituloCompara = sinPrefijo(compara.titulo) + detalleFiltro(compara.capa);
           setEstado({ tipo: "corriendo", mensaje: `Comparando ${segunda.features.length.toLocaleString("es-AR")} elementos con las áreas…` });
           await esperar();
-          const { porArea, cercanos } = await compararInfluencia(features, areas, segunda.features, (n) =>
+          const { porArea, cercanos } = await compararInfluencia(conArea, areas, segunda.features, (n) =>
             setEstado({ tipo: "corriendo", mensaje: `Comparando: ${n.toLocaleString("es-AR")} de ${segunda.features.length.toLocaleString("es-AR")}…` }),
           );
-          const nombres = features.map((f) => nombreDe(f.properties, entrada.capa));
+          const nombres = conArea.map((f) => nombreDe(f.properties, entrada.capa));
 
           // Capas de resultado: las áreas con la cantidad de elementos dentro, y los elementos que quedan dentro
           onResultado(
@@ -296,24 +296,24 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
           // Tablas: por elemento de entrada y por elemento comparado
           const [columnasEntrada, columnasCompara] = await Promise.all([columnasDe(entrada), columnasDe(compara)]);
           const etiquetaDentro = `${sinPrefijo(compara.titulo)} a menos de ${radio}`;
-          const ordenAreas = features.map((_, j) => j).sort((a, b) => porArea[b] - porArea[a]);
+          const ordenAreas = conArea.map((_, j) => j).sort((a, b) => porArea[b] - porArea[a]);
           const ordenCompara = segunda.features.map((_, i) => i).sort((a, b) => cercanos[a].metros - cercanos[b].metros);
-          const geomEntrada = aMapa(features).map((f) => f.getGeometry());
+          const geomEntrada = aMapa(conArea).map((f) => f.getGeometry());
           const geomCompara = aMapa(segunda.features).map((f) => f.getGeometry());
           onDatos({
             estado: "listo",
             tabla: {
               titulo: `Resultado: ${nombre(` de ${radio}`)} comparada con ${tituloCompara}`,
               pestana: `Por ${sinPrefijo(entrada.titulo).toLowerCase()}`,
-              subtitulo: `Cantidad de ${tituloCompara} dentro de cada área de influencia`,
+              subtitulo: `Cantidad de ${tituloCompara} dentro de cada área de influencia. Las áreas se superponen: un mismo elemento cuenta en cada área donde cae`,
               columnas: [
                 // la cantidad primero: con nombres largos sigue a la vista en el panel angosto
                 { clave: "_dentro", etiqueta: etiquetaDentro, numerico: true },
                 { clave: "_nombre", etiqueta: sinPrefijo(entrada.titulo) },
                 // sin repetir el atributo que ya se muestra como nombre
-                ...columnasEntrada.filter((c) => !features.some((f) => f.properties?.[c.clave] != null && String(f.properties[c.clave]) === nombreDe(f.properties, entrada.capa))),
+                ...columnasEntrada.filter((c) => !conArea.some((f) => f.properties?.[c.clave] != null && String(f.properties[c.clave]) === nombreDe(f.properties, entrada.capa))),
               ],
-              filas: ordenAreas.map((j) => ({ ...features[j].properties, _nombre: nombres[j], _dentro: porArea[j] })),
+              filas: ordenAreas.map((j) => ({ ...conArea[j].properties, _nombre: nombres[j], _dentro: porArea[j] })),
               geometrias: ordenAreas.map((j) => geomEntrada[j]),
               archivo: `influencia ${entrada.titulo} con ${compara.titulo}`,
               aviso,
@@ -344,6 +344,9 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
 
           const total = segunda.features.length;
           const sinNinguno = porArea.filter((n) => n === 0).length;
+          const suma = porArea.reduce((a, b) => a + b, 0);
+          // Personas físicas de proveedores: se publican en el centro de su localidad, todas en el mismo punto
+          const enCentro = segunda.features.filter((f, i) => cercanos[i].dentro && f.properties?.precision === "localidad").length;
           return setEstado({
             tipo: "listo",
             numero: dentro.length,
@@ -351,8 +354,21 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
             mensaje: (
               <>
                 de {total.toLocaleString("es-AR")} {tituloCompara} ({total ? formatoNumero((dentro.length / total) * 100, 0) : 0} %) quedan a
-                menos de {radio} de {tituloEntrada}. {sinNinguno.toLocaleString("es-AR")} de {features.length.toLocaleString("es-AR")}{" "}
-                {sinNinguno === 1 ? "no tiene" : "no tienen"} ninguno dentro de su área. El detalle está en el panel de datos y en las capas de resultado.
+                menos de {radio} de {tituloEntrada}, cada uno contado una vez. Se crearon {areas.length.toLocaleString("es-AR")}{" "}
+                {areas.length === 1 ? "área" : "áreas"}, una por elemento
+                {suma > dentro.length && (
+                  <>; como se superponen, un mismo elemento cae en varias y la suma por área da {suma.toLocaleString("es-AR")}</>
+                )}
+                . {sinNinguno.toLocaleString("es-AR")} de {areas.length.toLocaleString("es-AR")} {sinNinguno === 1 ? "no tiene" : "no tienen"} ninguno
+                dentro de su área.
+                {enCentro > 0 && (
+                  <>
+                    {" "}
+                    {enCentro.toLocaleString("es-AR")} de los que quedan dentro {enCentro === 1 ? "está ubicado" : "están ubicados"} en el centro de
+                    su localidad (personas físicas, sin domicilio publicado): entran o quedan afuera de un área todos juntos.
+                  </>
+                )}{" "}
+                El detalle está en el panel de datos y en las capas de resultado.
               </>
             ),
           });
