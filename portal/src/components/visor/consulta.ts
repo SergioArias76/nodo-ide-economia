@@ -55,7 +55,7 @@ export const etiquetaDe = (k: string) => {
 export const ATRIBUTOS_NOMBRE = ["nombre", "nombre_geografico", "name", "fna", "nam", "titulo", "entidad", "gna", "localidad"];
 
 // Ficha con los campos y formatos definidos para la capa en lib/config.ts
-function fichaNodo(nodo: CapaNodo, p: Record<string, unknown>): Resultado {
+export function fichaNodo(nodo: CapaNodo, p: Record<string, unknown>): Resultado {
   return {
     grupo: nodo.grupo,
     capa: nodo.titulo,
