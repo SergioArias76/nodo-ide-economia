@@ -108,6 +108,14 @@ Listo: 42 de 42 capas en el nodo., semanal) y el visor las sirve desde el nodo, 
 
 Diseño: [PRODUCT.md](PRODUCT.md) y [DESIGN.md](DESIGN.md). El catálogo de IDERA se regenera con `node scripts/actualizar-capas-idera.mjs`.
 
+## Ubicación manual de proveedores
+
+Pantalla interna en `/ubicaciones` para ubicar en el mapa a los proveedores que la geocodificación dejó en el centro de su localidad o de su provincia (domicilios como "MZA 5 LOTE 2" o "CHACRA 204"). Se elige un proveedor, se busca la dirección o se marca el punto en el mapa (con imagen satelital como ayuda) y se guarda.
+
+- Pide el usuario y la contraseña `UBICACIONES_USUARIO` / `UBICACIONES_PASSWORD` del `.env`, y nginx no la sirve por el túnel de Cloudflare.
+- Lo marcado queda en `proveedores.domicilio_correccion` con fuente `manual`: el visor lo muestra en el momento y la carga del padrón (Excel o API) lo vuelve a aplicar mientras el domicilio del proveedor no cambie. Si cambia, el proveedor vuelve a quedar pendiente.
+- Se conecta con el usuario de base `ide_ubicaciones`, que solo lee los proveedores (sin mail ni teléfono) y guarda correcciones. En una base existente se crea con `bash scripts/crear-usuario-ubicaciones.sh`.
+
 ## Estructura del repositorio
 
 ```
@@ -132,6 +140,8 @@ datos/           Datos de trabajo locales y cachés de geocodificación (no vers
 | `actualizar-capas-idera.mjs` | Regenera el catálogo de capas nacionales del visor |
 | `generar-limite-chubut.mjs` | Regenera el límite del Chubut que recorta y filtra las capas del visor |
 | `importar-capas-nacionales.mjs` | Copia al nodo (esquema y workspace `nacional`) las capas nacionales con WFS recortadas al Chubut, con el estilo de origen; programarlo semanal |
+| `crear-usuario-ubicaciones.sh` | Crea en una base existente el usuario de la pantalla de ubicación manual |
+| `generar-estilos-nacionales.mjs` | Genera los íconos y estilos propios de las capas nacionales de puntos |
 | `backup.sh` | Respaldo de la base y de los datos de GeoServer y GeoNetwork |
 
 ## Documentación

@@ -32,7 +32,7 @@ export type CapaNodo = {
   campos: Campo[];
 };
 
-const PRECISION: Record<string, string> = {
+export const PRECISION: Record<string, string> = {
   calle_altura: "Calle y altura",
   calle_altura_interpolada: "Calle y altura (interpolada)",
   calle_altura_sin_validar: "Calle y altura (sin validar)",
@@ -40,6 +40,7 @@ const PRECISION: Record<string, string> = {
   esquina: "Esquina",
   localidad: "Centro de la localidad",
   provincia: "Provincia",
+  manual: "Marcada a mano en el mapa",
 };
 
 const cuit = (v: Valor) => {
