@@ -1,5 +1,13 @@
 # Procesado por la imagen oficial de nginx (envsubst) al iniciar.
 
+# Imágenes del mapa y leyendas de GeoServer: el navegador las reutiliza 5 minutos (volver a una zona o
+# prender y apagar una capa no repite el pedido, que por el túnel de Cloudflare suma ~1 s). Los filtros
+# del visor van en la URL (CQL_FILTER), así que un filtro nuevo es otro pedido
+map $args $cache_geoserver {
+    "~*(^|&)request=(GetMap|GetLegendGraphic)(&|$)" "public, max-age=300";
+    default "";
+}
+
 server {
     listen 80;
     server_name ${DOMINIO};
@@ -37,6 +45,7 @@ server {
     location /geoserver/ {
         proxy_pass http://geoserver:8080/geoserver/;
         proxy_read_timeout 300s;
+        add_header Cache-Control $cache_geoserver;
     }
 
     location /geonetwork/ {
