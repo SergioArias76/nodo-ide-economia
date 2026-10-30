@@ -67,6 +67,19 @@ bash scripts/configurar-geonetwork.sh
 
 Reemplaza la contraseña de fábrica de `admin` por la del `.env`. (El paso 4 ya deshabilita WCS en GeoServer y cambia su contraseña maestra.)
 
+## 6. Publicar por Cloudflare (opcional)
+
+Túnel rápido, sin cuenta ni dominio: da una URL aleatoria `https://….trycloudflare.com` que cambia cada vez que se recrea el contenedor.
+
+```bash
+docker compose --profile tunel up -d
+docker compose logs cloudflared | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com'
+```
+
+Por el túnel se ven el portal, el visor, los servicios WMS/WFS y el catálogo; la administración de GeoServer y `/ubicaciones` dan 403 (solo desde la máquina, por `https://localhost`). Los GetCapabilities de GeoServer siguen anunciando `https://localhost/geoserver` (`PROXY_BASE_URL`), así que en un cliente externo como QGIS hay que tildar "Ignorar URI de GetMap/GetFeatureInfo informada en las capacidades".
+
+Para cortarlo: `docker compose --profile tunel stop cloudflared`.
+
 ## Problemas comunes
 
 | Síntoma | Causa / solución |

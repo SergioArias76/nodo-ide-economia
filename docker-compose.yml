@@ -112,6 +112,18 @@ services:
       - ./nginx/templates:/etc/nginx/templates:ro
       - ./nginx/certs:/etc/nginx/certs:ro
 
+  # Túnel rápido de Cloudflare (URL aleatoria *.trycloudflare.com, cambia en cada arranque). Opcional:
+  # docker compose --profile tunel up -d, y la URL con: docker compose logs cloudflared | grep trycloudflare
+  # Va a nginx por 443: el 80 redirige a https y por el túnel daría un bucle. Lo que entra por acá trae
+  # CF-Connecting-IP, y nginx bloquea la administración de GeoServer y /ubicaciones
+  cloudflared:
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION}
+    profiles: [tunel]
+    restart: unless-stopped
+    depends_on: [nginx]
+    command: tunnel --no-autoupdate --url https://nginx:443 --no-tls-verify
+    mem_limit: 256m
+
 volumes:
   pgdata:
   geoserver_data:
