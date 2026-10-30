@@ -43,6 +43,20 @@ scripts/cargar-proveedores.sh
 1. `ogr2ogr` (contenedor GDAL temporal) carga el GeoJSON en `staging.proveedores_qgis`.
 2. [`postgis/etl/proveedores_desde_staging.sql`](../postgis/etl/proveedores_desde_staging.sql) reemplaza el contenido de `proveedores.proveedor`, `proveedor_rubro` y `domicilio` en una transacción.
 
+## Actualización con el padrón del SIAFyC
+
+El reporte "Listado de Rubros/Categ/Subcat y Proveedores" del SIAFyC (Excel `.xls`) reemplaza al paquete QGIS como fuente. Va en `datos/fuentes/proveedores/Proveedores.xls`:
+
+```bash
+node scripts/importar-padron-siafyc.mjs          # Excel → datos/fuentes/proveedores/padron_siafyc.geojson
+bash scripts/cargar-proveedores.sh datos/fuentes/proveedores/padron_siafyc.geojson
+node scripts/geocodificar-domicilios.mjs --tipo todos --aplicar   # mejora los nuevos y los que cambiaron de domicilio
+```
+
+- El reporte trae una fila por proveedor y rubro, bajo filas de rubro, categoría y subcategoría. Se agrupa por CUIT (sin CUIT, por número de comprobante); con más de un domicilio se usa el legal.
+- No trae coordenadas: un proveedor cuyo domicilio no cambió conserva la ubicación que ya tenía en la base (también las geocodificadas y las marcadas a mano). Los nuevos y los que cambiaron de domicilio quedan en el centro de su localidad, hasta que se corra la geocodificación.
+- Los que no tienen localidad reconocible ("Región Generica", el nombre de una provincia sin localidad) siguen en el padrón pero sin punto en el mapa; quedan listados en `datos/geocodificacion/padron-sin-localidad.csv`.
+
 ## Qué se publica
 
 GeoServer solo tiene permiso sobre dos vistas:

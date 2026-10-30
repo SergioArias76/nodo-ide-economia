@@ -37,7 +37,8 @@ SELECT fid,
        nullif(complemento, ''), nullif(cp, ''), nullif(localidad, ''), nullif(departamento, ''),
        nullif(provincia, ''), nullif(pais, ''), nullif(calidad_dir, ''), precision,
        nullif(fuente_geo, ''), geom
-FROM staging.proveedores_qgis;
+FROM staging.proveedores_qgis
+WHERE geom IS NOT NULL;  -- el padrón del SIAFyC puede traer proveedores sin localidad reconocible
 
 -- Correcciones de ubicación (scripts/geocodificar-domicilios.mjs o carga manual): solo si el
 -- domicilio del padrón no cambió desde que se hizo la corrección
