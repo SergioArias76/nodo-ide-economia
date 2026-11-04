@@ -17,12 +17,20 @@ RED="$(docker compose ps -q postgis | xargs docker inspect -f '{{range $k, $v :=
 DIR="$(cd "$(dirname "$GEOJSON")" && (pwd -W 2>/dev/null || pwd))"  # pwd -W: ruta C:/... en Git Bash
 ARCHIVO="$(basename "$GEOJSON")"
 
-echo "1/2 GeoJSON → staging.proveedores_qgis"
+echo "1/3 GeoJSON → staging.proveedores_qgis"
 docker run --rm --network "$RED" -v "$DIR":/fuente:ro -e PGPASSWORD="$IDE_ADMIN_PASSWORD" "$GDAL_IMAGE" \
   ogr2ogr -f PostgreSQL "PG:host=postgis dbname=$IDE_DB user=ide_admin" "/fuente/$ARCHIVO" \
     -nln staging.proveedores_qgis -overwrite \
     -lco GEOMETRY_NAME=geom -lco FID=fid -nlt POINT -t_srs EPSG:4326
 
-echo "2/2 staging → proveedores"
+echo "2/3 staging → proveedores"
 docker compose exec -T postgis psql -U ide_admin -d "$IDE_DB" -v fuente="$ARCHIVO" \
   < postgis/etl/proveedores_desde_staging.sql
+
+# Los proveedores de la API del Registro son más recientes que el padrón: se vuelven a aplicar encima
+# (scripts/importar-api-proveedores.mjs los guarda en proveedores.api_proveedor)
+HAY_API="$(docker compose exec -T postgis psql -U ide_admin -d "$IDE_DB" -Atc "SELECT to_regclass('proveedores.api_proveedor') IS NOT NULL")"
+if [ "$HAY_API" = "t" ]; then
+  echo "3/3 proveedores de la API del Registro → proveedores"
+  docker compose exec -T postgis psql -U ide_admin -d "$IDE_DB" < postgis/etl/proveedores_desde_api.sql
+fi

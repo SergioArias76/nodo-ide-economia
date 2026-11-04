@@ -21,6 +21,8 @@ El archivo no se versiona: va en `datos/fuentes/proveedores/QGIS_proveedores_pun
 | `localidad` | 4.214 | Centro de la localidad |
 | `provincia` | 315 | Centro de la provincia (no sirve para mapear) |
 | `esquina` | — | Intersección de dos calles ("BELGRANO Y LEWIS JONES"); la agrega la regeocodificación |
+| `barrio` | — | Centro del barrio ("Bº 630 VIVIENDAS"), cuando el domicilio no tiene calle; la agrega la regeocodificación |
+| `proveedor` | — | Pin que marcó el proveedor en la plataforma del Registro (ver más abajo) |
 
 Las tres primeras (7.541, un 61%) están en el domicilio real. Localidades sin resolver todavía: Sarmiento, Trevelin, Lago Puelo, Gaiman y Rada Tilly (903 proveedores en total). El departamento se obtuvo con la API Georef (INDEC).
 
@@ -57,13 +59,34 @@ node scripts/geocodificar-domicilios.mjs --tipo todos --aplicar   # mejora los n
 - No trae coordenadas: un proveedor cuyo domicilio no cambió conserva la ubicación que ya tenía en la base (también las geocodificadas y las marcadas a mano). Los nuevos y los que cambiaron de domicilio quedan en el centro de su localidad, hasta que se corra la geocodificación.
 - Los que no tienen localidad reconocible ("Región Generica", el nombre de una provincia sin localidad) siguen en el padrón pero sin punto en el mapa; quedan listados en `datos/geocodificacion/padron-sin-localidad.csv`.
 
+## Actualización desde la API del Registro de Proveedores
+
+La plataforma del Registro de Proveedores expone la API de [api-proveedores.md](api-proveedores.md). Trae los proveedores inscriptos en la plataforma nueva (2.664 en noviembre de 2026): son **datos recientes y pisan los del padrón del SIAFyC** para el mismo CUIT. El padrón sigue siendo la base para los que no se reinscribieron. La URL y la clave van en `.env` (`PROVEEDORES_API_URL`, `PROVEEDORES_API_KEY`).
+
+```bash
+node scripts/importar-api-proveedores.mjs              # lo modificado desde la última importación
+node scripts/importar-api-proveedores.mjs --completo   # todo el padrón de la API
+# con la barra de progreso en una ventana propia:
+powershell -ExecutionPolicy Bypass -File scripts\geocodificar-en-ventana.ps1 -Script importar-api-proveedores.mjs
+```
+
+1. Guarda cada proveedor recibido en `proveedores.api_proveedor` (el último estado, con las bajas) y cada consulta en `proveedores.api_sincronizacion`. La próxima importación pide lo modificado desde el `generado` de la anterior.
+2. [`postgis/etl/proveedores_desde_api.sql`](../postgis/etl/proveedores_desde_api.sql) aplica esos datos sobre el padrón: razón social, rubros, contacto, estado y domicilio legal. Los que no estaban en el padrón se agregan. `scripts/cargar-proveedores.sh` lo vuelve a aplicar después de cada carga del Excel, así que una carga del padrón no pisa los datos de la API.
+3. La ubicación sale del **domicilio legal de la API**:
+   - si es el mismo domicilio que ya estaba ubicado (misma calle con la comparación de [`scripts/lib/calles.mjs`](../scripts/lib/calles.mjs), misma altura y el punto a menos de 15 km del centro de la localidad), se conserva la ubicación;
+   - si es nuevo o cambió, va al centro de su localidad (por `localidad_id` de Georef) y lo geocodifica `geocodificar-domicilios.mjs --fuente registro`;
+   - si la geocodificación no llega a calle y altura, se usa el **pin que marcó el proveedor** (precisión `proveedor`). Se descartan los pines a menos de 150 m del centro de la localidad (la posición por defecto del mapa de la plataforma: un 26 % en noviembre de 2026), los que caen a más de 15 km (otra localidad) y, si la calle ya está ubicada, los que están a más de 1 km de ella.
+4. Las bajas (`estado = 'baja'`) siguen en la base pero no se publican.
+
+En la ficha del visor, el campo **Fuente de los datos** dice si el proveedor viene del Registro de Proveedores o del padrón del SIAFyC.
+
 ## Qué se publica
 
 GeoServer solo tiene permiso sobre dos vistas:
 
 | Vista | Capa sugerida | Contenido |
 |---|---|---|
-| `v_proveedores_publico` | `economia:proveedores_radicacion` | Personas jurídicas y físicas con domicilio (calle y altura) en su punto exacto. Columna `tipo_persona` para filtrar (`CQL_FILTER=tipo_persona='fisica'`). Sin mail ni teléfono ni puntos de precisión `provincia` |
+| `v_proveedores_publico` | `economia:proveedores_radicacion` | Personas jurídicas y físicas activas con domicilio (calle y altura) en su punto exacto. Columna `tipo_persona` para filtrar (`CQL_FILTER=tipo_persona='fisica'`) y `fuente_datos` (Registro de Proveedores o padrón del SIAFyC). Sin mail ni teléfono, sin bajas ni puntos de precisión `provincia` |
 | `v_proveedores_por_localidad` | `economia:proveedores_por_localidad` | Cantidad de proveedores (todos) por localidad |
 
 Las tablas completas, con los datos personales, quedan dentro de la base y solo las lee `ide_admin`.

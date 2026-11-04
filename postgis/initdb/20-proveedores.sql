@@ -46,7 +46,7 @@ CREATE TABLE proveedores.domicilio (
     pais            text,
     calidad_dir     text,                          -- ALTA | MEDIA | BAJA | SIN DATO
     -- calle_altura | calle_altura_interpolada | calle_altura_sin_validar
-    -- | calle_sin_altura | localidad | provincia
+    -- | calle_sin_altura | esquina | barrio | proveedor (pin del Registro) | localidad | provincia | manual
     precision       text NOT NULL,
     fuente_geo      text,                          -- georef | nominatim/...
     geom            geometry(Point, 4326) NOT NULL

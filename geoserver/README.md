@@ -14,6 +14,8 @@ Imagen oficial `docker.osgeo.org/geoserver`. El data directory vive en el volume
 4. Publicar las vistas (ver [docs/datos-proveedores.md](../docs/datos-proveedores.md)):
    - `v_proveedores_publico` → `economia:proveedores_radicacion`
    - `v_proveedores_por_localidad` → `economia:proveedores_por_localidad`
+
+   La capa `proveedores_radicacion` tiene una lista fija de atributos: una columna nueva de la vista (como `fuente_datos`, de `postgis/initdb/25-proveedores-api.sql`) no aparece hasta agregarla. Por REST: `POST /rest/reset` (para que relea la vista) y después `PUT /rest/workspaces/economia/featuretypes/proveedores_radicacion` con la lista completa de atributos **y `"enabled": true`**: si el pedido no lo incluye, GeoServer desactiva la capa.
 5. Información del servicio (Contact Information, título, resumen) según *Perfil de Metadatos para Servicios OGC – IDERA*.
 6. Habilitar cache de teselas (GeoWebCache) en EPSG:3857 para WMTS.
 

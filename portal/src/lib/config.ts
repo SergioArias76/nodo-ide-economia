@@ -37,6 +37,8 @@ export const PRECISION: Record<string, string> = {
   calle_altura_interpolada: "Calle y altura (interpolada)",
   calle_altura_sin_validar: "Calle y altura (sin validar)",
   calle_sin_altura: "Calle sin altura",
+  barrio: "Barrio",
+  proveedor: "Marcado por el proveedor",
   esquina: "Esquina",
   localidad: "Centro de la localidad",
   provincia: "Provincia",
@@ -89,6 +91,7 @@ export const CAPAS_NODO: CapaNodo[] = [
       { atributo: "localidad", etiqueta: "Localidad" },
       { atributo: "departamento", etiqueta: "Departamento" },
       { atributo: "precision", etiqueta: "Precisión de la ubicación", formato: (v) => PRECISION[String(v)] ?? String(v ?? "") },
+      { atributo: "fuente_datos", etiqueta: "Fuente de los datos" },
     ],
   },
 ];
