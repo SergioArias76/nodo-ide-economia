@@ -91,7 +91,7 @@ const estiloVector = (color: string) =>
     image: new Circle({ radius: 6, fill: new Fill({ color }), stroke: new Stroke({ color: "#fff", width: 1.5 }) }),
   });
 
-const CLAVES_URL = ["zoom", "lat", "lng", "base", "capas", "localidad", "rubro"];
+const CLAVES_URL = ["zoom", "lat", "lng", "base", "capas", "localidad", "rubro", "encuadre", "cuit"];
 
 const lista = (valores: string[]) => valores.map((v) => `'${v.replaceAll("'", "''")}'`).join(", ");
 
@@ -189,6 +189,12 @@ function leerUrl() {
     capas: q.has("capas") ? q.get("capas")!.split(",").filter(Boolean) : null,
     localidades: q.get("localidad")?.split(",").filter(Boolean) ?? [],
     rubros: q.get("rubro")?.split("|").filter(Boolean) ?? [],
+    // Desde el buscador de inicio: recuadro a encuadrar (oeste,sur,este,norte) y proveedor a mostrar
+    encuadre: (() => {
+      const e = q.get("encuadre")?.split(",").map(Number);
+      return e?.length === 4 && e.every((n) => !isNaN(n)) ? (e as Extent) : null;
+    })(),
+    cuit: /^\d{11}$/.test(q.get("cuit") ?? "") ? q.get("cuit") : null,
     // Filtros de capas: un parámetro por atributo, con los valores elegidos (?tipo_persona=juridica)
     filtros: Object.fromEntries([...q.entries()].filter(([k]) => !CLAVES_URL.includes(k))),
   };
@@ -360,7 +366,10 @@ export default function Visor() {
     // Al abrir sin vista en la URL, la provincia entera, a la derecha del panel lateral
     if (!inicial.conVista) {
       const ancho = contenedor.current!.clientWidth;
-      mapa.getView().fit(EXTENSION_CHUBUT, { padding: [24, 24, 48, ancho >= 640 ? 440 : 24] });
+      const izquierda = ancho >= 640 ? 440 : 24;
+      // Lo buscado en la página de inicio, a la derecha del panel; si no, la provincia entera
+      if (inicial.encuadre) mapa.getView().fit(transformExtent(inicial.encuadre, "EPSG:4326", "EPSG:3857"), { padding: [80, 80, 80, izquierda], maxZoom: 14 });
+      else mapa.getView().fit(EXTENSION_CHUBUT, { padding: [24, 24, 48, izquierda] });
     }
     const escala = new ScaleLine({ target: escalaRef.current!, minWidth: 80 });
     mapa.addControl(escala);
@@ -797,6 +806,25 @@ export default function Visor() {
     });
   }
 
+  // ?cuit=: proveedor elegido en la página de inicio; se va a él y se abre su ficha, como al buscar su CUIT
+  useEffect(() => {
+    if (!mapa || !inicial.cuit) return;
+    const q = new URLSearchParams({
+      service: "WFS", version: "2.0.0", request: "GetFeature", typeNames: `${WORKSPACE}:proveedores_radicacion`,
+      srsName: "EPSG:3857", outputFormat: "application/json", CQL_FILTER: `cuit = '${inicial.cuit}'`,
+    });
+    fetch(`${PUBLIC_GEOSERVER}/${WORKSPACE}/wfs?${q}`)
+      .then((r) => r.json())
+      .then((d: { features: { properties: Record<string, unknown>; geometry: { coordinates: number[] } | null }[] }) => {
+        const f = d.features.find((x) => x.geometry);
+        if (!f) return;
+        const [lon, lat] = toLonLat(f.geometry!.coordinates);
+        irA({ nombre: String(f.properties.entidad ?? ""), detalle: "", lon, lat, proveedor: f.properties });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- una vez, con el mapa listo
+  }, [mapa]);
+
   function miUbicacion() {
     if (!navigator.geolocation) return setAviso("El navegador no permite obtener la ubicación.");
     setUbicando(true);
@@ -967,7 +995,7 @@ export default function Visor() {
         </div>
         {baseActual && (
           <div
-            className="pointer-events-auto ml-auto rounded-md bg-fondo/85 px-2 py-0.5 text-[0.6875rem] text-tenue [&_a]:text-tenue"
+            className="pointer-events-auto ml-auto rounded-md bg-fondo/85 px-2 py-0.5 text-xs text-tenue [&_a]:text-tenue"
             dangerouslySetInnerHTML={{ __html: baseActual.atribucion }}
           />
         )}

@@ -148,7 +148,7 @@ export async function imprimirPdf(mapa: Map, o: OpcionesPdf) {
   pdf.setFont("helvetica", "bold").setFontSize(15).setTextColor(19, 38, 46);
   pdf.text(o.titulo || "Mapa", m, m + 6);
   pdf.setFont("helvetica", "normal").setFontSize(9).setTextColor(77, 100, 110);
-  pdf.text("Ministerio de Economía · Gobierno del Chubut · IDE", m, m + 11);
+  pdf.text("Ministerio de Economía · Gobierno del Chubut · Nodo IDE Economía Chubut", m, m + 11);
   pdf.text(new Date().toLocaleDateString("es-AR", { dateStyle: "long" }), W - m, m + 6, { align: "right" });
 
   // La ficha consultada va en una columna a la derecha del mapa en la hoja apaisada y debajo en la vertical
