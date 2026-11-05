@@ -27,7 +27,8 @@ export async function buscarRegistros(texto: string, cantidad = 20): Promise<Reg
 
   const res = await fetch(`${GEONETWORK_URL}/srv/api/search/records/_search`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    // Sin Accept-Language, fetch manda "*" y GeoNetwork responde 400 ("Couldn't find 3-letter language code")
+    headers: { "Content-Type": "application/json", Accept: "application/json", "Accept-Language": "es" },
     body: JSON.stringify({
       size: cantidad,
       query: { bool: { must: [query], filter: [{ term: { isTemplate: "n" } }] } },

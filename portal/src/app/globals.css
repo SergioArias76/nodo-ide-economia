@@ -3,16 +3,24 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-/* Identidad del Gobierno del Chubut: neutros apenas teñidos de mar, acento mar profundo del isotipo */
+/* Identidad del Ministerio de Economía, alineada con el Registro de Proveedores
+   (proveedores.chubut.gob.ar): petróleo del mar del isotipo para cabecera, portada, pie y títulos, azul
+   mar para enlaces e íconos, naranja meseta para la acción principal y neutros grises */
 :root {
   color-scheme: light; /* casillas, deslizadores y barras del navegador siguen el tema */
   --fondo: #ffffff;
-  --texto: #13262e;
-  --tenue: #4d646e;
-  --borde: #d3dee2;
+  --texto: #0a0a0a;
+  --tenue: #4b5563;
+  --borde: #e5e7eb;
   --acento: #21708c;
   --acento-texto: #ffffff;
-  --superficie: #f2f6f7;
+  --superficie: #f3f4f6;
+  --petroleo: #16424f; /* cabecera, pie y títulos */
+  --sobre-naranja: #13262e; /* texto e íconos sobre el naranja: 5,4:1 (el blanco da 2,9:1) */
+  --texto-tarjeta: #111827; /* títulos de tarjeta */
+  --titulo: #16424f;
+  --celeste: #f5fafb; /* fondo de la sección alterna (#eef6f9 al 60 %, como el Registro) */
+  --fondo-icono: rgb(33 112 140 / 0.1); /* azul mar al 10 % detrás de los íconos */
 
   /* Franjas del isotipo: identifican los temas de capas */
   --sol: #ffc815;
@@ -22,33 +30,46 @@
   --mar: #5894a7;
   --mar-2: #21708c;
 
-  --sombra: 0 1px 2px rgb(19 38 46 / 0.08), 0 8px 24px -4px rgb(19 38 46 / 0.16);
+  /* Filete bajo la cabecera y sobre el pie, como en el Registro de Proveedores */
+  --franjas: linear-gradient(90deg, #2e8ca8, #ffc815, #ff682c);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* salida fuerte para la interacción */
+
+  --sombra: 0 1px 2px rgb(16 24 40 / 0.05), 0 8px 24px -8px rgb(16 24 40 / 0.12);
   --tinta: #13262e; /* avisos y etiquetas sobre el mapa */
 }
 
-/* Tema oscuro: el del sistema, salvo que se elija otro (data-tema en <html>, ver lib/tema.ts) */
+/* Tema oscuro, gris grafito: solo si se elige (data-tema en <html>, ver lib/tema.ts). Con "sistema"
+   sigue al sistema operativo; sin elección el portal es claro, como los sitios del Gobierno del Chubut */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-tema="claro"]) {
+  :root[data-tema="sistema"] {
     color-scheme: dark;
-    --fondo: #0e1a20;
-    --texto: #e5eef1;
-    --tenue: #9bb2bb;
-    --borde: #29414c;
+    --fondo: #17191c;
+    --texto: #ececec;
+    --tenue: #a8abb0;
+    --borde: #33363b;
     --acento: #7cc0d6;
-    --acento-texto: #0e1a20;
-    --superficie: #15252d;
+    --acento-texto: #17191c;
+    --superficie: #212327;
+    --titulo: #ececec;
+    --celeste: #1d2024;
+    --fondo-icono: rgb(124 192 214 / 0.12);
+    --texto-tarjeta: #ececec;
     --sombra: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -4px rgb(0 0 0 / 0.45);
   }
 }
 :root[data-tema="oscuro"] {
   color-scheme: dark;
-  --fondo: #0e1a20;
-  --texto: #e5eef1;
-  --tenue: #9bb2bb;
-  --borde: #29414c;
+  --fondo: #17191c;
+  --texto: #ececec;
+  --tenue: #a8abb0;
+  --borde: #33363b;
   --acento: #7cc0d6;
-  --acento-texto: #0e1a20;
-  --superficie: #15252d;
+  --acento-texto: #17191c;
+  --superficie: #212327;
+  --titulo: #ececec;
+  --celeste: #1d2024;
+  --fondo-icono: rgb(124 192 214 / 0.12);
+  --texto-tarjeta: #ececec;
   --sombra: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -4px rgb(0 0 0 / 0.45);
 }
 
@@ -103,14 +124,35 @@
   :focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
   * { scrollbar-width: thin; scrollbar-color: var(--borde) transparent; }
 
+  /* Cabecera y pie como los del Registro de Proveedores: petróleo con la firma en blanco y un filete
+     degradé (mar, sol, meseta). Son iguales en los dos temas */
   .cabecera {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--borde);
+    padding: 0.65rem max(1rem, calc((100% - 1200px) / 2 + 1rem));
+    background: var(--petroleo);
+    color: #ffffff;
+    border-bottom: 4px solid transparent;
+    border-image: var(--franjas) 1;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    position: relative;
+    z-index: 1;
   }
-  .cabecera nav { display: flex; align-items: center; gap: 1rem; }
+  .cabecera nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.1rem; font-size: 0.92rem; }
+  .cabecera nav a { color: #ffffff; text-decoration: none; opacity: 0.9; }
+  .cabecera nav a:hover { opacity: 1; text-decoration: underline; }
+  .cabecera nav a.boton-cabecera {
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    background: var(--meseta-2);
+    color: var(--sobre-naranja);
+    font-weight: 600;
+    opacity: 1;
+  }
+  .cabecera nav a.boton-cabecera:hover { text-decoration: none; }
   .boton-tema {
     display: inline-grid;
     place-items: center;
@@ -121,16 +163,30 @@
     cursor: pointer;
   }
   .boton-tema:hover { background: var(--superficie); }
-  .cabecera nav a { text-decoration: none; }
-  .marca { font-weight: 700; text-decoration: none; color: var(--texto); }
-  .marca span { color: var(--acento); }
+  .cabecera .boton-tema { color: #ffffff; }
+  .cabecera .boton-tema:hover { background: rgb(255 255 255 / 0.12); }
 
-  .pie {
-    padding: 0.75rem 1rem;
-    border-top: 1px solid var(--borde);
-    color: var(--tenue);
-    font-size: 0.85rem;
-  }
+  .marca { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: #ffffff; }
+  .marca img { width: 2.6rem; height: auto; }
+  .marca .firma { font-family: var(--font-rubik), var(--font-public-sans), sans-serif; font-weight: 600; font-size: 1rem; line-height: 1.05; }
+  .marca .firma small { display: block; margin-top: 0.15rem; font-weight: 500; font-size: 0.7rem; }
+  .marca .nodo { margin-left: 0.4rem; padding-left: 1rem; border-left: 1px solid rgb(255 255 255 / 0.3); font-weight: 600; font-size: 0.95rem; line-height: 1.2; }
+  .marca .nodo small { display: block; font-weight: 400; font-size: 0.75rem; color: rgb(255 255 255 / 0.7); }
+  @media (max-width: 760px) { .marca .nodo { display: none; } }
+  @media (max-width: 640px) { .cabecera nav a.boton-cabecera { display: none; } }
+
+  .pie { margin-top: 3rem; background: var(--petroleo); color: rgb(255 255 255 / 0.7); font-size: 0.85rem; border-top: 3px solid transparent; border-image: var(--franjas) 1; }
+  .pie a { color: rgb(255 255 255 / 0.85); text-decoration: none; }
+  .pie a:hover { color: #ffffff; text-decoration: underline; }
+  /* Primera columna más ancha solo cuando entran todas; en el celular, de a una o dos (sin anchos
+     mínimos fijos, que ensanchaban toda la página) */
+  .pie .pie-columnas { display: grid; gap: 1.5rem 2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); padding-top: 2.25rem; padding-bottom: 2rem; }
+  @media (min-width: 900px) { .pie .pie-columnas { grid-template-columns: 1.6fr repeat(3, 1fr); } }
+  .pie-columnas ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+  .pie .marca { margin-bottom: 0.75rem; }
+  .pie-nombre { margin: 0; color: #ffffff; font-weight: 600; font-size: 0.95rem; }
+  .pie-titulo { margin: 0 0 0.6rem; color: rgb(255 255 255 / 0.6); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
+  .pie-legal { padding: 0.9rem 1rem; border-top: 1px solid rgb(255 255 255 / 0.12); text-align: center; font-size: 0.78rem; }
 
   .contenido { width: 100%; max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem; }
 
@@ -170,6 +226,302 @@
   .registros p { margin: 0.25rem 0 0; color: var(--tenue); }
 
   .aviso, .cargando { color: var(--tenue); }
+
+  /* Página de inicio con el sistema del Registro de Proveedores: portada en degradé petróleo, tarjetas
+     blancas con borde gris, íconos azul mar sobre celeste, títulos en petróleo, acción principal en
+     naranja meseta y una sección alterna celeste */
+  .ancho { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+  .inicio > section.ancho { padding-top: 3.5rem; padding-bottom: 0.5rem; scroll-margin-top: 1rem; }
+  .inicio h2 { margin: 0 0 0.4rem; color: var(--titulo); font-weight: 600; font-size: 1.85rem; line-height: 1.2; letter-spacing: -0.025em; }
+  .inicio p { margin: 0.6rem 0; max-width: 72ch; }
+  .inicio section > p:first-of-type { color: var(--tenue); }
+
+  /* Portada: el buscador de proveedores sobre el degradé petróleo; a la derecha, el mapa que responde */
+  .portada {
+    padding: 3rem 0 6rem;
+    background: linear-gradient(to bottom right, #16424f, #21708c, #2e8ca8);
+    color: #ffffff;
+  }
+  .portada a:not(.boton) { color: #ffffff; }
+  .portada-grilla { display: grid; gap: 2.5rem; align-items: start; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+  .portada h1 {
+    margin: 0;
+    font-weight: 600;
+    font-size: clamp(1.9rem, 3.6vw, 2.75rem);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  .red { margin-top: 0.9rem !important; font-size: 0.85rem; color: rgb(255 255 255 / 0.75); }
+
+  .busqueda { position: relative; margin-top: 2rem; }
+  .busqueda-pregunta { display: block; margin-bottom: 0.6rem; font-size: 1.15rem; font-weight: 600; }
+  .busqueda-caja {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 3.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #0a0a0a;
+    box-shadow: 0 20px 40px -16px rgb(0 0 0 / 0.45);
+    transition: box-shadow 200ms ease, border-radius 150ms ease;
+  }
+  .busqueda-caja:focus-within { box-shadow: 0 0 0 3px var(--sol), 0 20px 40px -16px rgb(0 0 0 / 0.45); }
+  .busqueda-caja.abierta { border-radius: 14px 14px 0 0; }
+  .busqueda-lupa { width: 1.25rem; height: 1.25rem; color: #4b5563; flex-shrink: 0; }
+  .busqueda-caja input { flex: 1 1 12rem; min-width: 8rem; border: 0; outline: 0; background: transparent; color: inherit; font-size: 1.05rem; padding: 0.35rem 0.25rem; }
+  .busqueda-caja input::placeholder { color: #6b7280; }
+  .ficha {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.55rem 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: rgb(33 112 140 / 0.12);
+    color: #16424f;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ficha.lugar { background: rgb(255 104 44 / 0.15); color: #13262e; }
+  .ficha svg { width: 0.9rem; height: 0.9rem; }
+  .sugerencias {
+    position: absolute;
+    z-index: 5;
+    inset-inline: 0;
+    margin: 0;
+    padding: 0.35rem;
+    list-style: none;
+    border-top: 1px solid #e5e7eb;
+    border-radius: 0 0 14px 14px;
+    background: #ffffff;
+    color: #0a0a0a;
+    box-shadow: 0 24px 40px -16px rgb(0 0 0 / 0.45);
+    max-height: 22rem;
+    overflow-y: auto;
+  }
+  .sugerencias li { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.55rem 0.7rem; border-radius: 8px; cursor: pointer; }
+  .sugerencias li[aria-selected="true"] { background: rgb(33 112 140 / 0.1); }
+  .sugerencias small { flex-shrink: 0; color: #4b5563; font-size: 0.78rem; }
+  .atajos { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-top: 0.9rem; font-size: 0.85rem; }
+  .atajos > span { color: rgb(255 255 255 / 0.75); margin-right: 0.15rem; }
+  .atajos button {
+    padding: 0.25rem 0.7rem;
+    border: 1px solid rgb(255 255 255 / 0.3);
+    border-radius: 999px;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 160ms var(--ease-out);
+  }
+
+  .resumen { margin-top: 1.75rem; transition: opacity 200ms ease; }
+  .resumen[data-cargando="true"] { opacity: 0.55; }
+  .resumen p { margin: 0.3rem 0; }
+  .resumen-total { font-size: 1.05rem; color: rgb(255 255 255 / 0.9); }
+  .resumen-total strong { display: block; color: #ffffff; font-size: clamp(2.5rem, 5vw, 3.5rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
+  .resumen-tipos { font-size: 0.9rem; color: rgb(255 255 255 / 0.75); }
+  .resumen-error { color: #ffffff; }
+  .resumen .boton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 1rem;
+    padding: 0.65rem 1.1rem;
+    border-radius: 8px;
+    background: var(--meseta-2);
+    color: var(--sobre-naranja);
+    font-weight: 600;
+  }
+  .resumen .boton svg { width: 1.1rem; height: 1.1rem; transition: transform 160ms var(--ease-out); }
+
+  /* Mapa que responde a la búsqueda */
+  .mapa-portada { padding: 1.1rem 1.25rem 1.25rem; background: var(--fondo); border-radius: 16px; box-shadow: 0 20px 40px -12px rgb(0 0 0 / 0.35); color: var(--titulo); }
+  .mapa-titulo { margin: 0 0 0.5rem !important; font-size: 0.9rem; font-weight: 600; }
+  .mapa-buscador { display: block; width: 100%; height: auto; overflow: visible; }
+  .mapa-contorno { fill: var(--fondo-icono); stroke: color-mix(in srgb, var(--acento) 45%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .mapa-buscador circle {
+    fill: rgb(255 104 44 / 0.55);
+    stroke: #ffffff;
+    stroke-width: 1;
+  }
+  .mapa-buscador circle.elegido { fill: var(--meseta-2); stroke: #13262e; stroke-width: 1.5; }
+  .mapa-buscador text { fill: var(--titulo); font-size: 9px; font-weight: 600; paint-order: stroke; stroke: var(--fondo); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+  .desglose { list-style: none; margin: 0.9rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+  .desglose li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(3rem, 36%) 2.75rem; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--texto); }
+  .desglose-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .desglose-barra { display: block; block-size: 0.5rem; min-inline-size: 2px; border-radius: 999px; background: var(--acento); }
+  .desglose-n { color: var(--tenue); font-variant-numeric: tabular-nums; text-align: right; }
+  .ejemplos { margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid var(--borde); }
+  .ejemplos > p { margin: 0 0 0.4rem !important; font-size: 0.8rem; font-weight: 600; color: var(--tenue); }
+  .ejemplos ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; font-size: 0.85rem; color: var(--texto); }
+  .ejemplos small { color: var(--tenue); margin-left: 0.3rem; }
+  .portada .ejemplos a { color: var(--texto); text-decoration: none; }
+  .portada .ejemplos a:hover { color: var(--acento); text-decoration: underline; }
+
+  /* Movimiento del buscador (Emil Kowalski: un solo momento orquestado, el resto explica cambios).
+     Al cargar, los círculos crecen desde su localidad, de la más grande a la más chica, y las barras se
+     llenan; al buscar, todo pasa a su valor nuevo con salida suave. Entradas con @starting-style. */
+  .mapa-buscador circle {
+    transition: r 450ms var(--ease-out), opacity 300ms ease, fill 200ms ease;
+    @starting-style { r: 0; opacity: 0; }
+  }
+  .mapa-buscador[data-entrada] circle { transition-delay: calc(var(--i, 0) * 25ms); }
+  .mapa-buscador text { transition: opacity 300ms ease 350ms; @starting-style { opacity: 0; } }
+  .desglose-barra { transition: inline-size 450ms var(--ease-out); transition-delay: calc(var(--i, 0) * 40ms); @starting-style { inline-size: 0; } }
+  .ejemplos li {
+    transition: opacity 250ms ease, transform 250ms var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 35ms);
+    @starting-style { opacity: 0; transform: translateY(4px); }
+  }
+  /* Las sugerencias se despliegan desde el campo; las fichas aparecen con un leve crecimiento */
+  .sugerencias {
+    transform-origin: top center;
+    transition: opacity 150ms ease, transform 150ms var(--ease-out);
+    @starting-style { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  }
+  .ficha { @starting-style { opacity: 0; transform: scale(0.95); } }
+  .ficha { transition: opacity 150ms ease, transform 160ms var(--ease-out), background-color 150ms ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .mapa-buscador circle { transition: opacity 200ms ease; transition-delay: 0ms; @starting-style { opacity: 0; } }
+    .desglose-barra { transition: none; }
+    .ejemplos li, .sugerencias, .ficha { transition: opacity 150ms ease; transform: none; @starting-style { opacity: 0; transform: none; } }
+  }
+
+  @media (max-width: 860px) {
+    .portada { padding: 2rem 0 5rem; }
+    .portada-grilla { grid-template-columns: 1fr; gap: 1.75rem; }
+  }
+
+  /* Accesos directos: suben sobre el borde de la portada */
+  .accesos { position: relative; margin-top: -3.5rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+  .tarjeta-acceso {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    padding: 1.25rem;
+    background: var(--fondo);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    box-shadow: var(--sombra);
+    color: var(--tenue);
+    text-decoration: none;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+  .tarjeta-acceso strong { display: block; margin-bottom: 0.2rem; color: var(--texto-tarjeta); font-size: 1.125rem; font-weight: 600; }
+  .flecha {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    margin-left: auto;
+    align-self: flex-end;
+    border-radius: 50%;
+    background: var(--meseta-2);
+    color: var(--sobre-naranja);
+  }
+  .flecha svg { width: 1.1rem; height: 1.1rem; }
+
+  /* Ícono de la biblioteca de la provincia, azul mar sobre celeste (como el Registro de Proveedores) */
+  .icono {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 12px;
+    background: var(--fondo-icono);
+    color: var(--acento);
+  }
+  .icono-marca {
+    width: 1.45rem;
+    height: 1.45rem;
+    background: currentColor;
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+  }
+
+  .grilla-tarjetas { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+  .tarjeta { display: flex; gap: 0.9rem; align-items: flex-start; padding: 1.25rem; border: 1px solid var(--borde); border-radius: 16px; background: var(--fondo); color: var(--tenue); font-size: 0.9rem; line-height: 1.45; }
+  .tarjeta strong { display: block; margin-bottom: 0.2rem; color: var(--texto-tarjeta); font-size: 1.125rem; font-weight: 600; }
+
+  /* Sección alterna celeste, a todo el ancho */
+  .inicio > section#datos { box-shadow: 0 0 0 100vmax var(--celeste); clip-path: inset(0 -100vmax); background: var(--celeste); margin-top: 3.5rem; padding-bottom: 3.5rem; }
+
+  /* Galería de capas: filtros por tema y miniaturas sobre la provincia */
+  .galeria { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); }
+  .miniatura { display: block; height: 100%; padding: 0.6rem; border: 1px solid var(--borde); border-radius: 16px; background: var(--fondo); color: var(--texto); text-decoration: none; }
+  .vista { position: relative; display: block; border-radius: 10px; background: var(--fondo); overflow: hidden; }
+  .vista svg { display: block; width: 100%; height: auto; }
+  .vista path { fill: var(--fondo-icono); stroke: color-mix(in srgb, var(--acento) 35%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .vista img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .sin-vista { position: absolute; inset: auto 0 0.5rem; text-align: center; font-size: 0.75rem; color: var(--tenue); }
+  .pie-capa { display: block; margin: 0.55rem 0.2rem 0.1rem; font-size: 0.9rem; line-height: 1.3; }
+  .pie-capa strong { display: block; font-weight: 600; }
+  .pie-capa span { display: block; margin-top: 0.15rem; font-size: 0.78rem; color: var(--tenue); }
+
+  .servicios { margin-top: 1rem; }
+  .servicios th { width: 9rem; vertical-align: top; color: var(--titulo); }
+  .servicios th span { display: block; font-weight: 400; font-size: 0.8rem; color: var(--tenue); }
+  .servicios td a { display: block; margin-top: 0.25rem; }
+  .servicios .accion { width: 1%; vertical-align: top; }
+  .copiar { padding: 0.3rem 0.8rem; border: 1px solid var(--borde); border-radius: 6px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+  .copiar:hover { border-color: var(--acento); color: var(--acento); }
+  @media (max-width: 560px) {
+    .servicios tr { display: grid; grid-template-columns: 1fr auto; border-bottom: 1px solid var(--borde); }
+    .servicios th, .servicios td { border: 0; width: auto; }
+    .servicios td:not(.accion) { grid-column: 1 / -1; grid-row: 2; padding-top: 0; }
+  }
+
+  .dos-tarjetas { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); }
+  .tarjeta.bloque { display: block; padding: 1.5rem; font-size: 0.95rem; border-top: 4px solid var(--meseta-2); }
+  .tarjeta.bloque h2 { font-size: 1.35rem; }
+  .cita { margin: 1rem 0; padding: 0.75rem 1rem; background: var(--celeste); border-radius: 8px; color: var(--texto); }
+  .asuntos { list-style: none; padding: 0; margin: 0.5rem 0; }
+  .asuntos li { padding: 0.2rem 0; }
+
+  .ver-todas { margin-top: 1.25rem !important; font-weight: 600; }
+
+  /* Interacción */
+  .boton, .cabecera nav a.boton-cabecera, .tarjeta-acceso, .miniatura, .copiar, .flecha, .ficha {
+    transition: transform 160ms var(--ease-out), background-color 150ms ease, border-color 150ms ease, box-shadow 200ms ease;
+  }
+  .boton:active, .cabecera nav a.boton-cabecera:active, .copiar:active { transform: scale(0.97); }
+  .tarjeta-acceso:active, .miniatura:active { transform: scale(0.99); }
+  .atajos button:active, .ficha:active { transform: scale(0.97); }
+  @media (hover: hover) and (pointer: fine) {
+    .boton:hover, .cabecera nav a.boton-cabecera:hover { background-color: var(--meseta); }
+    .portada .boton.secundario:hover { background-color: rgb(255 255 255 / 0.1); }
+    .tarjeta-acceso:hover, .miniatura:hover { transform: translateY(-2px); border-color: var(--acento); box-shadow: var(--sombra); }
+    .atajos button:hover { background-color: rgb(255 255 255 / 0.12); border-color: rgb(255 255 255 / 0.6); }
+    .resumen .boton:hover svg { transform: translateX(3px); }
+    .tarjeta-acceso:hover .flecha { transform: translate(2px, -2px); }
+  }
+  /* Movimiento reducido: sin desplazamientos ni escalas; quedan los cambios de color y opacidad */
+  @media (prefers-reduced-motion: reduce) {
+    .boton, .cabecera nav a.boton-cabecera, .tarjeta-acceso, .miniatura, .copiar, .flecha, .ficha, .atajos button { transform: none !important; }
+  }
+  /* La miniatura WMS aparece con un fundido cuando llega */
+  .vista img { opacity: 0; transition: opacity 200ms var(--ease-out); }
+  .vista img[data-lista="true"] { opacity: 1; }
+
+  /* Títulos de las páginas internas (catálogo, guía) en petróleo, como los del inicio */
+  .contenido h1, .guia h2 { color: var(--titulo); font-weight: 600; letter-spacing: -0.025em; }
+
+  /* Guía de uso */
+  .guia section { padding: 1.5rem 0; scroll-margin-top: 1rem; }
+  .guia section + section { border-top: 1px solid var(--borde); }
+  .guia h2 { margin: 0 0 0.75rem; font-size: 1.4rem; }
+  .guia p { max-width: 72ch; }
+  .guia ol, .guia ul { padding-left: 1.25rem; }
+  .guia li { margin: 0.3rem 0; }
+  .indice { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; padding: 0.75rem 0; font-size: 0.95rem; }
+  .indice a { text-decoration: none; }
 }
 
 /* Visor: escala de OpenLayers dentro de la barra inferior */
@@ -181,7 +533,7 @@
 .escala .ol-scale-line-inner {
   border-color: var(--texto);
   color: var(--texto);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
 }
 
 /* Preferencias de accesibilidad del visor (atributos en <html>) */

@@ -19,7 +19,7 @@ const publicSans = localFont({
 const rubik = Rubik({ subsets: ["latin"], weight: ["500", "600"], variable: "--font-rubik", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "IDE Economía Chubut", template: "%s · IDE Economía Chubut" },
+  title: { default: "Nodo IDE Economía Chubut", template: "%s · Nodo IDE Economía Chubut" },
   description:
     "Nodo de Infraestructura de Datos Espaciales del Ministerio de Economía de la Provincia del Chubut.",
 };

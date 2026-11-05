@@ -72,7 +72,7 @@ export const CAPAS_NODO: CapaNodo[] = [
     titulo: "Proveedores",
     grupo: "Proveedores del Estado",
     atributoTitulo: "entidad",
-    nota: "Visible al acercar el mapa",
+    nota: "Puntos de lejos; íconos al acercar el mapa",
     simbolo: { color: "#ff682c" },
     filtroLocalidad: `${WORKSPACE}:proveedores_por_localidad`,
     filtroRubro: `${WORKSPACE}:proveedores_rubros`,
@@ -152,8 +152,47 @@ export const WMS_SUGERIDOS = [
 ];
 
 export const SERVICIOS = [
-  { tipo: "WMS", url: `${PUBLIC_GEOSERVER}/${WORKSPACE}/wms?service=WMS&request=GetCapabilities` },
-  { tipo: "WFS", url: `${PUBLIC_GEOSERVER}/${WORKSPACE}/wfs?service=WFS&request=GetCapabilities` },
-  { tipo: "WMTS", url: `${PUBLIC_GEOSERVER}/gwc/service/wmts?request=GetCapabilities` },
-  { tipo: "CSW", url: `${PUBLIC_GEONETWORK}/srv/spa/csw?service=CSW&request=GetCapabilities` },
+  {
+    tipo: "WMS",
+    nombre: "Web Map Service",
+    uso: "Mapas en imagen, para ver las capas en un SIG o en otro visor",
+    url: `${PUBLIC_GEOSERVER}/${WORKSPACE}/wms?service=WMS&request=GetCapabilities`,
+  },
+  {
+    tipo: "WFS",
+    nombre: "Web Feature Service",
+    uso: "Entidades vectoriales con sus atributos, para consultar y descargar (GeoJSON, Shapefile, CSV)",
+    url: `${PUBLIC_GEOSERVER}/${WORKSPACE}/wfs?service=WFS&request=GetCapabilities`,
+  },
+  {
+    tipo: "WMTS",
+    nombre: "Web Map Tile Service",
+    uso: "Mapas en teselas cacheadas, más rápidos para mapas base y tableros",
+    url: `${PUBLIC_GEOSERVER}/gwc/service/wmts?request=GetCapabilities`,
+  },
+  {
+    tipo: "CSW",
+    nombre: "Catalogue Service for the Web",
+    uso: "Catálogo de metadatos, para que la IDE provincial e IDERA lo cosechen",
+    url: `${PUBLIC_GEONETWORK}/srv/spa/csw?service=CSW&request=GetCapabilities`,
+  },
 ];
+
+// Datos institucionales de la página de inicio. Lo que esté en null no se muestra: completar cuando
+// el Ministerio lo confirme (ver docs/idera.md).
+export const NODO = {
+  nombre: "Nodo IDE Economía Chubut",
+  area: "Área de Transparencia y Normatización de Contrataciones Públicas", // responsable del nodo
+  oficina: "Oficina Provincial de Contrataciones",
+  subsecretaria: "Subsecretaría de Coordinación Financiera",
+  organismo: "Ministerio de Economía",
+  jurisdiccion: "Provincia del Chubut",
+  // Contacto: el mismo que publica el Registro de Proveedores (proveedores.chubut.gob.ar)
+  correo: "registrodeproveedores@chubut.gob.ar" as string | null,
+  telefono: "(0280) 4485422" as string | null,
+  telefonoEnlace: "tel:+542804485422",
+  horario: "Lunes a viernes de 8 a 14 h",
+  direccion: null as string | null, // oficina (calle, altura, localidad): sin publicar
+  // Licencia de los datos publicados. CC BY 4.0 es la que usa el portal nacional de datos abiertos
+  licencia: { nombre: "Creative Commons Atribución 4.0 Internacional (CC BY 4.0)", url: "https://creativecommons.org/licenses/by/4.0/deed.es" },
+};
