@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Un punto por proveedor, por tipo de persona; solo a escala urbana (a escala provincial lo resume proveedores_por_localidad).
-     De cerca, ícono por tipo (edificio: jurídica; persona: física); los SVG están en iconos/ y los sube scripts/publicar-geoserver.sh -->
+<!-- Un punto por proveedor, por tipo de persona, en tres escalas:
+     - lejos (provincia o país, más de 1:1.500.000): punto de 3 px semitransparente, sin borde, para ver
+       dónde se concentran sin tapar el mapa (el conteo por localidad lo da proveedores_por_localidad);
+     - región y ciudad: punto de 8 px con borde blanco;
+     - de cerca (menos de 1:40.000): ícono por tipo (edificio: jurídica; persona: física). Los SVG están en
+       iconos/ y los sube scripts/publicar-geoserver.sh -->
 <StyledLayerDescriptor version="1.0.0"
     xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc"
     xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -12,6 +16,28 @@
       <Title>Proveedores</Title>
       <!-- Todos en su domicilio; las jurídicas encima de las físicas -->
       <FeatureTypeStyle>
+        <Rule>
+          <Title>Persona física</Title>
+          <ogc:Filter>
+            <ogc:PropertyIsEqualTo>
+              <ogc:PropertyName>tipo_persona</ogc:PropertyName>
+              <ogc:Literal>fisica</ogc:Literal>
+            </ogc:PropertyIsEqualTo>
+          </ogc:Filter>
+          <MinScaleDenominator>1500000</MinScaleDenominator>
+          <PointSymbolizer>
+            <Graphic>
+              <Mark>
+                <WellKnownName>circle</WellKnownName>
+                <Fill>
+                  <CssParameter name="fill">#5894a7</CssParameter>
+                  <CssParameter name="fill-opacity">0.7</CssParameter>
+                </Fill>
+              </Mark>
+              <Size>3.5</Size>
+            </Graphic>
+          </PointSymbolizer>
+        </Rule>
         <Rule>
           <Title>Persona física</Title>
           <ogc:Filter>
@@ -57,6 +83,28 @@
         </Rule>
       </FeatureTypeStyle>
       <FeatureTypeStyle>
+        <Rule>
+          <Title>Persona jurídica</Title>
+          <ogc:Filter>
+            <ogc:PropertyIsEqualTo>
+              <ogc:PropertyName>tipo_persona</ogc:PropertyName>
+              <ogc:Literal>juridica</ogc:Literal>
+            </ogc:PropertyIsEqualTo>
+          </ogc:Filter>
+          <MinScaleDenominator>1500000</MinScaleDenominator>
+          <PointSymbolizer>
+            <Graphic>
+              <Mark>
+                <WellKnownName>circle</WellKnownName>
+                <Fill>
+                  <CssParameter name="fill">#ff682c</CssParameter>
+                  <CssParameter name="fill-opacity">0.7</CssParameter>
+                </Fill>
+              </Mark>
+              <Size>3.5</Size>
+            </Graphic>
+          </PointSymbolizer>
+        </Rule>
         <Rule>
           <Title>Persona jurídica</Title>
           <ogc:Filter>
