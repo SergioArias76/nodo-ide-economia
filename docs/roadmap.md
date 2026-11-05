@@ -22,7 +22,8 @@
 - [x] Estilos SLD institucionales
 
 ## Fase 3 – Catálogo y federación
-- [ ] Registros de metadatos en GeoNetwork (perfil IDERA)
+- [x] Registros de metadatos en GeoNetwork (perfil IDERA) de las capas de proveedores: `node scripts/cargar-metadatos-geonetwork.mjs`
+- [ ] Ficha de metadatos de servicio (WMS/WFS) y datos de contacto completos (dirección, correo y teléfono del área)
 - [ ] Alta del nodo ante la IDE provincial e IDERA
 - [ ] Harvesting/CSW habilitado
 
