@@ -17,7 +17,7 @@ Se usa por igual en escritorio (oficina, sesiones de análisis) y en celular (co
 
 ## Product Purpose
 
-Nodo de la Infraestructura de Datos Espaciales (IDE) del Ministerio de Economía de la Provincia del Chubut, a cargo del Área de Sistemas de Información y Transparencia (ASIyT). Publica la información geográfica del Ministerio con servicios estándar OGC (WMS, WFS, WMTS, CSW), documentada con metadatos según el perfil IDERA, y la muestra en un portal con visor de mapas y catálogo. Éxito: que cualquiera de los usuarios encuentre y entienda un dato territorial del Ministerio sin ayuda, y que el nodo se integre a IDERA.
+Nodo de la Infraestructura de Datos Espaciales (IDE) del Ministerio de Economía de la Provincia del Chubut, a cargo del Área de Transparencia y Normatización de Contrataciones Públicas (Oficina Provincial de Contrataciones, Subsecretaría de Coordinación Financiera). Publica la información geográfica del Ministerio con servicios estándar OGC (WMS, WFS, WMTS, CSW), documentada con metadatos según el perfil IDERA, y la muestra en un portal con visor de mapas y catálogo. Éxito: que cualquiera de los usuarios encuentre y entienda un dato territorial del Ministerio sin ayuda, y que el nodo se integre a IDERA.
 
 ## Positioning
 
@@ -39,6 +39,8 @@ Es la fuente oficial de los datos geográficos del Ministerio de Economía del C
 
 Identidad visual del Gobierno del Chubut y del Ministerio de Economía (archivos entregados por el área, fuera del repositorio: `Downloads/drive-download-20261007T190840Z-1-001`):
 
+- Referencia de estilo para el sitio público: el Registro de Proveedores (https://proveedores.chubut.gob.ar/), sitio hermano del Ministerio.
+
 - Isotipo de la provincia con forma del mapa del Chubut en franjas: `#FFC815`, `#FFB109`, `#FF8540`, `#FF682C`, `#5894A7`, `#21708C`. Versiones color, escala de grises y pluma, para fondo claro (`_b`) y oscuro (`_n`).
 - Logotipo "Ministerio de Economía · Gobierno del Chubut" en Rubik (Medium/SemiBold) junto al isotipo.
 - Tipografía institucional para texto: Public Sans.
@@ -46,7 +48,7 @@ Identidad visual del Gobierno del Chubut y del Ministerio de Economía (archivos
 
 ## Evidence on Hand
 
-- 12.435 proveedores del SIPPE (07/09/2026), 3.786 personas jurídicas publicadas, 254 localidades.
+- Padrón del SIAFyC más la API del Registro de Proveedores (desde 2026-11-04): 12.818 proveedores; 12.716 en el mapa público, 9.964 en 70 localidades del Chubut (2026-11-05). La página de inicio calcula sus cifras del WFS.
 - Catálogo IDERA: 76 capas nacionales en 10 temas (`portal/src/lib/capas-idera.json`).
 - No hay testimonios, métricas de uso ni casos publicados: no inventarlos.
 

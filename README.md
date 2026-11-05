@@ -1,6 +1,6 @@
 # Nodo IDE – Ministerio de Economía (Chubut)
 
-Nodo de **Infraestructura de Datos Espaciales** del Ministerio de Economía de la Provincia del Chubut, a cargo del Área de Sistemas de Información y Transparencia (ASIyT).
+Nodo de **Infraestructura de Datos Espaciales** del Ministerio de Economía de la Provincia del Chubut, a cargo del Área de Transparencia y Normatización de Contrataciones Públicas (Oficina Provincial de Contrataciones, Subsecretaría de Coordinación Financiera).
 
 Objetivo: publicar la información con componente territorial del Ministerio mediante servicios OGC estándar (WMS, WFS, WMTS), documentados con metadatos compatibles con **IDERA**, y en condiciones de federarse con la IDE provincial sin transferir la custodia de los datos.
 

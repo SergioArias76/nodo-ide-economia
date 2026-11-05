@@ -9,15 +9,18 @@ colors:
   mar: "#5894a7"
   mar-hondo: "#21708c"
   tinta: "#13262e"
-  tenue: "#4d646e"
-  borde: "#d3dee2"
-  superficie: "#f2f6f7"
+  texto: "#0a0a0a"
+  tenue: "#4b5563"
+  borde: "#e5e7eb"
+  superficie: "#f3f4f6"
   fondo: "#ffffff"
-  fondo-oscuro: "#0e1a20"
-  superficie-oscura: "#15252d"
-  borde-oscuro: "#29414c"
-  texto-oscuro: "#e5eef1"
-  tenue-oscuro: "#9bb2bb"
+  petroleo: "#16424f"
+  celeste: "#f5fafb"
+  fondo-oscuro: "#17191c"
+  superficie-oscura: "#212327"
+  borde-oscuro: "#33363b"
+  texto-oscuro: "#ececec"
+  tenue-oscuro: "#a8abb0"
   acento-oscuro: "#7cc0d6"
 typography:
   marca:
@@ -99,7 +102,7 @@ El isotipo del Gobierno del Chubut dibuja la provincia en franjas: sol, meseta y
 La interfaz es una herramienta de trabajo (modo Operate). Lleva la disposición familiar de los visores de IDE: panel de capas a la izquierda, herramientas arriba a la derecha y zoom abajo. Las tarjetas son blancas y flotan sobre el mapa. El color de marca hace trabajo concreto: identifica temas, marca acciones y selección, y aparece como franja de seis colores sobre el logotipo. No decora.
 
 **Key Characteristics:**
-- Base clara de neutros fríos apenas teñidos de mar; el modo oscuro sigue la preferencia del sistema.
+- Base clara de neutros grises (los del Registro de Proveedores). El portal abre siempre en claro, como los sitios del Gobierno del Chubut; el oscuro (gris grafito) se elige con el botón de tema o con "Sistema" en Accesibilidad.
 - Acento único para acciones y selección: mar hondo.
 - Franjas del isotipo reservadas para identificar temas y para la marca.
 - Íconos temáticos de Lucide (la familia de los botones), en tinta o blanco sobre su franja.
@@ -120,8 +123,9 @@ Una paleta de identidad provincial: tres pares de franjas cálidas y frías sobr
 - **Mar**: franja de Transporte y de Unidades geoestadísticas; color de las mediciones junto con mar hondo.
 
 ### Neutral
-- **Tinta**: texto principal, íconos sobre franjas cálidas y avisos sobre el mapa.
-- **Tenue**: texto secundario y etiquetas de campo (6:1 sobre blanco).
+- **Texto**: texto principal.
+- **Tinta**: íconos y texto sobre franjas cálidas (también sobre el naranja de los botones del sitio, 5,4:1) y avisos sobre el mapa.
+- **Tenue**: texto secundario y etiquetas de campo (7,6:1 sobre blanco).
 - **Borde**: divisores y contornos de tarjetas y campos.
 - **Superficie**: hover de filas y fondos secundarios.
 - **Fondo**: tarjetas y paneles.
@@ -221,6 +225,20 @@ Tarjeta de 320px:
 - Aparece desde el punto en 200ms con `cubic-bezier(0.16, 1, 0.3, 1)`. Es la única animación del visor.
 
 ## Do's and Don'ts
+
+## Sitio público (inicio, catálogo, ayuda)
+
+Las páginas del sitio siguen el sistema del Registro de Proveedores (proveedores.chubut.gob.ar), el sitio hermano del Ministerio, para que se lean como una misma familia:
+
+- **Cabecera y pie:** petróleo `#16424f` con la firma del Ministerio en blanco (isotipo + Rubik) y un filete de 4px en degradé `#2e8ca8 → #ffc815 → #ff682c`. Iguales en los dos temas.
+- **Portada = buscador ("¿Qué proveedor del Estado buscás?"):** sobre el degradé petróleo (`#16424f → #21708c → #2e8ca8`), un campo con sugerencias de rubros y localidades (fichas que se quitan) y, al instante, el total, el desglose por localidad o por rubro, algunos nombres y el acceso al visor ya filtrado. A la derecha, el Chubut en SVG con un círculo por localidad que cambia de tamaño con la búsqueda. Los datos vienen de `/api/buscar` (resumen calculado en el servidor desde el WFS). Es lo que diferencia al nodo de un portal de capas: responde una pregunta concreta.
+- **Títulos de sección:** Public Sans 600 en petróleo.
+- **Tarjetas:** blancas, borde `#e5e7eb`, 16px de radio. Íconos de la Biblioteca de Íconos de la Provincia (`public/marca/iconos/`, pintados con máscara CSS) en mar hondo sobre mar hondo al 10 %.
+- **Acción principal:** naranja meseta honda con texto en tinta (5,4:1). Es la excepción a "The Acento Hace Trabajo Rule" y la heredan del Registro; el texto blanco sobre ese naranja (2,9:1) no se usa.
+- **Sección alterna:** celeste `#f5fafb` a todo el ancho (la galería de capas).
+- **Cifras:** las da el buscador (total sin filtros y por búsqueda); se calculan de los datos publicados, nunca se escriben a mano.
+- **Interacción:** transiciones de propiedades concretas con `cubic-bezier(0.23, 1, 0.32, 1)`; los botones se hunden a 0.97 al presionar; las tarjetas con enlace suben 2px al pasar el mouse, solo con `@media (hover: hover) and (pointer: fine)`; con movimiento reducido no hay desplazamientos.
+- **Galería:** una selección de capas que se ven sobre el Chubut; la que no responde se oculta, nunca queda un recuadro vacío.
 
 ### Do:
 - **Do** asignar a cada tema nuevo una franja existente y un ícono de la biblioteca provincial en `TEMAS`.
