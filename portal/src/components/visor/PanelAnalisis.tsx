@@ -127,7 +127,8 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proceso, claveEntrada]);
 
-  const campos = leidos?.capa === claveEntrada ? leidos.campos : null; // null: todavía se están leyendo
+  // null: todavía se están leyendo, o no hay capa de entrada (por ejemplo, con todas las capas apagadas)
+  const campos = leidos && claveEntrada && leidos.capa === claveEntrada ? leidos.campos : null;
   const numericos = campos?.filter((c) => c.numerico) ?? [];
   // "Cantidad de elementos" (sin campo) sirve para contar; las demás operaciones necesitan un campo numérico
   const CANTIDAD = "__cantidad";
