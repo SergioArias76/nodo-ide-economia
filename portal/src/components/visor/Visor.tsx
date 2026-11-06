@@ -26,6 +26,8 @@ import "ol/ol.css";
 import { Check, Minus, Plus, X } from "lucide-react";
 import { BASE_INICIAL, CAPAS_NODO, MAPAS_BASE, PUBLIC_GEOSERVER, SIN_BASE, WORKSPACE, temaDe, type CapaNodo } from "@/lib/config";
 import catalogoIdera from "@/lib/capas-idera.json";
+import { ALERTAS_SMN, CAPAS_ALERTAS, COLORES_NIVEL, GRUPO_ALERTAS, leyendaAlerta } from "@/lib/capas-alertas";
+import GeoJSON from "ol/format/GeoJSON";
 import FichaConsulta, { type Consulta } from "./FichaConsulta";
 import PanelLateral from "./PanelLateral";
 import PanelCapas from "./PanelCapas";
@@ -209,6 +211,63 @@ function leerUrl() {
   };
 }
 
+// Alertas del SMN: color del nivel (amarillo, naranja, rojo), con el borde más marcado
+const estilosNivel: Record<string, Style> = {};
+const estiloAlerta = (f: FeatureLike) => {
+  const color = COLORES_NIVEL[f.get("nivel") as string] ?? COLORES_NIVEL.Amarillo;
+  return (estilosNivel[color] ??= new Style({ fill: new Fill({ color: `${color}38` }), stroke: new Stroke({ color, width: 2.5 }) }));
+};
+
+// Emergencias y alertas (lib/capas-alertas.ts), apagadas al inicio: las alertas del SMN, vectoriales, y los
+// mapas de incendios e inundaciones de Copernicus, por WMS
+function capasAlertas(activas: string[] | null): CapaVisor[] {
+  const smnVisible = activas?.includes(ALERTAS_SMN.id) ?? false;
+  const smn: CapaVisor = {
+    id: ALERTAS_SMN.id,
+    titulo: ALERTAS_SMN.titulo,
+    grupo: GRUPO_ALERTAS,
+    origen: "archivo",
+    fija: true,
+    visible: smnVisible,
+    opacidad: 1,
+    resumen: ALERTAS_SMN.resumen,
+    color: COLORES_NIVEL.Naranja,
+    capa: recortarAChubut(
+      new VectorLayer({
+        visible: smnVisible,
+        zIndex: Z.catalogo,
+        source: new VectorSource({ url: ALERTAS_SMN.url, format: new GeoJSON() }),
+        style: estiloAlerta,
+      }),
+    ),
+  };
+  const wms = CAPAS_ALERTAS.map((c): CapaVisor => {
+    const visible = activas?.includes(c.id) ?? false;
+    return {
+      id: c.id,
+      titulo: c.titulo,
+      grupo: GRUPO_ALERTAS,
+      origen: "catalogo",
+      visible,
+      opacidad: c.id === "peligro_de_incendio" ? 0.6 : 1,
+      resumen: c.resumen,
+      consultable: false,
+      exportable: true,
+      wfs: false,
+      leyenda: leyendaAlerta(c),
+      capa: recortarAChubut(
+        new ImageLayer({
+          visible,
+          opacity: c.id === "peligro_de_incendio" ? 0.6 : 1,
+          zIndex: Z.catalogo,
+          source: new ImageWMS({ url: c.url, params: { LAYERS: c.capa }, crossOrigin: "anonymous" }),
+        }),
+      ),
+    };
+  });
+  return [smn, ...wms];
+}
+
 // Capas temáticas nacionales del catálogo de IDERA (scripts/actualizar-capas-idera.mjs), apagadas al inicio
 function capasCatalogo(activas: string[] | null): CapaVisor[] {
   return catalogoIdera.capas.map((c) => {
@@ -279,7 +338,7 @@ function crearMapa() {
     };
   });
 
-  const catalogo = capasCatalogo(inicial.capas);
+  const catalogo = [...capasAlertas(inicial.capas), ...capasCatalogo(inicial.capas)];
 
   const popup = new Overlay({
     element: nodoPopup,
@@ -343,6 +402,28 @@ export default function Visor() {
   const [rubros, setRubros] = useState<OpcionFiltro[]>([]);
   const [datos, setDatos] = useState<EstadoDatos | null>(null); // panel de datos (derecha)
   const [datosAmpliado, setDatosAmpliado] = useState(false);
+
+  // Alertas del SMN: el título dice cuántas hay vigentes y la capa se vuelve a pedir cada 10 minutos
+  useEffect(() => {
+    const capa = v.catalogo.find((c) => c.id === ALERTAS_SMN.id)?.capa;
+    const fuente = capa?.getSource() as VectorSource | undefined;
+    if (!fuente) return;
+    const titular = (detalle: string) =>
+      setCapas((actuales) => actuales.map((c) => (c.id === ALERTAS_SMN.id ? { ...c, titulo: `${ALERTAS_SMN.titulo} (${detalle})` } : c)));
+    const alCargar = () => {
+      const n = new Set(fuente.getFeatures().map((f) => f.get("documento_cap"))).size;
+      titular(n === 0 ? "sin alertas vigentes" : n === 1 ? "1 vigente" : `${n} vigentes`);
+    };
+    const alFallar = () => titular("no disponible");
+    fuente.on("featuresloadend", alCargar);
+    fuente.on("featuresloaderror", alFallar);
+    const cada = setInterval(() => fuente.refresh(), 10 * 60_000);
+    return () => {
+      clearInterval(cada);
+      fuente.un("featuresloadend", alCargar);
+      fuente.un("featuresloaderror", alFallar);
+    };
+  }, [v]);
   const herramientas = useHerramientas(mapa);
 
   // Análisis geográfico: el panel pide un área o un punto y el visor lo dibuja
@@ -513,7 +594,7 @@ export default function Visor() {
       lng: lon.toFixed(5),
       base: activa,
       capas: capasRef.current
-        .filter((c) => (c.origen === "nodo" || c.origen === "catalogo") && c.visible)
+        .filter((c) => (c.origen === "nodo" || c.origen === "catalogo" || c.fija) && c.visible)
         .map((c) => corto(c.id))
         .join(","),
     });

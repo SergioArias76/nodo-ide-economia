@@ -25,6 +25,7 @@ export type CapaVisor = {
   localidades?: string[]; // localidades elegidas (nodo.filtroLocalidad); vacío: todas
   rubros?: string[]; // rubros elegidos (nodo.filtroRubro); vacío: todos
   proceso?: string; // capas de resultado del análisis geográfico: proceso que las generó
+  fija?: boolean; // capa vectorial propia del visor (alertas del SMN): no se quita ni se le cambia el color
 };
 
 // Opción de los filtros con buscador (localidades, rubros)

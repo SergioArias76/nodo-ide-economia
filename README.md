@@ -50,6 +50,7 @@ Visor propio en `/visor`, con las herramientas del visor de IDERA (mapa.idera.go
 
 - **Capas del nodo**: proveedores del Estado (ícono por domicilio: edificio para persona jurídica, persona para física; con filtros por persona jurídica o física, por localidad y por rubro) y cantidad de proveedores por localidad.
 - **Capas nacionales** del catálogo de IDERA agrupadas por tema (escuelas, hospitales, transporte, hidrografía…), con opacidad, leyenda y zoom a la extensión.
+- **Emergencias y alertas**: alertas meteorológicas vigentes del SMN sobre el Chubut (las junta `/api/alertas` desde el feed CAP oficial cada 10 minutos, con nivel, vigencia y recomendaciones), focos de calor de la última semana, áreas quemadas, peligro de incendio del día (Copernicus GWIS), zonas inundables por crecida de 100 años y pronóstico de crecidas (Copernicus GloFAS). Se superponen a los proveedores y las alertas del SMN entran en el análisis geográfico (por ejemplo, qué proveedores quedan dentro de una alerta). Las fuentes están en `portal/src/lib/capas-alertas.ts`.
 - **Mapas base**: OpenStreetMap (por defecto), Argenmap del IGN (normal, gris y oscuro) o sin mapa base.
 - **Herramientas**: búsqueda de localidades, consulta de datos con clic, medición de distancias y superficies, dibujo (con exportación a GeoJSON), grilla de coordenadas, mi ubicación, captura PNG e impresión en PDF.
 - **Análisis geográfico**, con las funciones y el comportamiento del geoportal estadístico del INDEC:

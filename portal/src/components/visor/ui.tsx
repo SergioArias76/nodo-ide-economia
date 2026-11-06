@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  BusFront, ChartPie, CloudSun, Factory, House, Layers, Leaf, Map as IconoMapa, Mountain, ShieldCheck, Store, Waves,
+  BusFront, ChartPie, CloudSun, Factory, House, Layers, Leaf, Map as IconoMapa, Mountain, ShieldCheck, Siren, Store, Waves,
   type LucideIcon,
 } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
@@ -76,6 +76,7 @@ const ICONOS_TEMA: Record<string, LucideIcon> = {
   demarcacion: IconoMapa,
   estadistica: ChartPie,
   agregadas: Layers,
+  emergencias: Siren,
 };
 
 // Mosaico del tema: el color de la franja del isotipo con el ícono del tema encima

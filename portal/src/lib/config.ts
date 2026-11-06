@@ -141,6 +141,7 @@ export const TEMAS: Record<string, Tema> = {
   "Hidrografía y oceanografía": { color: "var(--mar-2)", icono: "hidrografia", sobre: "#ffffff" },
   "Demarcación": { color: "var(--mar-2)", icono: "demarcacion", sobre: "#ffffff" },
   "Unidades geoestadísticas": { color: "var(--mar)", icono: "estadistica", sobre: "#ffffff" },
+  "Emergencias y alertas": { color: "var(--sol)", icono: "emergencias", sobre: "#13262e" },
 };
 
 export const temaDe = (grupo: string): Tema => TEMAS[grupo] ?? { color: "var(--tenue)", icono: "agregadas", sobre: "#ffffff" };

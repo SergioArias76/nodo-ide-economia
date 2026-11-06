@@ -229,7 +229,7 @@ function FilaCapa({ c, localidades, rubros, onCambiar, onFiltrar, onZoom, onQuit
         )}
         <BotonIcono
           icono={SlidersHorizontal}
-          etiqueta={c.origen === "archivo" ? "Estilo y opacidad" : "Opacidad"}
+          etiqueta={c.origen === "archivo" && !c.fija ? "Estilo y opacidad" : "Opacidad"}
           tamano="sm"
           activo={ajustes}
           className={ajustes ? "" : "text-tenue"}
@@ -238,7 +238,7 @@ function FilaCapa({ c, localidades, rubros, onCambiar, onFiltrar, onZoom, onQuit
         {c.origen === "archivo" && (
           <BotonIcono icono={Download} etiqueta="Descargar GeoJSON" tamano="sm" className="text-tenue" onClick={() => descargarCapa(c)} />
         )}
-        {(c.origen === "wms" || c.origen === "archivo") && (
+        {(c.origen === "wms" || c.origen === "archivo") && !c.fija && (
           <BotonIcono icono={Trash} etiqueta="Quitar capa" tamano="sm" className="text-tenue" onClick={() => onQuitar(c.id)} />
         )}
       </div>
@@ -318,7 +318,7 @@ function FilaCapa({ c, localidades, rubros, onCambiar, onFiltrar, onZoom, onQuit
           </button>
         </div>
       )}
-      {ajustes && c.origen === "archivo" && (
+      {ajustes && c.origen === "archivo" && !c.fija && (
         <label className="flex items-center gap-3 px-3 pt-1 pl-[2.1rem] text-xs text-tenue">
           Color
           <input
