@@ -33,6 +33,16 @@ export type OpcionFiltro = { nombre: string; detalle?: string; cantidad: number 
 // Localidad con proveedores, para el filtro por localidad (coordenada en EPSG:3857)
 export type Localidad = { nombre: string; departamento: string; provincia: string; cantidad: number; coordenada: number[] };
 
+// Cómo se nombra una localidad en el filtro y en la URL (?localidad=): las del Chubut solo por su nombre y
+// las de otras provincias con la provincia entre paréntesis, porque hay nombres repetidos ("Rawson" está en
+// el Chubut y en San Juan; "Las Heras", en Mendoza y en Santa Cruz)
+export const claveLocalidad = (l: { nombre: string; provincia: string }) => (l.provincia === "Chubut" ? l.nombre : `${l.nombre} (${l.provincia})`);
+
+export function leerClaveLocalidad(clave: string) {
+  const m = /^(.*) \(([^()]+)\)$/.exec(clave);
+  return m ? { nombre: m[1], provincia: m[2] } : { nombre: clave, provincia: "Chubut" };
+}
+
 export type Panel = "capas" | "base" | "agregar" | "analisis" | "ayuda" | "accesibilidad";
 
 export type Modo =

@@ -190,9 +190,12 @@ export default function BuscadorProveedores({ encabezado, contorno }: { encabeza
       ? vistaPara(enChubut.length ? enChubut : lugaresResultado)
       : null;
   const enlaceVisor = (extra?: Record<string, string>) => {
-    const q = new URLSearchParams({ capas: "proveedores_radicacion,proveedores_por_localidad" });
+    // Con una búsqueda, solo la capa de proveedores, que es la que se filtra (los círculos de "Proveedores
+    // por localidad" cuentan a todos los proveedores y confundirían)
+    const q = new URLSearchParams({ capas: rubro || lugar ? "proveedores_radicacion" : "proveedores_radicacion,proveedores_por_localidad" });
     if (rubro) q.set("rubro", rubro);
-    if (lugar) q.set("localidad", lugar.localidad);
+    // Mismo nombre que usa el visor: con la provincia si no es del Chubut
+    if (lugar) q.set("localidad", nombreLugar(lugar));
     const v = extra ?? vista;
     if (v) for (const [k, valor] of Object.entries(v)) q.set(k, valor);
     return `/visor?${q}`;

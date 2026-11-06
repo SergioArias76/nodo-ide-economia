@@ -11,7 +11,7 @@ import { temaDe } from "@/lib/config";
 import { descargarTexto } from "./exportar";
 import { BotonIcono, IconoTema, Titulo, campo, reset } from "./ui";
 import { esAnalizable } from "./analisis";
-import type { CapaVisor, Localidad, OpcionFiltro } from "./tipos";
+import { claveLocalidad, type CapaVisor, type Localidad, type OpcionFiltro } from "./tipos";
 
 type Props = {
   capas: CapaVisor[];
@@ -202,7 +202,7 @@ function descargarCapa(c: CapaVisor) {
 }
 
 const opcionesLocalidad = (ls: Localidad[]): OpcionFiltro[] =>
-  ls.map((l) => ({ nombre: l.nombre, detalle: [l.departamento, l.provincia].filter(Boolean).join(", "), cantidad: l.cantidad }));
+  ls.map((l) => ({ nombre: claveLocalidad(l), detalle: [l.departamento, l.provincia].filter(Boolean).join(", "), cantidad: l.cantidad }));
 
 function FilaCapa({ c, localidades, rubros, onCambiar, onFiltrar, onZoom, onQuitar, onAtributos, onColor, onDisolver }: { c: CapaVisor } & Omit<Props, "capas">) {
   const [ajustes, setAjustes] = useState(false);

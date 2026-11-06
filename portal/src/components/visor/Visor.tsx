@@ -40,7 +40,7 @@ import { consultar, fichaNodo, hayDatoEn } from "./consulta";
 import { useHerramientas } from "./useHerramientas";
 import { capturaPng, imprimirPdf } from "./exportar";
 import { BotonIcono, botonPrimario, botonSecundario, campo, tarjeta } from "./ui";
-import { Z, type CapaVisor, type Localidad, type OpcionFiltro, type Panel } from "./tipos";
+import { Z, claveLocalidad, leerClaveLocalidad, type CapaVisor, type Localidad, type OpcionFiltro, type Panel } from "./tipos";
 import type { Lugar } from "./Buscador";
 
 const VISTA_INICIAL = { lon: -68.5, lat: -43.7, zoom: 6 }; // Chubut
@@ -109,11 +109,20 @@ function cqlRubro(rubro: string) {
   return `rubros = '${r}' OR rubros LIKE '${r} | %' OR rubros LIKE '% | ${r}' OR rubros LIKE '% | ${r} | %'`;
 }
 
+// Localidades elegidas: cada una por nombre y provincia
+function cqlLocalidades(claves: string[]) {
+  const unaLocalidad = (clave: string) => {
+    const { nombre, provincia } = leerClaveLocalidad(clave);
+    return `(localidad = ${lista([nombre])} AND provincia = ${lista([provincia])})`;
+  };
+  return `(${claves.map(unaLocalidad).join(" OR ")})`;
+}
+
 // Filtro CQL de una capa del nodo: valores del atributo, localidades y rubros elegidos (sin elegir: todos)
 function cqlCapa(c: CapaNodo, elegidos?: string[], localidades?: string[], rubros?: string[]) {
   const partes = [
     c.filtro && elegidos && cqlDe(c.filtro.atributo, elegidos, c.filtro.opciones.length),
-    c.filtroLocalidad && localidades?.length ? `localidad IN (${lista(localidades)})` : undefined,
+    c.filtroLocalidad && localidades?.length ? cqlLocalidades(localidades) : undefined,
     c.filtroRubro && rubros?.length ? `(${rubros.map(cqlRubro).join(" OR ")})` : undefined,
   ].filter((p): p is string => p !== undefined);
   if (partes.includes("EXCLUDE")) return "EXCLUDE";
@@ -688,7 +697,7 @@ export default function Visor() {
     setCapas((actuales) => actuales.map((x) => (x.id === id ? nueva : x)));
     // Al sumar localidades, el mapa va hacia ellas (los proveedores se ven al acercar)
     const agregadas = cambios.localidades?.filter((l) => !c.localidades?.includes(l)) ?? [];
-    const puntos = localidades.filter((l) => agregadas.includes(l.nombre)).map((l) => l.coordenada);
+    const puntos = localidades.filter((l) => agregadas.includes(claveLocalidad(l))).map((l) => l.coordenada);
     if (puntos.length) encuadrar(boundingExtent(puntos), 13);
   }
 
