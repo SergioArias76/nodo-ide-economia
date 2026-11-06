@@ -1,6 +1,7 @@
 // Geoprocesos del panel "Análisis geográfico", con las mismas funciones y el mismo comportamiento que el
 // geoportal estadístico del INDEC (portalgeoestadistico.indec.gob.ar, js/geoprocess.json y js/core.js):
 // conteo por área, estadísticas, área de influencia, superposición, distancias y geometrías derivadas.
+// Además, propio del nodo: tiempo de llegada (quién llega a un lugar por ruta en menos de X minutos).
 //
 // Como en el INDEC, el área de análisis se aplica en el servidor: las capas WMS se piden por WFS con
 // CQL_FILTER=INTERSECTS(geom, área) (y el conteo, con resultType=hits); los archivos, dibujos y resultados
@@ -11,7 +12,7 @@ import type VectorSource from "ol/source/Vector";
 import type ImageWMS from "ol/source/ImageWMS";
 import GeoJSON from "ol/format/GeoJSON";
 import WKT from "ol/format/WKT";
-import { fromExtent } from "ol/geom/Polygon";
+import { circular, fromExtent } from "ol/geom/Polygon";
 import type { Extent } from "ol/extent";
 import type { Geometry, Polygon } from "ol/geom";
 import type {
@@ -60,6 +61,10 @@ export const PROCESOS = {
     nombre: "Distancias",
     ayuda: "Distancia de cada elemento a uno o más destinos, en línea recta o por la red vial (a pie, en bicicleta o en vehículo).",
   },
+  llegada: {
+    nombre: "Tiempo de llegada",
+    ayuda: "Elementos que llegan a un lugar por calles y rutas en menos del tiempo elegido, del más cercano al más lejano. Por ejemplo: proveedores de un rubro que pueden asistir en una emergencia.",
+  },
   geometrias: {
     nombre: "Geometrías derivadas",
     ayuda: "Reemplaza cada elemento por su centroide, su envolvente, su centro de masa o un punto sobre el elemento.",
@@ -91,6 +96,16 @@ export type Derivada = keyof typeof DERIVADAS;
 export const MODOS = { pie: "A pie", bici: "Bicicleta", auto: "Vehículo" } as const;
 export type ModoTransporte = keyof typeof MODOS;
 const PERFIL: Record<ModoTransporte, string> = { auto: "car", bici: "bike", pie: "foot" };
+
+// Tiempo de llegada: minutos que se pueden elegir y velocidad máxima de cada modo (km/h). Con la velocidad
+// máxima se descartan antes de rutear los que no llegan ni en línea recta, así se consulta al servidor de
+// ruteo solo por los que pueden llegar
+export const TIEMPOS = [15, 30, 45, 60, 90, 120];
+const VELOCIDAD_MAXIMA: Record<ModoTransporte, number> = { auto: 130, bici: 35, pie: 7 };
+
+// Círculo (EPSG:3857) que encierra todo lo que puede llegar al lugar en ese tiempo: es el área de análisis
+export const alcanceLlegada = (lugar: number[], minutos: number, modo: ModoTransporte) =>
+  circular(lugar, ((VELOCIDAD_MAXIMA[modo] * minutos) / 60) * 1000, 64).transform("EPSG:4326", "EPSG:3857") as Polygon;
 
 // --- Tablas del panel de datos ---
 
@@ -511,6 +526,34 @@ export async function distancias(
     alAvanzar?.(Math.min(i + lote, puntos.length));
   }
   return salida;
+}
+
+export type Llegada = { indice: number; metros: number; segundos: number };
+
+// Elementos que llegan al lugar [lon, lat] por la red vial en menos de "minutos", del más rápido al más lento
+export async function llegada(
+  features: GFeatures,
+  lugar: number[],
+  minutos: number,
+  modo: ModoTransporte,
+  alAvanzar?: (hechos: number, total: number) => void,
+): Promise<{ llegan: Llegada[]; candidatos: number }> {
+  const turf = await cargarTurf();
+  const radio = (VELOCIDAD_MAXIMA[modo] * minutos) / 60;
+  const cerca = features
+    .map((f, indice) => ({ f, indice }))
+    .filter(({ f }) => turf.distance(f.geometry.type === "Point" ? f.geometry.coordinates : turf.centroid(f), lugar, { units: "kilometers" }) <= radio);
+  if (cerca.length > MAXIMO_RUTEO)
+    throw new Error(
+      `Hay ${cerca.length.toLocaleString("es-AR")} elementos a menos de ${formatoNumero(radio, 0)} km y por ruta se calculan hasta ${MAXIMO_RUTEO} por vez. ` +
+        "Filtrá la capa por rubro o localidad en el panel Capas, o elegí menos tiempo.",
+    );
+  const rutas = await distancias(cerca.map((c) => c.f), [lugar], "red", modo, (n) => alAvanzar?.(n, cerca.length));
+  const llegan = rutas
+    .filter((r) => r.segundos != null && r.segundos <= minutos * 60)
+    .map((r) => ({ indice: cerca[r.origen].indice, metros: r.metros, segundos: r.segundos! }))
+    .sort((a, b) => a.segundos - b.segundos);
+  return { llegan, candidatos: cerca.length };
 }
 
 // --- Formatos ---

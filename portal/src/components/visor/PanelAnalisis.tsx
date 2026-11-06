@@ -8,13 +8,13 @@ import { extend } from "ol/extent";
 import { getArea } from "ol/sphere";
 import { toLonLat } from "ol/proj";
 import {
-  ArrowLeft, CircleDashed, Hash, LoaderCircle, MapPinned, PencilLine, Route, Shapes, Sigma, SquaresIntersect, Table, Trash2,
+  ArrowLeft, CircleDashed, Hash, LoaderCircle, MapPinned, PencilLine, Route, Shapes, Sigma, SquaresIntersect, Table, Timer, Trash2,
   TriangleAlert, type LucideIcon,
 } from "lucide-react";
 import {
-  AREAS, DERIVADAS, MAXIMO, MAXIMO_DESTINOS, MODOS, OPERACIONES, PROCESOS, RELACIONES, aMapa, areaDeExtension, camposDe,
-  columnasDe, compararInfluencia, contar, derivadas, distancias, esAnalizable, estadisticas, formatoDistancia, formatoDuracion, formatoNumero,
-  influencia, nombreDe, obtener, superposicion,
+  AREAS, DERIVADAS, MAXIMO, MAXIMO_DESTINOS, MODOS, OPERACIONES, PROCESOS, RELACIONES, TIEMPOS, aMapa, alcanceLlegada, areaDeExtension,
+  camposDe, columnasDe, compararInfluencia, contar, derivadas, distancias, esAnalizable, estadisticas, formatoDistancia, formatoDuracion,
+  formatoNumero, influencia, llegada, nombreDe, obtener, superposicion,
   type AreaAnalisis, type CampoEntrada, type Derivada, type Entrada, type GFeatures, type ModoTransporte, type Operacion,
   type Proceso, type Relacion,
 } from "./analisis";
@@ -28,6 +28,7 @@ const ICONOS: Record<Proceso, LucideIcon> = {
   influencia: CircleDashed,
   superposicion: SquaresIntersect,
   distancias: Route,
+  llegada: Timer,
   geometrias: Shapes,
 };
 
@@ -100,6 +101,7 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
   const [tipoDistancia, setTipoDistancia] = useState<"recta" | "red">("recta");
   const [modo, setModo] = useState<ModoTransporte>("auto");
   const [derivada, setDerivada] = useState<Derivada>("centroide");
+  const [minutos, setMinutos] = useState(60);
 
   const hayDibujos = dibujos().length > 0;
   const entradas: Entrada[] = [
@@ -143,12 +145,14 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
   // Como en el INDEC, "Ejecutar" se habilita cuando están todos los parámetros obligatorios
   const faltante = (() => {
     if (!entrada) return "Elegí la capa de entrada.";
-    if (area === "dibujo" && !areaDibujada) return "Dibujá el área de análisis.";
+    if (proceso !== "llegada" && area === "dibujo" && !areaDibujada) return "Dibujá el área de análisis.";
     if (proceso === "estadisticas" && !campos) return "Leyendo los campos de la capa…";
     if (proceso === "influencia" && !(num(distancia) > 0)) return "Indicá la distancia del área de influencia.";
     if (proceso === "superposicion" && !otra) return "Hace falta una segunda capa activa para superponer.";
     if (proceso === "distancias" && destinoTipo === "puntos" && !destinos.length) return "Marcá el destino en el mapa.";
     if (proceso === "distancias" && destinoTipo === "coordenada" && !coordenadaValida) return "Indicá la longitud y la latitud del destino.";
+    if (proceso === "llegada" && destinoTipo === "puntos" && !destinos.length) return "Marcá el lugar en el mapa.";
+    if (proceso === "llegada" && destinoTipo === "coordenada" && !coordenadaValida) return "Indicá la longitud y la latitud del lugar.";
     return null;
   })();
 
@@ -162,8 +166,12 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
     if (g) setDestinos(g.filter((p): p is Point => p instanceof Point).map((p) => toLonLat(p.getCoordinates())));
   }
 
+  // Tiempo de llegada: un solo lugar (el primero marcado), y el área sale del tiempo y del modo
+  const lugar = destinoTipo === "puntos" ? destinos[0] : destinoCoordenada;
   const areaDeAnalisis = (): Polygon | null =>
-    area === "mapa" ? areaDeExtension(extensionMapa()) : area === "dibujo" ? areaDibujada : null;
+    proceso === "llegada"
+      ? alcanceLlegada(lugar, minutos, modo)
+      : area === "mapa" ? areaDeExtension(extensionMapa()) : area === "dibujo" ? areaDibujada : null;
 
   async function ejecutar() {
     if (!proceso || !entrada || faltante) return;
@@ -216,7 +224,14 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
 
       const { features, truncado } = await pedir(entrada);
       const aviso = avisoTope(truncado, entrada.titulo);
-      if (!features.length) return setEstado({ tipo: "error", mensaje: `No hay elementos de ${tituloEntrada} en el área de análisis.` });
+      if (!features.length)
+        return setEstado({
+          tipo: "error",
+          mensaje:
+            proceso === "llegada"
+              ? `Ningún elemento de ${tituloEntrada} está lo bastante cerca para llegar en ${minutos} minutos.`
+              : `No hay elementos de ${tituloEntrada} en el área de análisis.`,
+        });
       setEstado({ tipo: "corriendo", mensaje: `Procesando ${features.length.toLocaleString("es-AR")} elementos…` });
       await esperar();
 
@@ -441,6 +456,64 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
           });
         }
 
+        case "llegada": {
+          const { llegan, candidatos } = await llegada(features, lugar, minutos, modo, (n, total) =>
+            setEstado({ tipo: "corriendo", mensaje: `Calculando rutas: ${n.toLocaleString("es-AR")} de ${total.toLocaleString("es-AR")}…` }),
+          );
+          const como = modo === "auto" ? "en vehículo" : MODOS[modo].toLowerCase();
+          if (!llegan.length)
+            return setEstado({
+              tipo: "error",
+              mensaje: `Ninguno de los ${candidatos.toLocaleString("es-AR")} elementos cercanos llega en ${minutos} minutos ${como} por ruta. Probá con más tiempo.`,
+            });
+          const titulo = nombre(` (${minutos} min ${como})`);
+          // Los elementos que llegan, con su tiempo y su distancia, en el orden en que llegan
+          const puntos: GFeatures = llegan.map((l, i) => ({
+            ...features[l.indice],
+            properties: {
+              orden: i + 1,
+              nombre: nombreDe(features[l.indice].properties, entrada.capa),
+              duracion: formatoDuracion(l.segundos),
+              distancia: formatoDistancia(l.metros),
+              ...features[l.indice].properties,
+            },
+          }));
+          onResultado(titulo, aMapa(puntos), proceso);
+          const columnas = await columnasDe(entrada);
+          const geometrias = aMapa(llegan.map((l) => features[l.indice])).map((f) => f.getGeometry());
+          onDatos({
+            estado: "listo",
+            tabla: {
+              titulo: `Resultado: ${titulo}`,
+              subtitulo: `Tiempo y distancia del recorrido por calles y rutas hasta ${lugar[1].toFixed(5)}°, ${lugar[0].toFixed(5)}° (OSRM, datos de OpenStreetMap; sin tránsito)`,
+              columnas: [
+                { clave: "_duracion", etiqueta: "Llega en", numerico: true, formato: (v) => formatoDuracion(Number(v)) },
+                { clave: "_distancia", etiqueta: "Distancia", numerico: true, formato: (v) => formatoDistancia(Number(v)) },
+                ...columnas,
+              ],
+              filas: llegan.map((l) => ({
+                ...features[l.indice].properties,
+                _duracion: Math.round(l.segundos),
+                _distancia: Math.round(l.metros),
+              })),
+              geometrias,
+              archivo: `tiempo de llegada ${entrada.titulo}`,
+              aviso,
+            },
+          });
+          return setEstado({
+            tipo: "listo",
+            numero: llegan.length,
+            aviso,
+            mensaje: (
+              <>
+                {llegan.length === 1 ? "elemento llega" : "elementos llegan"} en menos de {minutos} minutos {como}. El más cercano, en{" "}
+                {formatoDuracion(llegan[0].segundos)}. La lista está en el panel de datos y los puntos, en la capa <b>Resultado: {titulo}</b>.
+              </>
+            ),
+          });
+        }
+
         case "geometrias":
           return capa(nombre(` (${DERIVADAS[derivada].toLowerCase()})`), await derivadas(features, derivada), aviso);
       }
@@ -636,9 +709,9 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
             </>
           )}
 
-          {proceso === "distancias" && (
+          {(proceso === "distancias" || proceso === "llegada") && (
             <>
-              <Campo etiqueta="Destino">
+              <Campo etiqueta={proceso === "llegada" ? "Lugar" : "Destino"}>
                 <select className={campo} value={destinoTipo} onChange={(e) => setDestinoTipo(e.target.value as typeof destinoTipo)}>
                   <option value="puntos">Dibujar puntos</option>
                   <option value="coordenada">Coordenada</option>
@@ -665,7 +738,13 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
                       </button>
                     </>
                   )}
-                  <span className="w-full text-xs text-tenue">Podés marcar hasta {MAXIMO_DESTINOS} destinos.</span>
+                  <span className="w-full text-xs text-tenue">
+                    {proceso === "llegada"
+                      ? destinos.length > 1
+                        ? "Se usa el primer punto marcado."
+                        : "Por ejemplo, el lugar de la emergencia o el punto de entrega."
+                      : `Podés marcar hasta ${MAXIMO_DESTINOS} destinos.`}
+                  </span>
                 </div>
               ) : (
                 <div className="flex gap-2">
@@ -677,13 +756,25 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
                   </Campo>
                 </div>
               )}
-              <Campo etiqueta="Tipo de distancia">
-                <select className={campo} value={tipoDistancia} onChange={(e) => setTipoDistancia(e.target.value as typeof tipoDistancia)}>
-                  <option value="recta">Línea recta</option>
-                  <option value="red">Por red vial</option>
-                </select>
-              </Campo>
-              {tipoDistancia === "red" && (
+              {proceso === "llegada" ? (
+                <Campo etiqueta="Llegan en menos de">
+                  <select className={campo} value={minutos} onChange={(e) => setMinutos(Number(e.target.value))}>
+                    {TIEMPOS.map((t) => (
+                      <option key={t} value={t}>
+                        {t < 60 ? `${t} minutos` : t === 60 ? "1 hora" : `${formatoNumero(t / 60, 1)} horas`}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+              ) : (
+                <Campo etiqueta="Tipo de distancia">
+                  <select className={campo} value={tipoDistancia} onChange={(e) => setTipoDistancia(e.target.value as typeof tipoDistancia)}>
+                    <option value="recta">Línea recta</option>
+                    <option value="red">Por red vial</option>
+                  </select>
+                </Campo>
+              )}
+              {(tipoDistancia === "red" || proceso === "llegada") && (
                 <Campo etiqueta="Modo de transporte">
                   <select className={campo} value={modo} onChange={(e) => setModo(e.target.value as ModoTransporte)}>
                     {opciones(MODOS)}
@@ -701,16 +792,25 @@ export default function PanelAnalisis({ capas, dibujos, extensionMapa, capturar,
             </Campo>
           )}
 
-          <Campo etiqueta="Área de análisis">
-            <select className={campo} value={area} onChange={(e) => setArea(e.target.value as AreaAnalisis)}>
-              {AREAS.map((a) => (
-                <option key={a.valor} value={a.valor}>
-                  {a.etiqueta}
-                </option>
-              ))}
-            </select>
-          </Campo>
-          {area === "dibujo" && (
+          {proceso === "llegada" && (
+            <p className="m-0 text-xs text-tenue">
+              Tiempos por calles y rutas a velocidad habitual, sin tránsito ni cortes. Se analiza la capa con sus filtros: para una
+              emergencia, filtrá antes por rubro en el panel Capas.
+            </p>
+          )}
+
+          {proceso !== "llegada" && (
+            <Campo etiqueta="Área de análisis">
+              <select className={campo} value={area} onChange={(e) => setArea(e.target.value as AreaAnalisis)}>
+                {AREAS.map((a) => (
+                  <option key={a.valor} value={a.valor}>
+                    {a.etiqueta}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+          )}
+          {proceso !== "llegada" && area === "dibujo" && (
             <div className="flex items-center gap-2">
               <button type="button" className={botonSecundario} onClick={dibujarArea} disabled={corriendo}>
                 <PencilLine className="size-4" aria-hidden /> {areaDibujada ? "Volver a dibujar" : "Dibujar en el mapa"}
